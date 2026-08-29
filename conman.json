@@ -1,0 +1,21 @@
+{
+  "budget": {
+    "total": 3000,
+    "perFile": 2000,
+    "skillIndex": 800
+  },
+  "safetyMargin": 0.1,
+  "gate": {
+    "over-budget": "error",
+    "duplication": "error",
+    "value-conflict": "error",
+    "vehicle-fit": "warn"
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "dist/**",
+    "test/fixtures/**",
+    "fixtures/repos/**"
+  ]
+}

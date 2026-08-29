@@ -1,8 +1,45 @@
 # Project agent memory
 
-This file is the project's committed home for project-intrinsic agent knowledge: build, test, release, architecture, and sharp-edge notes that should travel with the code.
+This file is the project's committed home for project-intrinsic agent knowledge:
+build, test, release, architecture, and sharp-edge notes that should travel with
+the code.
 
-- Add durable project-specific notes here as they are discovered through real work.
+## What conman is
+
+Deterministic, offline CLI that resolves a repo's Claude Code context stack for an
+entry point and reports load order, token cost, block duplication, and direct
+value conflicts, plus a budget-gated CI check. Scope and non-goals: `VISION.md`.
+No model or network in the analysis path.
+
+## Where things are
+
+- `MODEL.md` — the resolution model (load order, `settings.json` keys, finding
+  rules, default budget provenance, tokenizer caveat). Read it before changing
+  `src/resolver.ts` or the defaults in `src/config.ts`.
+- `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
+  / `mapReport`, with `gate`, `map`, `fix`, `diff`, `config`, `tokenizer` around
+  them. `cli.ts` is arg-parse and dispatch only.
+- `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
+  expected CLI output. `test/run-golden.js` diffs live output against golden;
+  `npm run test:update-golden` regenerates.
+
+## Build and test
+
+- `npm run build` — `tsc` to `dist/` (`rootDir: src`, so `bin` is `dist/cli.js`).
+- `npm test` — builds, then `node --test` over compiled unit tests and the
+  golden runner.
+
+## House rules
+
+- Determinism is the contract: same input → same bytes out. No `Date`, no
+  `Math.random`, sort every directory listing and every findings array, emit
+  POSIX paths.
+- `--fix` is mechanical only (dedupe byte-identical parent/child blocks, sort
+  skill frontmatter keys, normalize whitespace). It must never touch prose or
+  meaning, and must be idempotent.
+- conman is held to its own checks: `conman.json` at the repo root, and CI runs
+  `conman check --map` against this repo. Keep this file and any other context
+  files under the budget in `conman.json`.
 
 ## Test fixtures
 
@@ -11,7 +48,9 @@ resolved-stack analysis. Edit `fixtures/manifest.toml` to add or re-pin a repo,
 run `scripts/fetch-fixtures.sh` to clone them into `fixtures/repos/`
 (gitignored). See `fixtures/README.md` for the workflow and the
 behavior-coverage table. No third-party code is vendored; clones are
-local-only, pinned by SHA, not redistributed.
+local-only, pinned by SHA, not redistributed. This corpus is separate from the
+small hand-built fixtures under `test/fixtures/`, which the unit and golden tests
+depend on.
 
 ## Maintaining this file
 

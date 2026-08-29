@@ -1,0 +1,39 @@
+# exit: 1
+conman VERSION  model 0.1  tokenizer claude-local
+entry: services/api   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source                            lines         tokens
+  b1   memory       CLAUDE.md                         1-10              62
+  b2   import       docs/style.md (via CLAUDE.md:10)  1-4               33
+  b3   memory       services/api/CLAUDE.md            1-10              57
+  b4   rule-always  .claude/rules/always.md           1-5               27
+  b5   rule-scoped  .claude/rules/backend.md          1-8               41
+  b6   skill-index  .claude/skills                    1-2               49
+  ------------------------------------------------------------------------
+  total                                                                269
+
+BUDGET
+  budget          400
+  safety margin   10%   ->  effective 360
+  stack total     269
+  delta           -91  (under budget)
+
+FINDINGS  (2 error, 0 warn)
+  error  duplication
+         CLAUDE.md:7-8
+         services/api/CLAUDE.md:7-8
+         identical 27-token block "Run `npm ci` then `npm test`. Do not skip the lint step.…" appears in 2 files (27 redundant tokens)
+  error  value-conflict
+         CLAUDE.md:3-3
+         services/api/CLAUDE.md:3-3
+         key "node version" is set to different values across the stack: "20" vs "22"
+
+NOTES
+  - excluded by settings claudeMdExcludes: services/CLAUDE.md
+  - skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45
+
+RESULT  fail
+  - 1 duplication finding at error severity
+  - 1 value-conflict finding at error severity
