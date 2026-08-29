@@ -1,6 +1,6 @@
 # Vision
 
-`conman` exists so that a repository's AI-agent context can be measured and budgeted before a session starts, instead of growing unchecked until it degrades the agent.
+`conman` exists so that a repository's Claude Code context can be measured and budgeted before a session starts, instead of growing unchecked until it degrades the agent.
 It serves the developer or team that maintains that context, and it turns a checkout plus an entry point into a report of what loads, in what order, at what token cost, and where the loaded instructions duplicate or plainly contradict each other.
 It owns exactly one thing: the resolved context stack for an entry point.
 
