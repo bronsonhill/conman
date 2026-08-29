@@ -158,7 +158,10 @@
       <h3>Result</h3>
       <p class="pass">pass</p>
       <p>no gate failures</p>
-
+      <h3>Other fields</h3>
+      <dl class="kv">
+        <dt>discovery</dt><dd class="mono">[&quot;memory-file&quot;,&quot;root&quot;]</dd>
+      </dl>
     </section>
 
     <section class="entry" id="entry-1">
@@ -216,7 +219,10 @@
       <h3>Result</h3>
       <p class="pass">pass</p>
       <p>no gate failures</p>
-
+      <h3>Other fields</h3>
+      <dl class="kv">
+        <dt>discovery</dt><dd class="mono">[&quot;memory-file&quot;]</dd>
+      </dl>
     </section>
 
     <section class="entry" id="entry-2">
@@ -273,7 +279,10 @@
       <h3>Result</h3>
       <p class="pass">pass</p>
       <p>no gate failures</p>
-
+      <h3>Other fields</h3>
+      <dl class="kv">
+        <dt>discovery</dt><dd class="mono">[&quot;memory-file&quot;,&quot;rule-path&quot;]</dd>
+      </dl>
     </section>
 
     <section class="entry" id="entry-3">
@@ -361,7 +370,10 @@
         <li>1 duplication finding at error severity</li>
         <li>1 value-conflict finding at error severity</li>
       </ul>
-
+      <h3>Other fields</h3>
+      <dl class="kv">
+        <dt>discovery</dt><dd class="mono">[&quot;memory-file&quot;]</dd>
+      </dl>
     </section>
 </main>
 </body>

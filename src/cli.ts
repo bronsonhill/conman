@@ -128,7 +128,7 @@ const HELP = `conman ${toolVersion()} - deterministic linter for a repo's Claude
 
 USAGE
   conman <entrypoint> [flags]      analyze one entry point
-  conman map [root] [flags]        analyze every discovered entry point
+  conman map [root] [flags]        analyze every entry point (memory files + path-scoped rule targets)
   conman check [<entrypoint>]      analyze + gate on budget / findings
 
 FLAGS

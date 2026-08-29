@@ -49,6 +49,15 @@ export function renderMapHuman(
   }
   out.push("");
 
+  const ruleOnly = result.entries.filter(
+    (e) => e.discovery.includes("rule-path") && !e.discovery.includes("memory-file"),
+  );
+  if (ruleOnly.length > 0) {
+    out.push("discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):");
+    for (const e of ruleOnly) out.push(`  ${e.entry}`);
+    out.push("");
+  }
+
   const totalTokens = result.entries.reduce(
     (n, e) => n + e.analysis.totals.stackTokens,
     0,
@@ -91,6 +100,7 @@ export function renderMapJson(
     pass: result.pass,
     entryPoints: result.entries.map((e) => ({
       entry: e.entry,
+      discovery: e.discovery,
       mode: e.mode,
       tokenizer: e.analysis.tokenizer,
       stackTokens: e.analysis.totals.stackTokens,
