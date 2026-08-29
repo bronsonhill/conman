@@ -70,6 +70,41 @@ every block.
      `resolve.skillListingBudget` if set, else the `skillListingBudget` key from
      `.claude/settings.json`, else no limit.
 
+## Entry-point discovery (`conman map`)
+
+`conman map` resolves and gates every entry point it can find in the repo. A
+directory is an entry point when either:
+
+- it holds a `CLAUDE.md` or an `AGENTS.md` (the repo root always counts), or
+- a `.claude/rules/` file path-scopes to it through `paths` — the directory a
+  glob such as `src/renderer/**` points at, even when that directory carries no
+  memory file of its own. This is the shape `conman map` on Motrix used to
+  miss: every one of Motrix's rules scopes with `paths`, so `src/main` and
+  `src/renderer` were entry points that discovery never reported.
+
+**Glob to directory.** Take the longest leading run of path segments that carry
+no glob metacharacter — `*`, `?`, `[`, `]`, `{`, `}`, `,`. `src/renderer/**`
+gives `src/renderer`; `src/**` gives `src`; `app/api/**` gives `app/api`; a
+wildcard anywhere in the path (`src/*/main`) cuts the run at that segment. If
+the run names a file rather than a directory (`docs/CONTRIBUTING.md`), trailing
+segments are dropped until an existing directory is left. A glob whose leading
+run is empty — a bare `**`, or any pattern that starts with a wildcard — or that
+reduces to the repo root is skipped, so a keyless or `**`-scoped rule adds no
+entry point. Only directories that exist on disk are added; conman never invents
+a path. Brace lists are not expanded (`src/{main,renderer}/**` stops at the `{`
+and yields `src`), matching the resolver's own literal treatment of `paths`
+globs.
+
+Note the interaction with rule matching: a `paths` of `src/**` scopes everything
+*under* `src`, not `src` itself, so the rule that made `src` an entry point does
+not necessarily load into `src`'s own resolved stack. Discovery still surfaces
+the directory so it is analyzed and gated.
+
+The `map` JSON report tags each entry point with a `discovery` array — some of
+`root`, `memory-file`, `rule-path` — recording why it was picked up. The human
+report lists, under the table, any entry point found only through a path-scoped
+rule.
+
 ## `settings.json` keys that change resolution
 
 conman reads `.claude/settings.json` and `.claude/settings.local.json` at the

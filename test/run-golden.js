@@ -29,6 +29,14 @@ const CASES = [
   { name: "map-monorepo", args: ["map", MONO, "--repo-root", MONO] },
   { name: "map-monorepo-json", args: ["map", MONO, "--repo-root", MONO, "--json"] },
   { name: "map-monorepo-html", args: ["map", MONO, "--repo-root", MONO], html: true },
+  {
+    name: "map-rule-entry",
+    args: ["map", "test/fixtures/rule-entry", "--repo-root", "test/fixtures/rule-entry"],
+  },
+  {
+    name: "map-rule-entry-json",
+    args: ["map", "test/fixtures/rule-entry", "--repo-root", "test/fixtures/rule-entry", "--json"],
+  },
   { name: "check-monorepo", args: ["check", `${MONO}/services/api`, "--repo-root", MONO] },
   { name: "analyze-imports", args: ["test/fixtures/imports", "--repo-root", "test/fixtures/imports"] },
   {

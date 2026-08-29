@@ -32,6 +32,12 @@ Flags: `--json`, `--config <path>`, `--budget <n>`, `--tokenizer <name>`,
 `--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--map`
 (with `check`), and `--html <path>` (with `map`).
 
+`conman map` counts a directory as an entry point when it holds a `CLAUDE.md` or
+`AGENTS.md`, or when a `.claude/rules/` file path-scopes to it with `paths` — the
+directory a glob like `src/renderer/**` targets, even with no memory file of its
+own. Keyless and `**`-scoped rules add nothing, and only directories that exist
+on disk are picked up. `MODEL.md` has the glob-to-directory rule.
+
 A run prints the load order with per-block token counts, the total against the
 budget, and any findings. Every finding names a `file:line`, a token cost, or
 both.

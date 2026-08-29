@@ -54,6 +54,10 @@
         "stackTotal": 171,
         "total": 400
       },
+      "discovery": [
+        "memory-file",
+        "root"
+      ],
       "entry": ".",
       "findings": [],
       "mode": "stack",
@@ -129,6 +133,9 @@
         "stackTotal": 202,
         "total": 400
       },
+      "discovery": [
+        "memory-file"
+      ],
       "entry": "legacy",
       "findings": [],
       "mode": "stack",
@@ -194,6 +201,10 @@
         "stackTotal": 171,
         "total": 400
       },
+      "discovery": [
+        "memory-file",
+        "rule-path"
+      ],
       "entry": "services",
       "findings": [],
       "mode": "stack",
@@ -280,6 +291,9 @@
         "stackTotal": 268,
         "total": 400
       },
+      "discovery": [
+        "memory-file"
+      ],
       "entry": "services/api",
       "findings": [
         {

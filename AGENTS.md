@@ -15,7 +15,9 @@ No model or network in the analysis path.
 
 - `MODEL.md` — the resolution model (load order, `settings.json` keys, finding
   rules, default budget provenance, tokenizer caveat). Read it before changing
-  `src/resolver.ts` or the defaults in `src/config.ts`.
+  `src/resolver.ts` or the defaults in `src/config.ts`. Its "Entry-point
+  discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
+  glob into an entry-point directory.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
   / `mapReport` / `mapHtmlReport` (`conman map --html`), with `gate`, `map`,
   `fix`, `diff`, `config`, `tokenizer` around them. `cli.ts` is arg-parse and

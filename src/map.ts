@@ -1,27 +1,107 @@
 // `conman map`: discover every entry point in the repo and run the analysis
 // across all of them, so a monorepo can be taken in one pass.
 //
-// An entry point is any directory that contains a CLAUDE.md or an AGENTS.md,
-// plus the repo root itself. Discovery is a deterministic depth-first walk with
-// sorted directory listings; `.git`, `node_modules`, and config `ignore` globs
-// are skipped.
+// A directory is an entry point when either:
+//   - it contains a CLAUDE.md or an AGENTS.md (or it is the repo root), or
+//   - a `.claude/rules/` file path-scopes to it via `paths` — the directory a
+//     glob like `src/renderer/**` points at, even with no memory file of its
+//     own. This is the shape `conman map` on Motrix used to miss: `src/main`
+//     and `src/renderer` exist only as `paths: [src/**]`-style rule targets.
+//
+// Discovery is a deterministic depth-first walk with sorted directory listings;
+// `.git`, `node_modules`, `dist`, `.treehouse`, and config `ignore` globs are
+// skipped. The glob-to-directory rule is documented in MODEL.md.
 
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import type { Analysis } from "./types.js";
 import type { Config } from "./config.js";
 import { analyzeEntry } from "./analyze.js";
 import { evaluateGate } from "./gate.js";
+import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 import { getTokenizer } from "./tokenizer.js";
 
 const ALWAYS_SKIP = new Set([".git", "node_modules", "dist", ".treehouse"]);
 const MEMORY_NAMES = ["CLAUDE.md", "AGENTS.md"];
 
-export function discoverEntryPoints(repoRoot: string, config: Config): string[] {
-  const found = new Set<string>();
-  found.add(repoRoot);
+/**
+ * The one `.claude/rules/` frontmatter key Claude Code path-scopes a rule on.
+ * Kept in step with `RULE_SCOPE_KEY` in `src/resolver.ts`; see MODEL.md.
+ */
+const RULE_SCOPE_KEY = "paths";
 
+/**
+ * A path segment containing any of these ends the literal prefix of a glob.
+ * conman's matcher does not expand brace lists (see MODEL.md), so `{` `}` `,`
+ * are treated as prefix terminators too: `src/{a,b}/**` reduces to `src`.
+ */
+const GLOB_META = /[*?[\]{},]/;
+
+export type DiscoverySource = "root" | "memory-file" | "rule-path";
+
+export interface DiscoveredEntry {
+  /** Repo-relative POSIX path; "." for the repo root. */
+  path: string;
+  /** Absolute filesystem path. */
+  abs: string;
+  /** Why this directory is an entry point. Sorted, deduped, never empty. */
+  discovery: DiscoverySource[];
+}
+
+function toStringArray(v: unknown): string[] {
+  if (typeof v === "string") return v.trim() ? [v.trim()] : [];
+  if (Array.isArray(v)) {
+    return v.filter((x) => typeof x === "string").map((x) => (x as string).trim());
+  }
+  return [];
+}
+
+/**
+ * Reduce a rule `paths` glob to the repo-relative directory it scopes: the
+ * longest leading run of path segments that carry no glob metacharacter
+ * (`* ? [ ] { } ,`). `src/renderer/**` scopes `src/renderer`; `src/**` scopes
+ * `src`; `app/api/**` scopes `app/api`; a wildcard mid-path (`src` then `**`
+ * then a filename glob) still scopes `src`. If the run names a file rather than
+ * a directory, trailing segments are dropped until an existing directory
+ * remains. Returns null when the leading literal run is empty (a bare `**`, or
+ * any wildcard-first pattern) or resolves to the repo root, or when no existing
+ * directory is left — a keyless or `**`-scoped rule adds no entry point, and
+ * conman never invents a path that is not on disk. See MODEL.md.
+ */
+export function globToEntryDir(repoRoot: string, glob: string): string | null {
+  const cleaned = glob.trim().replace(/^\.?\//, "").replace(/\/+$/, "");
+  if (!cleaned) return null;
+  const kept: string[] = [];
+  for (const seg of cleaned.split("/")) {
+    if (seg === "" || GLOB_META.test(seg)) break;
+    kept.push(seg);
+  }
+  while (kept.length > 0) {
+    const rel = kept.join("/");
+    if (isDir(join(repoRoot, rel))) return rel;
+    kept.pop();
+  }
+  return null;
+}
+
+export function discoverEntryPoints(repoRoot: string, config: Config): DiscoveredEntry[] {
+  const root = resolve(repoRoot);
+  // Keyed by repo-relative POSIX path so entries dedupe regardless of how the
+  // directory was reached.
+  const reasons = new Map<string, Set<DiscoverySource>>();
+  const note = (absDir: string, why: DiscoverySource) => {
+    const rel = relPosix(root, absDir);
+    let set = reasons.get(rel);
+    if (!set) {
+      set = new Set<DiscoverySource>();
+      reasons.set(rel, set);
+    }
+    set.add(why);
+  };
+  note(root, "root");
+
+  const ruleDirs: string[] = [];
   const walk = (dir: string) => {
     let entries: string[];
     try {
@@ -30,24 +110,66 @@ export function discoverEntryPoints(repoRoot: string, config: Config): string[] 
       return;
     }
     for (const name of MEMORY_NAMES) {
-      if (isFile(join(dir, name))) found.add(dir);
+      if (isFile(join(dir, name))) note(dir, "memory-file");
+    }
+    if (basename(dir) === "rules" && basename(dirname(dir)) === ".claude") {
+      ruleDirs.push(dir);
     }
     for (const e of entries) {
       if (ALWAYS_SKIP.has(e)) continue;
       const abs = join(dir, e);
       if (!isDir(abs)) continue;
-      const rel = relPosix(repoRoot, abs);
+      const rel = relPosix(root, abs);
       if (matchesAnyGlob(rel, config.ignore)) continue;
       walk(abs);
     }
   };
-  walk(repoRoot);
+  walk(root);
 
-  return [...found].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const rdir of ruleDirs.sort()) {
+    let files: string[];
+    try {
+      files = readdirSync(rdir)
+        .filter((f) => f.endsWith(".md"))
+        .sort();
+    } catch {
+      continue;
+    }
+    for (const f of files) {
+      const abs = join(rdir, f);
+      if (!isFile(abs)) continue;
+      let patterns: string[];
+      try {
+        const fm = parseFrontmatter(readFileSync(abs, "utf8"));
+        patterns = toStringArray(fm.data[RULE_SCOPE_KEY]);
+      } catch {
+        continue;
+      }
+      for (const pat of patterns) {
+        if (pat === "**") continue; // scopes to everything: no scope at all
+        const rel = globToEntryDir(root, pat);
+        if (!rel || rel === ".") continue;
+        note(resolve(root, rel), "rule-path");
+      }
+    }
+  }
+
+  const out: DiscoveredEntry[] = [];
+  for (const [rel, why] of reasons) {
+    out.push({
+      path: rel,
+      abs: rel === "." ? root : resolve(root, rel),
+      discovery: [...why].sort(),
+    });
+  }
+  out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return out;
 }
 
 export interface MapEntryResult {
   entry: string;
+  /** Why this entry point was discovered. Sorted, deduped, never empty. */
+  discovery: DiscoverySource[];
   analysis: Analysis;
   notes: string[];
   mode: "stack" | "single-file";
@@ -70,7 +192,7 @@ export function runMap(
   const points = discoverEntryPoints(repoRoot, config);
   const entries: MapEntryResult[] = [];
   for (const p of points) {
-    const { analysis, notes, mode } = analyzeEntry(p, {
+    const { analysis, notes, mode } = analyzeEntry(p.abs, {
       repoRoot,
       config,
       tokenizer: tok,
@@ -78,6 +200,7 @@ export function runMap(
     const gate = evaluateGate(analysis, config);
     entries.push({
       entry: analysis.entry || ".",
+      discovery: p.discovery,
       analysis,
       notes,
       mode,
