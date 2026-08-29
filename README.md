@@ -1,6 +1,8 @@
 # conman
 
-*Short for context manager. Also a con man. Your Claude Code context stack is both.*
+**Don't be conned.** `conman` is short for context manager. The con is the
+context stack itself: files that are each defensible on their own while, together,
+they make the model worse and every session more expensive.
 
 Claude Code assembles its startup context fresh every session. It walks the
 directory tree for `CLAUDE.md` and `AGENTS.md`, inlines their `@`-imports, pulls in
