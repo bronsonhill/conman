@@ -1,0 +1,144 @@
+# conman fixture corpus
+#
+# One [[fixture]] table per repo. scripts/fetch-fixtures.sh clones each into
+# fixtures/repos/<name> at the pinned `sha` (gitignored, never committed).
+#
+# Fields:
+#   name      directory name under fixtures/repos/ (kebab-case, unique)
+#   url       https git URL, clonable without credentials
+#   sha       full 40-char commit SHA to check out (pinned; no floating refs)
+#   branch    branch the SHA was taken from, for a shallow fetch
+#   license   SPDX id where one applies, or the license name for source-available repos
+#   entry_points  directories to point `conman` / `conman map` at, relative to the repo root
+#   notes     which conman behaviors this fixture exercises
+#
+# To refresh a pin: bump `sha` (and `branch` if it moved), update `notes` if the
+# stack changed shape, re-run the fetch script. See fixtures/README.md.
+
+[[fixture]]
+name = "llm"
+url = "https://github.com/simonw/llm.git"
+sha = "a463c6318f65a48ae185733a0655dca7bb00c3e1"
+branch = "main"
+license = "Apache-2.0"
+entry_points = ["."]
+notes = """
+Smallest possible stack: a single root AGENTS.md, no .claude/ directory, no
+imports, no rules, no skills. Baseline for the one-file resolved stack and for
+checking conman does nothing surprising when there is nothing to accumulate.
+"""
+
+[[fixture]]
+name = "firstmate"
+url = "https://github.com/kunchenguid/firstmate.git"
+sha = "420721401c4080d1a4f6982b0ef6769e2a749b23"
+branch = "main"
+license = "MIT"
+entry_points = ["."]
+notes = """
+90-byte CLAUDE.md whose only content is `@AGENTS.md`, pulling one ~72 KB block
+via a single import. Exercises @-import resolution and the "one oversized
+imported block" case. .claude/skills is a symlink to a skills tree of ~21
+SKILL.md files, so the skill startup index is large. .claude/settings.json is
+hooks-only (no resolution keys).
+"""
+
+[[fixture]]
+name = "motrix"
+url = "https://github.com/agalwood/Motrix.git"
+sha = "78610342d63ce8446acf4505158aaebdc91a9c09"
+branch = "main"
+license = "MIT"
+entry_points = [".", "src/renderer", "src/main"]
+notes = """
+13 files in .claude/rules/, every one carrying a real `paths:` glob array
+(src/renderer/**, src/main/**, config files, etc.). Compact root CLAUDE.md plus
+AGENTS.md. Exercises path-scoped rule resolution: root entry loads only
+always-on rules, src/renderer and src/main each trigger a different scoped
+subset.
+"""
+
+[[fixture]]
+name = "ack-nestjs-boilerplate"
+url = "https://github.com/andrechristikan/ack-nestjs-boilerplate.git"
+sha = "ab70ad273db04566f1c03d9f797fba9f1e100738"
+branch = "main"
+license = "MIT"
+entry_points = [".", "src"]
+notes = """
+settings.json resolution keys: `claudeMdExcludes` lists 18 of the 19 files in
+.claude/rules/, so a correct resolve drops almost the entire rules set. The
+memory root is .claude/CLAUDE.md, not repo-root CLAUDE.md. 6 skills. Exercises
+claudeMdExcludes handling and the rule/exclude interaction.
+"""
+
+[[fixture]]
+name = "cockroach"
+url = "https://github.com/cockroachdb/cockroach.git"
+sha = "8812064a015d2faf99d3fc7e15880f94042954b0"
+branch = "master"
+license = "CockroachDB Software License (source-available)"
+entry_points = [".", "pkg/sql/logictest", "pkg/sql/schemachanger", "pkg/ui"]
+notes = """
+Deep ancestor CLAUDE.md chain: /CLAUDE.md -> pkg/sql/CLAUDE.md ->
+pkg/sql/logictest/CLAUDE.md (three levels for one entry point). 7 .claude/rules/
+files. Large .claude/skills/ with bundled scripts and references/ subdirs, plus
+extra nested .claude/skills/ trees under pkg/ui and
+pkg/kv/kvserver/allocator/mmaprototype. No AGENTS.md. Exercises deep nesting and
+large / nested skills directories.
+"""
+
+[[fixture]]
+name = "humanlayer"
+url = "https://github.com/humanlayer/humanlayer.git"
+sha = "99abe673498cf8bdcd5f989aebe9406a27185b3b"
+branch = "main"
+license = "Apache-2.0"
+entry_points = [".", "apps/daemon", "apps/react", "hld"]
+notes = """
+Mid-size monorepo with several entry points: nested CLAUDE.md at apps/daemon,
+apps/react, and hld, plus one at .github/workflows. .claude/settings.json sets
+an env key (MAX_THINKING_TOKENS) but no resolution keys. 6 agents, 26 commands.
+Exercises `conman map` across a moderate monorepo where each entry inherits the
+root CLAUDE.md plus its own.
+"""
+
+[[fixture]]
+name = "posthog"
+url = "https://github.com/PostHog/posthog.git"
+sha = "41570ae96afb3b0fd74d2873d68037553aaaec8d"
+branch = "master"
+license = "MIT (ee/ subtree is proprietary; not an entry point here)"
+entry_points = [
+  ".",
+  "common",
+  "frontend/src/scenes/max",
+  "posthog/temporal/data_modeling",
+  "products/customer_analytics/frontend/components/Accounts",
+]
+notes = """
+Overgrown monorepo. CLAUDE.md and AGENTS.md exist as a pair in ~20 directories;
+the root pair and the common/ pair are byte-identical (1739 bytes each), so this
+is the fixture for byte-identical parent/child (and sibling) block duplication.
+Nesting runs 6 levels deep
+(products/customer_analytics/frontend/components/Accounts/). 13 .claude/rules/.
+.claude/settings.json is hooks + plugins, no resolution keys. Many entry points
+for `conman map`. Best candidate for a direct value conflict between a CLAUDE.md
+and its sibling AGENTS.md where the two have drifted.
+"""
+
+[[fixture]]
+name = "ruflo"
+url = "https://github.com/ruvnet/ruflo.git"
+sha = "d33ef4bf8ab27a8f9ef08352c9c293b53312a861"
+branch = "main"
+license = "MIT"
+entry_points = [".", "v3", "v3/@claude-flow/cli", "v3/@claude-flow/mcp"]
+notes = """
+Plainly overgrown stack. Root CLAUDE.md is ~65 KB (~16k tokens on its own).
+~154 skill files under .claude/skills/. Nested CLAUDE.md at v3/ and two
+v3/@claude-flow/* packages. .claude/settings.json carries resolution-relevant
+keys: skillListingBudgetFraction = 0.06 (6x the 0.01 default), plus a `model`
+override and a `customInstructions` string. Exercises the skill-listing budget
+key and a stack that is over budget before any child file is added.
+"""
