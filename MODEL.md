@@ -43,12 +43,24 @@ every block.
 
 3. **`.claude/rules/` entries.** Every `*.md` under a `.claude/rules/` directory
    at or above the entry directory (within the repo).
-   - Frontmatter `globs` (a string or list) with no `alwaysApply: true` makes a
-     rule **path-scoped**: it loads only when one of its globs matches the entry
-     path. Everything else is **always-loaded**.
+   - Frontmatter `paths` (a string or list of globs) makes a rule
+     **path-scoped**: it loads only when one of its globs matches the entry
+     path. A rule with no `paths` — or a `paths` of just `**` — is
+     **always-loaded**. `paths` is the only scoping key Claude Code reads:
+     confirmed by the [memory docs][cc-rules] ("Rules can be scoped to specific
+     files using YAML frontmatter with the `paths` field [...] Rules without a
+     `paths` field are loaded unconditionally") and by Claude Code's own rule
+     parser (v2.1.251), which reads `frontmatter.paths` and nothing else.
+     `globs` and `alwaysApply` are Cursor `.mdc` keys; a rule that carries
+     `globs` but no `paths` loads always-on, with a NOTE.
    - Always-loaded rules load first (path-sorted), then path-scoped rules that
      matched (path-sorted). Rules load after all memory files.
    - `@`-imports inside rule files are not followed in `0.1`.
+   - conman's glob matcher (`src/repo.ts`) does not do brace expansion, so a
+     `paths` pattern like `src/**/*.{ts,tsx}` matches literally rather than as
+     the two patterns Claude Code expands it to.
+
+[cc-rules]: https://code.claude.com/docs/en/memory#path-specific-rules
 
 4. **The skill startup index.** One line per skill found under a `.claude/skills/`
    directory at or above the entry: `- <name>: <description>`, taken from each

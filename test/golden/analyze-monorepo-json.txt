@@ -48,7 +48,7 @@
       "lineEnd": 8,
       "lineStart": 1,
       "source": ".claude/rules/backend.md",
-      "tokens": 41,
+      "tokens": 40,
       "via": null
     },
     {
@@ -63,11 +63,11 @@
     }
   ],
   "budget": {
-    "delta": -91,
+    "delta": -92,
     "effective": 360,
     "overBudget": false,
     "safetyMargin": 0.1,
-    "stackTotal": 269,
+    "stackTotal": 268,
     "total": 400
   },
   "configSource": "conman.json",
@@ -140,13 +140,13 @@
   "totals": {
     "perFile": {
       ".claude/rules/always.md": 27,
-      ".claude/rules/backend.md": 41,
+      ".claude/rules/backend.md": 40,
       ".claude/skills": 49,
       "CLAUDE.md": 62,
       "docs/style.md": 33,
       "services/api/CLAUDE.md": 57
     },
     "skillIndexTokens": 49,
-    "stackTokens": 269
+    "stackTokens": 268
   }
 }

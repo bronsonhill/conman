@@ -1,6 +1,6 @@
 ---
 description: Backend service rules
-globs:
+paths:
   - services/**
 ---
 
