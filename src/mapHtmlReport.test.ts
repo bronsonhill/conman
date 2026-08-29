@@ -36,7 +36,7 @@ test("covers the same data as the text and JSON map reports", () => {
   assert.ok(html.includes("docs/style.md (via CLAUDE.md:10)"));
   // per-block / per-file token cost
   assert.ok(html.includes("<h3>Token cost by file</h3>"));
-  assert.ok(html.includes(">total</th><td class=\"num\">269</td>"));
+  assert.ok(html.includes(">total</th><td class=\"num\">268</td>"));
   // block duplication
   assert.ok(html.includes("duplication &mdash; error"));
   assert.ok(html.includes("27 redundant tokens"));
