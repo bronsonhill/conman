@@ -1,0 +1,368 @@
+# exit: 0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>conman map report</title>
+<style>
+:root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.75rem; }
+  h2 {
+    font-size: 1.2rem;
+    margin: 2.5rem 0 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #d8d8d8;
+  }
+  h3 { font-size: 1rem; margin: 1.5rem 0 0.4rem; }
+  h4 { font-size: 0.95rem; margin: 0 0 0.3rem; }
+  p { margin: 0.4rem 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+  th, td { text-align: left; padding: 0.35rem 0.6rem; border-bottom: 1px solid #e4e4e4; }
+  thead th { border-bottom: 2px solid #c7c7c7; }
+  tfoot th, tfoot td { border-top: 2px solid #c7c7c7; border-bottom: none; font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mono, td.src, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  td.src, code { font-size: 0.85em; }
+  dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 1.25rem; margin: 0.4rem 0; }
+  dl.kv dt { font-weight: 600; color: #555; }
+  dl.kv dd { margin: 0; }
+  section.entry { margin-top: 1.5rem; padding-top: 0.5rem; }
+  .finding {
+    border-left: 3px solid #b0b0b0;
+    padding: 0.5rem 0.85rem;
+    margin: 0.6rem 0;
+    background: #fff;
+  }
+  .finding.sev-error { border-left-color: #c0392b; }
+  .finding.sev-warn { border-left-color: #b9770e; }
+  .finding .message { margin: 0.3rem 0; }
+  ul.locations, ul.notes, ul.reasons { margin: 0.3rem 0; padding-left: 1.15rem; }
+  ul.locations { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
+  .pass { color: #1e7e34; font-weight: 600; }
+  .fail { color: #c0392b; font-weight: 600; }
+  .toc a { margin-right: 0.9rem; white-space: nowrap; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e6e6; background: #17191b; }
+    h2 { border-bottom-color: #33373a; }
+    th, td { border-bottom-color: #2b2f31; }
+    thead th { border-bottom-color: #3d4245; }
+    tfoot th, tfoot td { border-top-color: #3d4245; }
+    dl.kv dt { color: #9aa4ab; }
+    .finding { background: #1e2123; border-left-color: #4a4f52; }
+    .finding.sev-error { border-left-color: #e06c5b; }
+    .finding.sev-warn { border-left-color: #d9a441; }
+    .pass { color: #52c46b; }
+    .fail { color: #e06c5b; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>conman map report</h1>
+    <dl class="kv">
+      <dt>tool</dt><dd>conman VERSION</dd>
+      <dt>model</dt><dd>0.1</dd>
+      <dt>config</dt><dd>conman.json</dd>
+      <dt>entry points discovered</dt><dd>4</dd>
+      <dt>result</dt><dd class="fail">fail</dd>
+    </dl>
+  </header>
+
+  <section id="summary">
+    <h2>Summary</h2>
+    <p class="toc mono">
+        <a href="#entry-0">.</a>
+        <a href="#entry-1">legacy</a>
+        <a href="#entry-2">services</a>
+        <a href="#entry-3">services/api</a>
+    </p>
+      <table>
+        <thead><tr><th>entry</th><th>mode</th><th class="num">tokens</th><th class="num">delta</th><th class="num">errors</th><th class="num">warnings</th><th>result</th></tr></thead>
+        <tbody>
+        <tr><td class="src"><a href="#entry-0">.</a></td><td>stack</td><td class="num">171</td><td class="num">-189</td><td class="num">0</td><td class="num">0</td><td class="pass">pass</td></tr>
+        <tr><td class="src"><a href="#entry-1">legacy</a></td><td>stack</td><td class="num">202</td><td class="num">-158</td><td class="num">0</td><td class="num">0</td><td class="pass">pass</td></tr>
+        <tr><td class="src"><a href="#entry-2">services</a></td><td>stack</td><td class="num">171</td><td class="num">-189</td><td class="num">0</td><td class="num">0</td><td class="pass">pass</td></tr>
+        <tr><td class="src"><a href="#entry-3">services/api</a></td><td>stack</td><td class="num">269</td><td class="num">-91</td><td class="num">2</td><td class="num">0</td><td class="fail">FAIL</td></tr>
+        </tbody>
+        <tfoot><tr><th colspan="2">repo rollup</th><td class="num">813</td><td colspan="4"></td></tr></tfoot>
+      </table>
+      <p>813 tokens across 4 entry points.</p>
+  </section>
+
+    <section class="entry" id="entry-0">
+      <h2>.</h2>
+      <dl class="kv">
+        <dt>mode</dt><dd>stack</dd>
+        <dt>tokenizer</dt><dd>claude-local</dd>
+        <dt>stack tokens</dt><dd>171</dd>
+        <dt>result</dt><dd class="pass">pass</dd>
+      </dl>
+
+      <h3>Load order</h3>
+      <table>
+        <thead><tr><th>#</th><th>kind</th><th>source</th><th class="num">lines</th><th class="num">depth</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="mono">b1</td><td>memory</td><td class="src">CLAUDE.md</td><td class="num">1-10</td><td class="num">0</td><td class="num">62</td></tr>
+        <tr><td class="mono">b2</td><td>import</td><td class="src">docs/style.md (via CLAUDE.md:10)</td><td class="num">1-4</td><td class="num">1</td><td class="num">33</td></tr>
+        <tr><td class="mono">b3</td><td>rule-always</td><td class="src">.claude/rules/always.md</td><td class="num">1-5</td><td class="num">0</td><td class="num">27</td></tr>
+        <tr><td class="mono">b4</td><td>skill-index</td><td class="src">.claude/skills</td><td class="num">1-2</td><td class="num">0</td><td class="num">49</td></tr>
+        </tbody>
+        <tfoot><tr><th colspan="5">total</th><td class="num">171</td></tr></tfoot>
+      </table>
+
+      <h3>Token cost by file</h3>
+      <table>
+        <thead><tr><th>file</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="src">.claude/rules/always.md</td><td class="num">27</td></tr>
+        <tr><td class="src">.claude/skills</td><td class="num">49</td></tr>
+        <tr><td class="src">CLAUDE.md</td><td class="num">62</td></tr>
+        <tr><td class="src">docs/style.md</td><td class="num">33</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Budget</h3>
+      <dl class="kv">
+        <dt>budget</dt><dd>400</dd>
+        <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
+        <dt>stack total</dt><dd>171</dd>
+        <dt>delta</dt><dd>-189 (under budget)</dd>
+      </dl>
+
+      <h3>Findings</h3>
+      <p>0 error, 0 warn</p>
+      <p>none</p>
+
+      <h3>Notes</h3>
+      <ul class="notes">
+        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .</li>
+        <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
+      </ul>
+
+      <h3>Result</h3>
+      <p class="pass">pass</p>
+      <p>no gate failures</p>
+
+    </section>
+
+    <section class="entry" id="entry-1">
+      <h2>legacy</h2>
+      <dl class="kv">
+        <dt>mode</dt><dd>stack</dd>
+        <dt>tokenizer</dt><dd>claude-local</dd>
+        <dt>stack tokens</dt><dd>202</dd>
+        <dt>result</dt><dd class="pass">pass</dd>
+      </dl>
+
+      <h3>Load order</h3>
+      <table>
+        <thead><tr><th>#</th><th>kind</th><th>source</th><th class="num">lines</th><th class="num">depth</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="mono">b1</td><td>memory</td><td class="src">CLAUDE.md</td><td class="num">1-10</td><td class="num">0</td><td class="num">62</td></tr>
+        <tr><td class="mono">b2</td><td>import</td><td class="src">docs/style.md (via CLAUDE.md:10)</td><td class="num">1-4</td><td class="num">1</td><td class="num">33</td></tr>
+        <tr><td class="mono">b3</td><td>memory</td><td class="src">legacy/CLAUDE.md</td><td class="num">1-4</td><td class="num">0</td><td class="num">31</td></tr>
+        <tr><td class="mono">b4</td><td>rule-always</td><td class="src">.claude/rules/always.md</td><td class="num">1-5</td><td class="num">0</td><td class="num">27</td></tr>
+        <tr><td class="mono">b5</td><td>skill-index</td><td class="src">.claude/skills</td><td class="num">1-2</td><td class="num">0</td><td class="num">49</td></tr>
+        </tbody>
+        <tfoot><tr><th colspan="5">total</th><td class="num">202</td></tr></tfoot>
+      </table>
+
+      <h3>Token cost by file</h3>
+      <table>
+        <thead><tr><th>file</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="src">.claude/rules/always.md</td><td class="num">27</td></tr>
+        <tr><td class="src">.claude/skills</td><td class="num">49</td></tr>
+        <tr><td class="src">CLAUDE.md</td><td class="num">62</td></tr>
+        <tr><td class="src">docs/style.md</td><td class="num">33</td></tr>
+        <tr><td class="src">legacy/CLAUDE.md</td><td class="num">31</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Budget</h3>
+      <dl class="kv">
+        <dt>budget</dt><dd>400</dd>
+        <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
+        <dt>stack total</dt><dd>202</dd>
+        <dt>delta</dt><dd>-158 (under budget)</dd>
+      </dl>
+
+      <h3>Findings</h3>
+      <p>0 error, 0 warn</p>
+      <p>none</p>
+
+      <h3>Notes</h3>
+      <ul class="notes">
+        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy</li>
+        <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
+      </ul>
+
+      <h3>Result</h3>
+      <p class="pass">pass</p>
+      <p>no gate failures</p>
+
+    </section>
+
+    <section class="entry" id="entry-2">
+      <h2>services</h2>
+      <dl class="kv">
+        <dt>mode</dt><dd>stack</dd>
+        <dt>tokenizer</dt><dd>claude-local</dd>
+        <dt>stack tokens</dt><dd>171</dd>
+        <dt>result</dt><dd class="pass">pass</dd>
+      </dl>
+
+      <h3>Load order</h3>
+      <table>
+        <thead><tr><th>#</th><th>kind</th><th>source</th><th class="num">lines</th><th class="num">depth</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="mono">b1</td><td>memory</td><td class="src">CLAUDE.md</td><td class="num">1-10</td><td class="num">0</td><td class="num">62</td></tr>
+        <tr><td class="mono">b2</td><td>import</td><td class="src">docs/style.md (via CLAUDE.md:10)</td><td class="num">1-4</td><td class="num">1</td><td class="num">33</td></tr>
+        <tr><td class="mono">b3</td><td>rule-always</td><td class="src">.claude/rules/always.md</td><td class="num">1-5</td><td class="num">0</td><td class="num">27</td></tr>
+        <tr><td class="mono">b4</td><td>skill-index</td><td class="src">.claude/skills</td><td class="num">1-2</td><td class="num">0</td><td class="num">49</td></tr>
+        </tbody>
+        <tfoot><tr><th colspan="5">total</th><td class="num">171</td></tr></tfoot>
+      </table>
+
+      <h3>Token cost by file</h3>
+      <table>
+        <thead><tr><th>file</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="src">.claude/rules/always.md</td><td class="num">27</td></tr>
+        <tr><td class="src">.claude/skills</td><td class="num">49</td></tr>
+        <tr><td class="src">CLAUDE.md</td><td class="num">62</td></tr>
+        <tr><td class="src">docs/style.md</td><td class="num">33</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Budget</h3>
+      <dl class="kv">
+        <dt>budget</dt><dd>400</dd>
+        <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
+        <dt>stack total</dt><dd>171</dd>
+        <dt>delta</dt><dd>-189 (under budget)</dd>
+      </dl>
+
+      <h3>Findings</h3>
+      <p>0 error, 0 warn</p>
+      <p>none</p>
+
+      <h3>Notes</h3>
+      <ul class="notes">
+        <li>excluded by settings claudeMdExcludes: services/CLAUDE.md</li>
+        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services</li>
+        <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
+      </ul>
+
+      <h3>Result</h3>
+      <p class="pass">pass</p>
+      <p>no gate failures</p>
+
+    </section>
+
+    <section class="entry" id="entry-3">
+      <h2>services/api</h2>
+      <dl class="kv">
+        <dt>mode</dt><dd>stack</dd>
+        <dt>tokenizer</dt><dd>claude-local</dd>
+        <dt>stack tokens</dt><dd>269</dd>
+        <dt>result</dt><dd class="fail">fail</dd>
+      </dl>
+
+      <h3>Load order</h3>
+      <table>
+        <thead><tr><th>#</th><th>kind</th><th>source</th><th class="num">lines</th><th class="num">depth</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="mono">b1</td><td>memory</td><td class="src">CLAUDE.md</td><td class="num">1-10</td><td class="num">0</td><td class="num">62</td></tr>
+        <tr><td class="mono">b2</td><td>import</td><td class="src">docs/style.md (via CLAUDE.md:10)</td><td class="num">1-4</td><td class="num">1</td><td class="num">33</td></tr>
+        <tr><td class="mono">b3</td><td>memory</td><td class="src">services/api/CLAUDE.md</td><td class="num">1-10</td><td class="num">0</td><td class="num">57</td></tr>
+        <tr><td class="mono">b4</td><td>rule-always</td><td class="src">.claude/rules/always.md</td><td class="num">1-5</td><td class="num">0</td><td class="num">27</td></tr>
+        <tr><td class="mono">b5</td><td>rule-scoped</td><td class="src">.claude/rules/backend.md</td><td class="num">1-8</td><td class="num">0</td><td class="num">41</td></tr>
+        <tr><td class="mono">b6</td><td>skill-index</td><td class="src">.claude/skills</td><td class="num">1-2</td><td class="num">0</td><td class="num">49</td></tr>
+        </tbody>
+        <tfoot><tr><th colspan="5">total</th><td class="num">269</td></tr></tfoot>
+      </table>
+
+      <h3>Token cost by file</h3>
+      <table>
+        <thead><tr><th>file</th><th class="num">tokens</th></tr></thead>
+        <tbody>
+        <tr><td class="src">.claude/rules/always.md</td><td class="num">27</td></tr>
+        <tr><td class="src">.claude/rules/backend.md</td><td class="num">41</td></tr>
+        <tr><td class="src">.claude/skills</td><td class="num">49</td></tr>
+        <tr><td class="src">CLAUDE.md</td><td class="num">62</td></tr>
+        <tr><td class="src">docs/style.md</td><td class="num">33</td></tr>
+        <tr><td class="src">services/api/CLAUDE.md</td><td class="num">57</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Budget</h3>
+      <dl class="kv">
+        <dt>budget</dt><dd>400</dd>
+        <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
+        <dt>stack total</dt><dd>269</dd>
+        <dt>delta</dt><dd>-91 (under budget)</dd>
+      </dl>
+
+      <h3>Findings</h3>
+      <p>2 error, 0 warn</p>
+      <article class="finding sev-error">
+        <h4>duplication &mdash; error</h4>
+        <p class="message">identical 27-token block &quot;Run `npm ci` then `npm test`. Do not skip the lint step.…&quot; appears in 2 files (27 redundant tokens)</p>
+        <ul class="locations">
+          <li>CLAUDE.md:7-8</li>
+          <li>services/api/CLAUDE.md:7-8</li>
+        </ul>
+        <p>token cost: 27</p>
+        <dl class="kv">
+          <dt>occurrences</dt><dd>2</dd>
+          <dt>segmentTokens</dt><dd>27</dd>
+        </dl>
+      </article>
+      <article class="finding sev-error">
+        <h4>value-conflict &mdash; error</h4>
+        <p class="message">key &quot;node version&quot; is set to different values across the stack: &quot;20&quot; vs &quot;22&quot;</p>
+        <ul class="locations">
+          <li>CLAUDE.md:3-3</li>
+          <li>services/api/CLAUDE.md:3-3</li>
+        </ul>
+        <p>token cost: 8</p>
+        <dl class="kv">
+          <dt>key</dt><dd>node version</dd>
+          <dt>values</dt><dd>20, 22</dd>
+        </dl>
+      </article>
+
+      <h3>Notes</h3>
+      <ul class="notes">
+        <li>excluded by settings claudeMdExcludes: services/CLAUDE.md</li>
+        <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
+      </ul>
+
+      <h3>Result</h3>
+      <p class="fail">fail</p>
+      <ul class="reasons">
+        <li>1 duplication finding at error severity</li>
+        <li>1 value-conflict finding at error severity</li>
+      </ul>
+
+    </section>
+</main>
+</body>
+</html>

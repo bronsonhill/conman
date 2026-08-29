@@ -6,10 +6,11 @@
 //
 // Flags: --json  --config <path>  --budget <n>  --tokenizer <name>
 //        --no-repo-boundary  --fix  --dry-run  --map (check only)
+//        --html <path> (map only)
 //
 // Exit codes: 0 ok / gate pass, 1 gate fail, 2 usage or runtime error.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, type Config } from "./config.js";
@@ -18,6 +19,7 @@ import { analyzeEntry } from "./analyze.js";
 import { renderHuman, renderJson, type RenderContext } from "./report.js";
 import { runMap } from "./map.js";
 import { renderMapHuman, renderMapJson } from "./mapReport.js";
+import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
 import { unifiedDiff } from "./diff.js";
 import { evaluateGate } from "./gate.js";
@@ -44,6 +46,7 @@ interface Args {
   fix: boolean;
   dryRun: boolean;
   map: boolean;
+  html?: string;
   repoRoot?: string;
 }
 
@@ -86,6 +89,9 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
       case "--config":
         a.configPath = argv[++i];
         break;
+      case "--html":
+        a.html = argv[++i];
+        break;
       case "--repo-root":
         a.repoRoot = argv[++i];
         break;
@@ -98,6 +104,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
       default:
         if (t.startsWith("--budget=")) a.budget = Number(t.slice("--budget=".length));
         else if (t.startsWith("--config=")) a.configPath = t.slice("--config=".length);
+        else if (t.startsWith("--html=")) a.html = t.slice("--html=".length);
         else if (t.startsWith("--repo-root=")) a.repoRoot = t.slice("--repo-root=".length);
         else if (t.startsWith("--tokenizer=")) a.tokenizer = t.slice("--tokenizer=".length);
         else if (t.startsWith("-")) {
@@ -134,6 +141,7 @@ FLAGS
   --fix                  apply mechanical fixes (dedupe, sort skill keys, whitespace)
   --dry-run              with --fix: print a diff, write nothing
   --map                  (check only) gate across all discovered entry points
+  --html <path>          (map only) write a self-contained HTML report to <path>
 
 EXIT CODES
   0  ok / gate pass    1  gate fail    2  usage or runtime error
@@ -191,11 +199,17 @@ function main(): void {
   if (args.command === "map" || (args.command === "check" && args.map)) {
     const root = args.target ? resolve(cwd, args.target) : repoRoot;
     const result = runMap(root, config, args.tokenizer);
-    process.stdout.write(
-      args.json
-        ? renderMapJson(result, tv, configSource)
-        : renderMapHuman(result, tv, configSource),
-    );
+    if (args.html) {
+      const dest = resolve(cwd, args.html);
+      writeFileSync(dest, renderMapHtml(result, tv, configSource));
+      process.stdout.write(`wrote ${args.html}\n`);
+    } else {
+      process.stdout.write(
+        args.json
+          ? renderMapJson(result, tv, configSource)
+          : renderMapHuman(result, tv, configSource),
+      );
+    }
     process.exit(args.command === "check" ? (result.pass ? 0 : 1) : 0);
   }
 

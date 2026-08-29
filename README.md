@@ -29,8 +29,8 @@ conman check [<entrypoint>]  analyze, then exit non-zero over budget or on a gat
 ```
 
 Flags: `--json`, `--config <path>`, `--budget <n>`, `--tokenizer <name>`,
-`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, and `--map`
-(with `check`).
+`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--map`
+(with `check`), and `--html <path>` (with `map`).
 
 A run prints the load order with per-block token counts, the total against the
 budget, and any findings. Every finding names a `file:line`, a token cost, or
@@ -50,6 +50,20 @@ FINDINGS  (2 error, 0 warn)
          key "node version" is set to different values across the stack: "20" vs "22"
 
 RESULT  fail
+```
+
+## HTML report
+
+`conman map --html <path>` writes the map results to a single self-contained
+HTML file instead of printing them: the discovered entry points, each entry's
+load order and per-block token cost, the per-file token subtotals, block
+duplication, and value conflicts. The file inlines its own CSS, pulls in no
+scripts, fonts, or network resources, and opens directly in a browser. Output is
+byte-identical for the same repo state — no timestamps, no absolute paths — so it
+can be committed or diffed like any other artifact.
+
+```
+conman map --html report.html
 ```
 
 ## `--fix`

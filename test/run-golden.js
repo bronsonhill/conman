@@ -10,7 +10,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,6 +28,7 @@ const CASES = [
   { name: "analyze-monorepo-json", args: [`${MONO}/services/api`, "--repo-root", MONO, "--json"] },
   { name: "map-monorepo", args: ["map", MONO, "--repo-root", MONO] },
   { name: "map-monorepo-json", args: ["map", MONO, "--repo-root", MONO, "--json"] },
+  { name: "map-monorepo-html", args: ["map", MONO, "--repo-root", MONO], html: true },
   { name: "check-monorepo", args: ["check", `${MONO}/services/api`, "--repo-root", MONO] },
   { name: "analyze-imports", args: ["test/fixtures/imports", "--repo-root", "test/fixtures/imports"] },
   {
@@ -60,8 +62,32 @@ if (!existsSync(GOLDEN_DIR)) mkdirSync(GOLDEN_DIR, { recursive: true });
 
 for (const c of CASES) {
   test(c.name, () => {
-    const { code, stdout } = run(c.args);
-    const actual = `# exit: ${code}\n` + normalize(stdout);
+    let code;
+    let payload;
+    if (c.html) {
+      // `--html` writes a file, not stdout. Run it, read the file back, and diff
+      // that against the golden. Two runs into two paths also proves the output
+      // is byte-identical for identical input.
+      const out1 = join(tmpdir(), `conman-golden-${c.name}-1.html`);
+      const out2 = join(tmpdir(), `conman-golden-${c.name}-2.html`);
+      try {
+        run([...c.args, "--html", out1]);
+        run([...c.args, "--html", out2]);
+        const html1 = readFileSync(out1, "utf8");
+        const html2 = readFileSync(out2, "utf8");
+        assert.equal(html1, html2, `${c.name}: HTML output differs between two runs`);
+        code = 0;
+        payload = html1;
+      } finally {
+        rmSync(out1, { force: true });
+        rmSync(out2, { force: true });
+      }
+    } else {
+      const r = run(c.args);
+      code = r.code;
+      payload = r.stdout;
+    }
+    const actual = `# exit: ${code}\n` + normalize(payload);
     const goldenPath = join(GOLDEN_DIR, `${c.name}.txt`);
 
     if (UPDATE || !existsSync(goldenPath)) {
