@@ -1,0 +1,152 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 10,
+      "lineStart": 1,
+      "source": "CLAUDE.md",
+      "tokens": 62,
+      "via": null
+    },
+    {
+      "depth": 1,
+      "id": "b2",
+      "kind": "import",
+      "lineEnd": 4,
+      "lineStart": 1,
+      "source": "docs/style.md",
+      "tokens": 33,
+      "via": "CLAUDE.md:10"
+    },
+    {
+      "depth": 0,
+      "id": "b3",
+      "kind": "memory",
+      "lineEnd": 10,
+      "lineStart": 1,
+      "source": "services/api/CLAUDE.md",
+      "tokens": 57,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b4",
+      "kind": "rule-always",
+      "lineEnd": 5,
+      "lineStart": 1,
+      "source": ".claude/rules/always.md",
+      "tokens": 27,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b5",
+      "kind": "rule-scoped",
+      "lineEnd": 8,
+      "lineStart": 1,
+      "source": ".claude/rules/backend.md",
+      "tokens": 41,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b6",
+      "kind": "skill-index",
+      "lineEnd": 2,
+      "lineStart": 1,
+      "source": ".claude/skills",
+      "tokens": 49,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -91,
+    "effective": 360,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 269,
+    "total": 400
+  },
+  "configSource": "conman.json",
+  "entry": "services/api",
+  "findings": [
+    {
+      "detail": {
+        "occurrences": 2,
+        "segmentTokens": 27
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 8,
+          "lineStart": 7
+        },
+        {
+          "file": "services/api/CLAUDE.md",
+          "lineEnd": 8,
+          "lineStart": 7
+        }
+      ],
+      "message": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens)",
+      "severity": "error",
+      "tokens": 27,
+      "type": "duplication"
+    },
+    {
+      "detail": {
+        "key": "node version",
+        "values": [
+          "20",
+          "22"
+        ]
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 3,
+          "lineStart": 3
+        },
+        {
+          "file": "services/api/CLAUDE.md",
+          "lineEnd": 3,
+          "lineStart": 3
+        }
+      ],
+      "message": "key \"node version\" is set to different values across the stack: \"20\" vs \"22\"",
+      "severity": "error",
+      "tokens": 8,
+      "type": "value-conflict"
+    }
+  ],
+  "mode": "stack",
+  "modelVersion": "0.1",
+  "notes": [
+    "excluded by settings claudeMdExcludes: services/CLAUDE.md",
+    "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
+  ],
+  "result": {
+    "pass": false,
+    "reasons": [
+      "1 duplication finding at error severity",
+      "1 value-conflict finding at error severity"
+    ]
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      ".claude/rules/always.md": 27,
+      ".claude/rules/backend.md": 41,
+      ".claude/skills": 49,
+      "CLAUDE.md": 62,
+      "docs/style.md": 33,
+      "services/api/CLAUDE.md": 57
+    },
+    "skillIndexTokens": 49,
+    "stackTokens": 269
+  }
+}

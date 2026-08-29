@@ -1,0 +1,14 @@
+{
+  "budget": {
+    "total": 400,
+    "perFile": 300,
+    "skillIndex": 60
+  },
+  "safetyMargin": 0.1,
+  "gate": {
+    "over-budget": "error",
+    "duplication": "error",
+    "value-conflict": "error",
+    "vehicle-fit": "warn"
+  }
+}

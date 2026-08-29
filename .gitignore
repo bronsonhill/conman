@@ -1,2 +1,6 @@
 # Cloned fixture repos — fetched on demand at pinned SHAs, never committed.
 fixtures/repos/
+node_modules/
+dist/
+*.log
+.claude/settings.local.json

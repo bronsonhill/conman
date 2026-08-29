@@ -1,0 +1,40 @@
+# exit: 0
+# .claude/skills/alpha/SKILL.md: sorted skill frontmatter keys
+--- a/.claude/skills/alpha/SKILL.md
++++ b/.claude/skills/alpha/SKILL.md
+@@ -1,7 +1,7 @@
+ ---
+-name: alpha
+ description: Scaffold a new package in the monorepo with the standard layout.
++name: alpha
+ ---
+ 
+ Steps to scaffold a package.
+ 
+# .claude/skills/gamma/SKILL.md: sorted skill frontmatter keys
+--- a/.claude/skills/gamma/SKILL.md
++++ b/.claude/skills/gamma/SKILL.md
+@@ -1,7 +1,7 @@
+ ---
+-name: gamma
+ description: Generate an incident report skeleton from a template and recent commits.
++name: gamma
+ ---
+ 
+ Incident report template.
+ 
+# services/api/CLAUDE.md: deduped block repeated from CLAUDE.md, normalized whitespace
+--- a/services/api/CLAUDE.md
++++ b/services/api/CLAUDE.md
+@@ -1,11 +1,8 @@
+ # API service
+ 
+ `Node version`: 22
+ 
+ ## Build and test
+ 
+-Run `npm ci` then `npm test`. Do not skip the lint step.
+-Keep changes scoped to one package per PR.
+-
+ Endpoints live under `src/routes`.
+ 
