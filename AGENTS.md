@@ -17,8 +17,10 @@ No model or network in the analysis path.
   rules, default budget provenance, tokenizer caveat). Read it before changing
   `src/resolver.ts` or the defaults in `src/config.ts`.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
-  / `mapReport`, with `gate`, `map`, `fix`, `diff`, `config`, `tokenizer` around
-  them. `cli.ts` is arg-parse and dispatch only.
+  / `mapReport` / `mapHtmlReport` (`conman map --html`), with `gate`, `map`,
+  `fix`, `diff`, `config`, `tokenizer` around them. `cli.ts` is arg-parse and
+  dispatch only. Every renderer is a pure formatter over `Analysis` / `MapResult`
+  and must stay deterministic: no `Date`, no absolute paths, sort before emit.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
   expected CLI output. `test/run-golden.js` diffs live output against golden;
   `npm run test:update-golden` regenerates.
