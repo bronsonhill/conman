@@ -32,6 +32,33 @@ The scope and the reasoning behind it are in [`VISION.md`](VISION.md). The
 resolution model — load order, which `settings.json` keys matter, how findings are
 defined, where the default numbers come from — is in [`MODEL.md`](MODEL.md).
 
+## What the research says
+
+Three recent studies have looked at whether `AGENTS.md`-style context files help
+coding agents. The results on task accuracy are unsettled; the results on cost and
+hygiene are not.
+
+- **[Evaluating AGENTS.md](https://arxiv.org/abs/2602.11988)** (Gloaguen et al.,
+  Feb 2026). Across established benchmarks and new repos with developer-written
+  context files, providing a context file did not generally improve task success
+  and raised inference cost by more than 20% on average. Agents follow the file
+  literally and over-explore; any non-essential requirement in it makes tasks
+  harder. The authors recommend keeping human-written context minimal.
+- **[Configuration Smells in AGENTS.md Files](https://arxiv.org/abs/2606.15828)**
+  (dos Santos et al., June 2026). A scan of 100 popular repos found widespread
+  removable content: lint rules the linter already enforces (62% of files),
+  general context bloat (42%), skill-shaped content (35%), plus contradictory
+  instructions, stale `/init` boilerplate, and dead references.
+- **[Probe-and-Refine Tuning of Repository
+  Guidance](https://arxiv.org/abs/2606.20512)** (Shepard & Albrecht, June 2026).
+  A guidance file iteratively pruned against synthetic bug-fix probes beat running
+  with no guidance file on SWE-bench Verified, 33.0% resolved versus 25.5%.
+
+conman targets the settled part: duplication, self-contradiction, and per-session
+token cost you can measure and budget before a session starts. Whether a leaner
+stack also improves task outcomes is a question for a future eval, not a claim
+conman makes.
+
 ## Install
 
 ```
