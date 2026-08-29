@@ -1,24 +1,30 @@
 # conman
 
-*A linter for the Claude Code context stack a repo loads before you type anything.*
+*Short for context manager. Also a con man. Your Claude Code context stack is both.*
 
-Claude Code builds its startup context fresh every session. It walks the directory
-tree for `CLAUDE.md` and `AGENTS.md`, inlines their `@`-imports, pulls in
-`.claude/rules/`, and appends a one-line index of every skill. Nobody watches the
-total. It grows a paragraph at a time, across months of pull requests, and one day
-a root file says Node 20 while a service file two directories down says Node 22.
-Both loaded, both in front of the model, and nothing reconciles them. The agent
-gets a little worse and it's hard to say why.
+Claude Code assembles its startup context fresh every session. It walks the
+directory tree for `CLAUDE.md` and `AGENTS.md`, inlines their `@`-imports, pulls in
+`.claude/rules/`, and appends a one-line index of every skill. Every block in that
+stack was added by someone trying to help the agent, and read on its own each one
+looks reasonable.
 
-`conman` reads that stack before a session starts. Point it at an entry point; it
-resolves the full chain a session would load and reports what's in it, in what
-order, at what token cost, and where blocks repeat verbatim or set the same key to
-different values. It runs offline and emits the same bytes for the same input
-every time. No model sits in the analysis path.
+Read the whole stack and the story changes. A root file says Node 20; a service
+file two directories down says Node 22. Both load, both sit in front of the model,
+nothing reconciles them. A setup paragraph gets copied into a child directory and
+now the session pays for it twice. The skill index creeps up a line at a time.
+None of it trips an alarm, because none of it looks wrong up close. The agent just
+gets a little worse each month and it's hard to point at why.
 
-The name is the joke. Every file in the stack looks helpful. Some of them
-contradict each other, some are dead weight duplicated from a parent, and the
-session pays for all of it. conman is the audit.
+That's the con. The stack reads like help and bills you like help, session after
+session, while some of it is duplicated blocks, contradictory values, and weight
+inherited from a parent directory that never applied here.
+
+`conman` reads the stack before a session starts and calls it. Point it at an
+entry point; it resolves the full chain a session would load and reports what's in
+it, in what order, at what token cost, and where blocks repeat verbatim or set the
+same key to two different values. It runs offline, uses no model in the analysis
+path, and emits the same bytes for the same input every time. The job is to lint
+your context stack, not to grow it.
 
 The scope and the reasoning behind it are in [`VISION.md`](VISION.md). The
 resolution model — load order, which `settings.json` keys matter, how findings are
