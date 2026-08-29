@@ -62,16 +62,17 @@ against the new tree, and re-run the fetch.
 
 | behavior | fixtures |
 |----------|----------|
-| small single-file stack            | `llm` |
+| small single-file stack            | `llm`, `lila` |
 | `@`-import of one oversized block   | `firstmate` |
 | deep ancestor `CLAUDE.md` chain     | `cockroach`, `posthog`, `ruflo` |
-| monorepo, several entry points      | `humanlayer`, `posthog` |
+| monorepo, several entry points      | `humanlayer`, `posthog`, `lila` |
 | path-scoped `.claude/rules/`        | `motrix`, `ack-nestjs-boilerplate`, `cockroach`, `posthog` |
 | large / nested skills directory     | `ruflo`, `cockroach`, `firstmate` |
 | `settings.json` resolution keys     | `ack-nestjs-boilerplate` (`claudeMdExcludes`), `ruflo` (`skillListingBudgetFraction`) |
-| byte-identical parent/child dup     | `posthog` (root and `common/` `CLAUDE.md` == `AGENTS.md`) |
+| byte-identical parent/child dup     | `posthog` (root and `common/` `CLAUDE.md` == `AGENTS.md`), `lila` (root pair) |
 | direct value conflict               | `posthog` (drifted `CLAUDE.md` / `AGENTS.md` sibling pairs) |
 | plainly overgrown stack             | `ruflo`, `posthog` |
+| scale: large tree, many `conman map` entry points | `lila` (~16.7k files, 765 dirs, 85 SBT modules + 42 UI packages) |
 
 ## Licensing
 
@@ -80,6 +81,8 @@ redistribute them; `fixtures/repos/` is gitignored and nothing from it is
 committed here. Licenses of the pinned repos, recorded in `manifest.toml`:
 Apache-2.0 (`llm`, `humanlayer`), MIT (`firstmate`, `motrix`,
 `ack-nestjs-boilerplate`, `ruflo`), MIT Expat with a proprietary `ee/` subtree
-that is not an entry point (`posthog`), and the source-available CockroachDB
-Software License (`cockroach`). If you add a repo, record its license and keep
-it to terms that allow local cloning for testing.
+that is not an entry point (`posthog`), AGPL-3.0 (`lila`), and the
+source-available CockroachDB Software License (`cockroach`). All permit local
+cloning for testing; AGPL obligations attach to distributing or network-serving
+modified versions, which this corpus does not do. If you add a repo, record its
+license and keep it to terms that allow local cloning for testing.

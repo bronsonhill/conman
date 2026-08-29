@@ -142,3 +142,21 @@ keys: skillListingBudgetFraction = 0.06 (6x the 0.01 default), plus a `model`
 override and a `customInstructions` string. Exercises the skill-listing budget
 key and a stack that is over budget before any child file is added.
 """
+
+[[fixture]]
+name = "lila"
+url = "https://github.com/lichess-org/lila.git"
+sha = "9b49f37fe9d953c85dae12bbc159a0bf721a9fca"
+branch = "master"
+license = "AGPL-3.0"
+entry_points = [".", "modules/tournament", "modules/game", "ui/analyse"]
+notes = """
+Scale stress test: ~16.7k files, 765 directories, 85 SBT modules under modules/
+and 42 UI packages under ui/, so `conman map` discovers a large number of entry
+points that all inherit the same root stack. The stack itself is shallow: a
+root CLAUDE.md and AGENTS.md only, no .claude/ directory, no imports, no rules,
+no skills. The two root files are byte-identical (6387 bytes each), a second
+byte-identical sibling-pair duplication case alongside posthog. Exercises
+discovery and per-entry resolution across a large tree, and duplication
+detection at the root.
+"""

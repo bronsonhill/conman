@@ -17,6 +17,11 @@
 
 set -u -o pipefail
 
+# conman analyses the text tree, not binaries. Skip Git LFS smudge so fixtures
+# with LFS-tracked assets (and possibly an exhausted LFS budget, e.g. lila)
+# still check out. Harmless for repos that do not use LFS.
+export GIT_LFS_SKIP_SMUDGE=1
+
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 manifest="$repo_root/fixtures/manifest.toml"
 dest_root="$repo_root/fixtures/repos"
