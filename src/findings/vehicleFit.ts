@@ -46,7 +46,7 @@ export function findVehicleFit(
       findings.push({
         type: "vehicle-fit",
         severity,
-        message: `${b.tokens}-token always-loaded rule; adding a \`globs\` scope would keep it out of unrelated sessions`,
+        message: `${b.tokens}-token always-loaded rule; adding a \`paths\` scope would keep it out of unrelated sessions`,
         locations: [{ file: b.source, lineStart: b.lineStart, lineEnd: b.lineEnd }],
         tokens: b.tokens,
         detail: { shape: "rule-always", coarse: true },

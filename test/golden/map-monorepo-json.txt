@@ -258,7 +258,7 @@
           "lineEnd": 8,
           "lineStart": 1,
           "source": ".claude/rules/backend.md",
-          "tokens": 41,
+          "tokens": 40,
           "via": null
         },
         {
@@ -273,11 +273,11 @@
         }
       ],
       "budget": {
-        "delta": -91,
+        "delta": -92,
         "effective": 360,
         "overBudget": false,
         "safetyMargin": 0.1,
-        "stackTotal": 269,
+        "stackTotal": 268,
         "total": 400
       },
       "entry": "services/api",
@@ -342,7 +342,7 @@
           "1 value-conflict finding at error severity"
         ]
       },
-      "stackTokens": 269,
+      "stackTokens": 268,
       "tokenizer": "claude-local"
     }
   ],

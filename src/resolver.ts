@@ -9,7 +9,7 @@
 //      CLAUDE.md before AGENTS.md within a directory;
 //      each file's @-imports inlined immediately after it, depth-first
 //   2. .claude/rules entries with no path scope (always loaded), path-sorted
-//   3. .claude/rules entries whose `globs` matched the entry path, path-sorted
+//   3. .claude/rules entries whose `paths` matched the entry path, path-sorted
 //   4. the skill startup index (name + description per skill), budget-truncated
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -22,6 +22,13 @@ import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 
 const MEMORY_NAMES = ["CLAUDE.md", "AGENTS.md"];
 const FENCE = /^(\s*)(`{3,}|~{3,})/;
+
+/**
+ * The one `.claude/rules/` frontmatter key Claude Code reads to path-scope a
+ * rule. Confirmed against the docs and Claude Code's own parser; see MODEL.md.
+ * `globs` / `alwaysApply` are Cursor `.mdc` keys and are not honored.
+ */
+const RULE_SCOPE_KEY = "paths";
 
 /** Line count that does not overcount a trailing newline. */
 function countLines(text: string): number {
@@ -254,10 +261,17 @@ function collectRuleBlocks(
       const fm = parseFrontmatter(text);
       const lineCount = countLines(text);
       const rel = relPosix(ctx.repoRoot, abs);
-      const globs = toStringArray(fm.data["globs"]);
-      const alwaysApply = fm.data["alwaysApply"] === true;
+
+      // Claude Code path-scopes a rule on one frontmatter key: `paths`. A rule
+      // with no `paths` loads unconditionally. See MODEL.md for the source.
+      const patterns = toStringArray(fm.data[RULE_SCOPE_KEY]);
+      // A `paths` of `**` (or nothing usable) scopes to everything, which Claude
+      // Code treats as no scope at all.
+      const scopedByPath =
+        patterns.length > 0 && !patterns.every((p) => p === "**");
+
       const block: Omit<Block, "id" | "tokens"> = {
-        kind: globs.length > 0 && !alwaysApply ? "rule-scoped" : "rule-always",
+        kind: scopedByPath ? "rule-scoped" : "rule-always",
         source: rel,
         lineStart: 1,
         lineEnd: Math.max(1, lineCount),
@@ -265,13 +279,20 @@ function collectRuleBlocks(
         depth: 0,
       };
       if (block.kind === "rule-scoped") {
-        if (matchesAnyGlob(entryTargetPosix, globs)) scoped.push(block);
+        if (matchesAnyGlob(entryTargetPosix, patterns)) scoped.push(block);
         else
           ctx.notes.push(
-            `rule ${rel} is path-scoped (${globs.join(", ")}); did not match entry ${entryTargetPosix}`,
+            `rule ${rel} is path-scoped (${patterns.join(", ")}); did not match entry ${entryTargetPosix}`,
           );
       } else {
         always.push(block);
+        // A rule copied from a Cursor `.mdc` file scopes on `globs`, which Claude
+        // Code ignores: the rule silently loads always-on. Surface that.
+        if (fm.data[RULE_SCOPE_KEY] === undefined && fm.data["globs"] !== undefined) {
+          ctx.notes.push(
+            `rule ${rel} sets \`globs\` but not \`paths\`; Claude Code path-scopes rules only on \`paths\`, so this rule loads always-on`,
+          );
+        }
       }
     }
   }

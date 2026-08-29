@@ -1,7 +1,7 @@
 // Small filesystem helpers: repo-root detection, path normalization, and a
 // minimal glob matcher (enough for gitignore-style patterns in config and
-// frontmatter `globs`). No external glob dependency, so behavior is fixed and
-// testable.
+// rule frontmatter `paths`). No external glob dependency, so behavior is fixed
+// and testable.
 
 import { existsSync, statSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
