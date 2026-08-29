@@ -65,6 +65,10 @@
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -143,6 +147,10 @@
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -213,6 +221,10 @@
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -299,6 +311,7 @@
         {
           "detail": {
             "occurrences": 2,
+            "relation": "parent-child",
             "segmentTokens": 27
           },
           "locations": [
@@ -313,7 +326,7 @@
               "lineStart": 7
             }
           ],
-          "message": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens)",
+          "message": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens, relation: parent-child)",
           "severity": "error",
           "tokens": 27,
           "type": "duplication"
@@ -349,6 +362,10 @@
         "excluded by settings claudeMdExcludes: services/CLAUDE.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
+      "redundant": {
+        "pctOfStack": 10,
+        "tokens": 27
+      },
       "result": {
         "pass": false,
         "reasons": [
@@ -360,8 +377,12 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.1",
+  "modelVersion": "0.2",
   "pass": false,
+  "redundant": {
+    "pctOfStack": 3,
+    "tokens": 27
+  },
   "tool": "conman",
   "toolVersion": "0.1.0"
 }

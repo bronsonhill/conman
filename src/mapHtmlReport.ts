@@ -12,6 +12,8 @@
 import type { MapResult, MapEntryResult } from "./map.js";
 import type { Finding } from "./types.js";
 import { MODEL_VERSION } from "./analyze.js";
+import { redundancy } from "./report.js";
+import { mapRedundancy } from "./mapReport.js";
 
 const KIND_LABEL: Record<string, string> = {
   memory: "memory",
@@ -178,6 +180,7 @@ ${rows}
 
 function renderBudget(e: MapEntryResult): string {
   const b = e.analysis.budget;
+  const red = redundancy(e.analysis);
   return `      <dl class="kv">
         <dt>budget</dt><dd>${esc(b.total)}</dd>
         <dt>safety margin</dt><dd>${esc(Math.round(b.safetyMargin * 100))}% &rarr; effective ${esc(
@@ -187,6 +190,7 @@ function renderBudget(e: MapEntryResult): string {
         <dt>delta</dt><dd>${esc(signed(b.delta))} (${
           b.overBudget ? "OVER budget" : "under budget"
         })</dd>
+        <dt>redundant tokens</dt><dd>${esc(red.tokens)} (${esc(red.pctOfStack)}% of stack)</dd>
       </dl>`;
 }
 
@@ -307,6 +311,7 @@ function renderSummaryTable(result: MapResult): string {
     (n, e) => n + e.analysis.totals.stackTokens,
     0,
   );
+  const red = mapRedundancy(result);
   return `      <table>
         <thead><tr><th>entry</th><th>mode</th><th class="num">tokens</th><th class="num">delta</th><th class="num">errors</th><th class="num">warnings</th><th>result</th></tr></thead>
         <tbody>
@@ -318,7 +323,8 @@ ${rows}
       </table>
       <p>${esc(totalTokens)} tokens across ${esc(result.entries.length)} entry ${
         result.entries.length === 1 ? "point" : "points"
-      }.</p>`;
+      }.</p>
+      <p>redundant tokens: ${esc(red.tokens)} (${esc(red.pctOfStack)}% of stack).</p>`;
 }
 
 export function renderMapHtml(

@@ -9,7 +9,7 @@ import { resolveStack } from "./resolver.js";
 import { costBlocks, computeTotals, computeBudget } from "./coster.js";
 import { runFindings } from "./findings/index.js";
 
-export const MODEL_VERSION = "0.1";
+export const MODEL_VERSION = "0.2";
 
 export interface AnalyzeOptions {
   repoRoot: string;

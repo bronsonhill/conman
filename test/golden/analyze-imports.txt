@@ -1,5 +1,5 @@
 # exit: 0
-conman VERSION  model 0.1  tokenizer claude-local
+conman VERSION  model 0.2  tokenizer claude-local
 entry: .   mode: stack
 config: (built-in defaults)
 
@@ -21,6 +21,9 @@ BUDGET
   safety margin   10%   ->  effective 10800
   stack total     137
   delta           -10663  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
 
 FINDINGS  (0 error, 0 warn)  none
 

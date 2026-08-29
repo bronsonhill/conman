@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.1` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.2` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -122,10 +122,25 @@ as it formalizes the settings surface; a change here is a model-version change.
 ## Findings
 
 - **Duplication** — a segment (a heading-delimited or blank-line-delimited run of
-  text, or a whole fenced code block) whose trimmed bytes are identical in two
-  files of the stack, where one file's directory is an ancestor of the other's or
-  one `@`-imports the other. Segments under 8 tokens and heading-only segments are
-  ignored. The finding carries both `file:line`s and the redundant token count.
+  text, or a whole fenced code block) whose trimmed bytes are identical in two or
+  more files of the *resolved stack*, whatever the relationship between those
+  files. Segments under 8 tokens and heading-only segments are ignored. Each
+  finding carries every `file:line` and the redundant token count, and records
+  the file relationship in `detail.relation`:
+  - `parent-child` — one file's directory is an ancestor of the other's
+  - `import` — one file `@`-imports the other, directly or through a chain
+  - `same-stack` — neither; two files that merely share text (a `CLAUDE.md` and
+    its sibling `AGENTS.md`, two rules, a rule and a memory file)
+
+  When every qualifying segment of one file also appears in another (a whole-file
+  duplicate), the pair — or the whole cluster of mutually-duplicated files — is
+  reported as one finding with `detail.wholeFileDuplicate: true`, not one finding
+  per shared segment. The report leads with a `redundant tokens: N (M% of stack)`
+  line summing what removing the duplicate copies would recover.
+
+  `--fix` still only dedupes `parent-child`, per-segment findings: removing a
+  `same-stack` or whole-file duplicate safely means deleting a file or writing a
+  pointer, which is a change of substance conman does not make.
 - **Value conflict** — a definitional markdown line (`` `Key`: value ``,
   `**Key:** value`, or `- Key: value` with an uppercase key) where the same
   normalized key is bound to two different short values in two different files of
@@ -162,3 +177,19 @@ guarantees is determinism: the same text always costs the same number, and
 budgets are set against this counter. `--tokenizer exact` is a documented seam
 for a future token-counting API call; it is not implemented and ships no network
 code.
+
+## Model version history
+
+- **0.2** — Duplication fires across the whole resolved stack, not just
+  parent/child file pairs. Any byte-identical segment (≥ 8 tokens) repeated
+  between two files of one stack is a finding; `detail.relation` records whether
+  the files are `parent-child`, `import`, or `same-stack`. Whole-file duplicates
+  roll up into one finding per cluster. The report leads with a `redundant
+  tokens: N (M% of stack)` line, and the map JSON/HTML reports carry the same
+  figure per entry point. Duplication severity is unchanged (`error`), so a repo
+  that has a `CLAUDE.md`/`AGENTS.md` copy — passing under 0.1 — now fails. `--fix`
+  behaviour is unchanged: it still only dedupes `parent-child`, per-segment
+  findings.
+- **0.1** — Initial model: ancestor memory walk, `@`-imports, `.claude/rules/`,
+  skill startup index, `settings.json` resolution keys. Duplication limited to
+  parent/child file pairs.

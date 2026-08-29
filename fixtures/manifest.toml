@@ -118,8 +118,9 @@ entry_points = [
 ]
 notes = """
 Overgrown monorepo. CLAUDE.md and AGENTS.md exist as a pair in ~20 directories;
-the root pair and the common/ pair are byte-identical (1739 bytes each), so this
-is the fixture for byte-identical parent/child (and sibling) block duplication.
+at the pinned SHA the root pair is byte-identical (42408 bytes each) and the
+common/ pair is byte-identical (1739 bytes each), so this is the fixture for
+byte-identical parent/child (and sibling) block duplication.
 Nesting runs 6 levels deep
 (products/customer_analytics/frontend/components/Accounts/). 13 .claude/rules/.
 .claude/settings.json is hooks + plugins, no resolution keys. Many entry points

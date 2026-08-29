@@ -14,6 +14,12 @@ function stagedMonorepo(): string {
   return dir;
 }
 
+function staged(name: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "conman-fix-"));
+  cpSync(fixture(name), dir, { recursive: true });
+  return dir;
+}
+
 test("--fix dedupes the child block, sorts skill keys, and is idempotent", () => {
   const root = stagedMonorepo();
   try {
@@ -40,6 +46,30 @@ test("--fix dedupes the child block, sorts skill keys, and is idempotent", () =>
     const second = analyzeEntry(entry, { repoRoot: root, config: DEFAULT_CONFIG });
     const again = computeFixes(root, second.analysis);
     assert.deepEqual(again.changes, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("--fix leaves a same-stack whole-file duplicate untouched", () => {
+  // findings-only: removing a byte-identical sibling means deleting a file or
+  // writing a pointer, which --fix does not do.
+  const root = staged("sibling-dup");
+  try {
+    const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+    assert.ok(
+      analysis.findings.some(
+        (f) => f.type === "duplication" && f.detail?.["relation"] === "same-stack",
+      ),
+      "the fixture does raise a same-stack duplication finding",
+    );
+    const fixes = computeFixes(root, analysis);
+    assert.deepEqual(fixes.changes, [], "no fix is proposed for the same-stack duplicate");
+
+    const before = readFileSync(join(root, "AGENTS.md"), "utf8");
+    applyFixes(root, fixes);
+    const after = readFileSync(join(root, "AGENTS.md"), "utf8");
+    assert.equal(after, before, "AGENTS.md is byte-for-byte unchanged");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
