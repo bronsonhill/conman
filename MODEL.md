@@ -9,6 +9,21 @@ golden fixtures move with it.
 This file records what the model assumes and where the default numbers come from.
 If you are debugging a surprising report, start here.
 
+## Accurate as of
+
+**Claude Code v2.1.251, verified 2026-08-30.**
+
+Every resolution rule below — ancestor `CLAUDE.md` walk order, the
+`settings.json` keys conman honours, `@`-import inlining and the 5-hop depth
+limit, `.claude/rules/` always-on vs `paths`-scoped, and the skill startup
+index — was checked against that release's documented behaviour and its rule
+parser. conman models this release; it does not track newer ones automatically.
+
+`src/anchor.test.ts` pins the observable resolution output for this anchor. If
+a newer Claude Code release changes any of these rules, that test fails with a
+pointer back here. When it does, follow **Bumping the version anchor** at the
+bottom of this file — do not just regenerate the golden.
+
 ## What resolves, and in what order
 
 For one entry point (a directory, or a file), the resolved stack is built in this
@@ -228,6 +243,40 @@ guarantees is determinism: the same text always costs the same number, and
 budgets are set against this counter. `--tokenizer exact` is a documented seam
 for a future token-counting API call; it is not implemented and ships no network
 code.
+
+## Bumping the version anchor
+
+`src/anchor.test.ts` fails when the resolved output for its pinned fixtures
+drifts from what this file's **Accurate as of** release documents. A conman
+maintainer sees that failure, re-verifies against the newer Claude Code release,
+and bumps the anchor. The procedure:
+
+1. **Re-verify each resolution rule** against the new release's docs and, where
+   possible, its rule parser:
+   - ancestor `CLAUDE.md` walk direction and the repo-boundary stop;
+   - `@`-import handling: inline position, depth-first order, the hop limit
+     (`resolve.importDepthLimit`), cycle breaking, `@~/...` skipped;
+   - `.claude/rules/`: `paths` as the only scoping key, always-on vs
+     path-scoped ordering, `**` and keyless treated as always-on, `globs` /
+     `alwaysApply` ignored;
+   - the skill startup index: one line per `SKILL.md`, sorted by name, budget
+     truncation;
+   - the `settings.json` keys conman acts on (`claudeMdExcludes`,
+     `skillListingBudget`, and their aliases).
+2. **If behaviour changed**, update `src/resolver.ts` / `src/config.ts` to
+   match, then bump `modelVersion` and add a `## Model version history` entry.
+3. **Update the anchor**: change the version and date in **Accurate as of**
+   above, and the `ANCHOR` constant in `src/anchor.test.ts`.
+4. **Regenerate the drift-test expectation and the goldens**: update the
+   `EXPECTED` literal in `src/anchor.test.ts` to the new resolved output, then
+   `npm run test:update-golden`. Review the diff — an unexplained change there
+   is a bug, not a refresh.
+5. `npm test` green, commit with the release you verified against named in the
+   message.
+
+If re-verification finds nothing changed, still bump the date in **Accurate as
+of** and the `ANCHOR` constant so the anchor records the last time it was
+checked.
 
 ## Model version history
 
