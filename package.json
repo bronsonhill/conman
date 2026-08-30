@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/*.test.js test/run-golden.js",
+    "test": "bash scripts/build-if-stale.sh && node --test dist/*.test.js test/run-golden.js",
     "test:update-golden": "npm run build && UPDATE_GOLDEN=1 node --test test/run-golden.js",
     "conman": "node dist/cli.js"
   },
