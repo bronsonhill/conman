@@ -58,6 +58,20 @@ export interface UnlinkedAgentsCopy {
   lines: number;
 }
 
+/**
+ * A context file whose YAML frontmatter the resolver reads keys from: a
+ * `.claude/rules` entry (its `paths` scope key) or a skill `SKILL.md` (its
+ * `name` / `description`). Carried out of resolution so the frontmatter finding
+ * can lint the raw text without re-walking the tree.
+ */
+export interface FrontmatterSubject {
+  /** Repo-relative POSIX path. */
+  file: string;
+  role: "rule" | "skill";
+  /** Full raw file text. */
+  text: string;
+}
+
 export interface ResolveResult {
   mode: "stack" | "single-file";
   entryPosix: string;
@@ -65,6 +79,7 @@ export interface ResolveResult {
   settings: Settings;
   notes: string[];
   unlinkedAgentsCopies: UnlinkedAgentsCopy[];
+  frontmatterSubjects: FrontmatterSubject[];
 }
 
 export function loadSettings(repoRoot: string): Settings {
@@ -140,6 +155,8 @@ interface ImportCtx {
    * CLAUDE.md -> AGENTS.md symlink and not count the target a second time.
    */
   seenReal: Map<string, string>;
+  /** Rule / SKILL.md files whose frontmatter the resolver read keys from. */
+  frontmatterSubjects: FrontmatterSubject[];
 }
 
 /** Symlink-resolved absolute path, or the input unchanged if it cannot resolve. */
@@ -307,6 +324,7 @@ function collectRuleBlocks(
       const fm = parseFrontmatter(text);
       const lineCount = countLines(text);
       const rel = relPosix(ctx.repoRoot, abs);
+      ctx.frontmatterSubjects.push({ file: rel, role: "rule", text });
 
       // Claude Code path-scopes a rule on one frontmatter key: `paths`. A rule
       // with no `paths` loads unconditionally. See MODEL.md for the source.
@@ -366,7 +384,13 @@ function buildSkillIndex(
     for (const sub of subs) {
       const skillMd = join(sdir, sub, "SKILL.md");
       if (!isFile(skillMd)) continue;
-      const fm = parseFrontmatter(readFileSync(skillMd, "utf8"));
+      const skillText = readFileSync(skillMd, "utf8");
+      ctx.frontmatterSubjects.push({
+        file: relPosix(ctx.repoRoot, skillMd),
+        role: "skill",
+        text: skillText,
+      });
+      const fm = parseFrontmatter(skillText);
       const name =
         typeof fm.data["name"] === "string" ? (fm.data["name"] as string) : sub;
       const description =
@@ -428,6 +452,7 @@ export function resolveStack(
     notes,
     seen: new Set<string>(),
     seenReal: new Map<string, string>(),
+    frontmatterSubjects: [],
   };
   const unlinkedAgentsCopies: UnlinkedAgentsCopy[] = [];
 
@@ -457,6 +482,7 @@ export function resolveStack(
       settings,
       notes,
       unlinkedAgentsCopies,
+      frontmatterSubjects: ctx.frontmatterSubjects,
     };
   }
 
@@ -517,6 +543,7 @@ export function resolveStack(
     settings,
     notes,
     unlinkedAgentsCopies,
+    frontmatterSubjects: ctx.frontmatterSubjects,
   };
 }
 

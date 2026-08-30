@@ -1,0 +1,221 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 5,
+      "lineStart": 1,
+      "source": "CLAUDE.md",
+      "tokens": 59,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b2",
+      "kind": "rule-always",
+      "lineEnd": 7,
+      "lineStart": 1,
+      "source": ".claude/rules/legacy-globs.md",
+      "tokens": 44,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b3",
+      "kind": "rule-always",
+      "lineEnd": 6,
+      "lineStart": 1,
+      "source": ".claude/rules/no-close-fence.md",
+      "tokens": 34,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b4",
+      "kind": "rule-always",
+      "lineEnd": 6,
+      "lineStart": 1,
+      "source": ".claude/rules/paths-number.md",
+      "tokens": 26,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b5",
+      "kind": "rule-always",
+      "lineEnd": 6,
+      "lineStart": 1,
+      "source": ".claude/rules/unparseable-scope.md",
+      "tokens": 33,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b6",
+      "kind": "skill-index",
+      "lineEnd": 3,
+      "lineStart": 1,
+      "source": ".claude/skills",
+      "tokens": 31,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -1573,
+    "effective": 1800,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 227,
+    "total": 2000
+  },
+  "configSource": "conman.json",
+  "entry": ".",
+  "findings": [
+    {
+      "detail": {
+        "role": "rule",
+        "subcase": "unterminated-fence"
+      },
+      "locations": [
+        {
+          "file": ".claude/rules/no-close-fence.md",
+          "lineEnd": 1,
+          "lineStart": 1
+        }
+      ],
+      "message": "frontmatter opens with `---` but has no closing `---`; the block is read as prose and any `paths` scope is ignored, so the rule loads always-on",
+      "severity": "error",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "rule",
+        "subcase": "scope-wrong-type"
+      },
+      "locations": [
+        {
+          "file": ".claude/rules/paths-number.md",
+          "lineEnd": 4,
+          "lineStart": 1
+        }
+      ],
+      "message": "`paths` is a number, not a string or a list of strings; the scope yields no globs, so this rule meant to be path-scoped loads always-on instead",
+      "severity": "error",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "rule",
+        "subcase": "unparseable-yaml"
+      },
+      "locations": [
+        {
+          "file": ".claude/rules/unparseable-scope.md",
+          "lineEnd": 4,
+          "lineStart": 1
+        }
+      ],
+      "message": "frontmatter YAML does not parse (Flow sequence in block collection must be sufficiently indented and end with a ]); the `paths` scope cannot be read, so this path-scoped rule silently loads always-on",
+      "severity": "error",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "rule",
+        "subcase": "scope-key-absent"
+      },
+      "locations": [
+        {
+          "file": ".claude/rules/legacy-globs.md",
+          "lineEnd": 5,
+          "lineStart": 1
+        }
+      ],
+      "message": "frontmatter sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
+      "severity": "warn",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "rule",
+        "subcase": "scope-scalar-string"
+      },
+      "locations": [
+        {
+          "file": ".claude/rules/paths-string.md",
+          "lineEnd": 4,
+          "lineStart": 1
+        }
+      ],
+      "message": "`paths` is a bare string, not a YAML list; conman reads it as a single glob, but the documented form is a list and some parsers drop a scalar",
+      "severity": "warn",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "skill",
+        "subcase": "unparseable-yaml"
+      },
+      "locations": [
+        {
+          "file": ".claude/skills/broken-yaml/SKILL.md",
+          "lineEnd": 5,
+          "lineStart": 1
+        }
+      ],
+      "message": "frontmatter YAML does not parse (Tabs are not allowed as indentation); `name` and `description` cannot be read",
+      "severity": "warn",
+      "type": "frontmatter"
+    },
+    {
+      "detail": {
+        "role": "skill",
+        "subcase": "skill-missing-description"
+      },
+      "locations": [
+        {
+          "file": ".claude/skills/no-desc/SKILL.md",
+          "lineEnd": 3,
+          "lineStart": 1
+        }
+      ],
+      "message": "skill frontmatter has no usable `description`; the startup listing shows this skill with an empty description",
+      "severity": "warn",
+      "type": "frontmatter"
+    }
+  ],
+  "mode": "stack",
+  "modelVersion": "0.2",
+  "notes": [
+    "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
+    "rule .claude/rules/paths-string.md is path-scoped (src/**); did not match entry .",
+    "rule .claude/rules/valid.md is path-scoped (src/**); did not match entry ."
+  ],
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
+  "result": {
+    "pass": false,
+    "reasons": [
+      "3 frontmatter findings at error severity"
+    ]
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      ".claude/rules/legacy-globs.md": 44,
+      ".claude/rules/no-close-fence.md": 34,
+      ".claude/rules/paths-number.md": 26,
+      ".claude/rules/unparseable-scope.md": 33,
+      ".claude/skills": 31,
+      "CLAUDE.md": 59
+    },
+    "skillIndexTokens": 31,
+    "stackTokens": 227
+  }
+}

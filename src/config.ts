@@ -39,6 +39,11 @@ export const DEFAULT_CONFIG: Config = {
     "unlinked-copy": "warn",
     "value-conflict": "error",
     "vehicle-fit": "warn",
+    // Acts as a severity ceiling for the frontmatter finding, which assigns
+    // "error" or "warn" per sub-case (see src/findings/frontmatter.ts):
+    // "error" lets both through, "warn" caps every sub-case at warn, "off"
+    // disables the check.
+    frontmatter: "error",
   },
   resolve: {
     repoBoundary: true,

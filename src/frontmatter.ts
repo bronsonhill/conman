@@ -18,6 +18,15 @@ export interface Frontmatter {
   body: string;
   /** 1-indexed line where the body begins in the original document. */
   bodyStartLine: number;
+  /** The first line was exactly `---`, i.e. an opening fence is present. */
+  opened: boolean;
+  /** An opening `---` was present but no closing `---` line was found. */
+  unterminated: boolean;
+  /**
+   * Set when `YAML.parse` threw on the fenced text: the first line of the
+   * parser's message. Undefined when the YAML parsed (or there was none).
+   */
+  parseError?: string;
 }
 
 export function parseFrontmatter(text: string): Frontmatter {
@@ -30,6 +39,8 @@ export function parseFrontmatter(text: string): Frontmatter {
     rawYaml: "",
     body: text,
     bodyStartLine: 1,
+    opened: false,
+    unterminated: false,
   };
   if (lines[0] !== "---") return empty;
   let close = -1;
@@ -39,16 +50,21 @@ export function parseFrontmatter(text: string): Frontmatter {
       break;
     }
   }
-  if (close === -1) return empty;
+  if (close === -1) return { ...empty, opened: true, unterminated: true };
   const rawYaml = lines.slice(1, close).join("\n");
   let data: Record<string, unknown> = {};
+  let parseError: string | undefined;
   try {
     const parsed = YAML.parse(rawYaml);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       data = parsed as Record<string, unknown>;
     }
-  } catch {
+  } catch (err) {
     data = {};
+    parseError = String((err as Error)?.message ?? err)
+      .split("\n")[0]!
+      .replace(/ at line \d+, column \d+:?\s*$/, "")
+      .trim();
   }
   return {
     data,
@@ -58,6 +74,9 @@ export function parseFrontmatter(text: string): Frontmatter {
     rawYaml,
     body: lines.slice(close + 1).join("\n"),
     bodyStartLine: close + 2,
+    opened: true,
+    unterminated: false,
+    ...(parseError ? { parseError } : {}),
   };
 }
 

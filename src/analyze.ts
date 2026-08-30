@@ -38,6 +38,7 @@ export function analyzeEntry(
     opts.config,
     tok,
     resolved.unlinkedAgentsCopies,
+    resolved.frontmatterSubjects,
   );
 
   const analysis: Analysis = {
