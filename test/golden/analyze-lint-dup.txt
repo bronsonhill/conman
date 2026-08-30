@@ -1,0 +1,35 @@
+# exit: 0
+conman VERSION  model 0.2  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source      lines         tokens
+  b1   memory       CLAUDE.md   1-9               66
+  --------------------------------------------------
+  total                                           66
+
+BUDGET
+  budget          2000
+  safety margin   10%   ->  effective 1800
+  stack total     66
+  delta           -1734  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 4 warn)
+  warn   lint-duplication
+         CLAUDE.md:5-5
+         2-space indentation is already enforced by .prettierrc (tabWidth); repeating it in an always-loaded context file spends budget on a rule the tooling applies automatically
+  warn   lint-duplication
+         CLAUDE.md:6-6
+         single quotes is already enforced by .prettierrc (singleQuote); repeating it in an always-loaded context file spends budget on a rule the tooling applies automatically
+  warn   lint-duplication
+         CLAUDE.md:7-7
+         no semicolons is already enforced by .prettierrc (semi); repeating it in an always-loaded context file spends budget on a rule the tooling applies automatically
+  warn   lint-duplication
+         CLAUDE.md:8-8
+         a 100-column line limit is already enforced by .prettierrc (printWidth); repeating it in an always-loaded context file spends budget on a rule the tooling applies automatically
+
+RESULT  pass

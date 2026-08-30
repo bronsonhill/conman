@@ -11,6 +11,20 @@
           "version": "VERSION",
           "rules": [
             {
+              "id": "dead-reference",
+              "name": "dead-reference",
+              "shortDescription": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json."
+              },
+              "fullDescription": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. conman checks these on ancestor memory files and `.claude/rules` entries."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. conman checks these on ancestor memory files and `.claude/rules` entries.\n\nRemediation: Fix or remove the reference: correct the `@`-import path, update the prose path, or rename the script to match package.json. A dead `@`-import is a gate error because the drop is silent; a dead prose path or script is a warning."
+              }
+            },
+            {
               "id": "duplication",
               "name": "duplication",
               "shortDescription": {
@@ -36,6 +50,34 @@
               "helpUri": "https://github.com/bronsonhill/conman#findings",
               "help": {
                 "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type. Scope is exactly the files whose frontmatter changes what resolves: a `.claude/rules` entry (its `paths` scope key) and a skill SKILL.md (`name` / `description`). An unreadable `paths` scope silently makes a rule load always-on or never match; a skill missing `name` or `description` weakens or breaks its startup listing.\n\nRemediation: Fix the YAML: give `paths` a list of strings, close the `---` fence, and give each skill a usable `name` and `description`. `conman --fix` does not repair frontmatter validity, since a malformed scope key is a change of meaning."
+              }
+            },
+            {
+              "id": "lint-duplication",
+              "name": "lint-duplication",
+              "shortDescription": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`."
+              },
+              "fullDescription": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`. The config runs on save or in CI regardless, so the sentence is context the tooling makes redundant, paid for on every request. conman reads `.prettierrc*`, `.eslintrc*` (JSON/YAML), `biome.json`, and `pyproject.toml` `[tool.ruff]` / `[tool.black]`, and matches a fixed set of keys against conservative prose phrasings."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`. The config runs on save or in CI regardless, so the sentence is context the tooling makes redundant, paid for on every request. conman reads `.prettierrc*`, `.eslintrc*` (JSON/YAML), `biome.json`, and `pyproject.toml` `[tool.ruff]` / `[tool.black]`, and matches a fixed set of keys against conservative prose phrasings.\n\nRemediation: Delete the sentence and let the linter or formatter config carry the rule. If the rule is not actually configured, add it to the config rather than to the context file."
+              }
+            },
+            {
+              "id": "stale-boilerplate",
+              "name": "stale-boilerplate",
+              "shortDescription": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header."
+              },
+              "fullDescription": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header. It says nothing project-specific, so it is pure filler in every session's base context. conman matches a small curated set of known `/init` sentences near-verbatim."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header. It says nothing project-specific, so it is pure filler in every session's base context. conman matches a small curated set of known `/init` sentences near-verbatim.\n\nRemediation: Replace the template sentence with guidance specific to this repository, or delete it outright."
               }
             },
             {

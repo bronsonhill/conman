@@ -1,0 +1,26 @@
+# exit: 0
+conman VERSION  model 0.2  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source      lines         tokens
+  b1   memory       CLAUDE.md   1-7               47
+  --------------------------------------------------
+  total                                           47
+
+BUDGET
+  budget          2000
+  safety margin   10%   ->  effective 1800
+  stack total     47
+  delta           -1753  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 1 warn)
+  warn   stale-boilerplate
+         CLAUDE.md:3-3
+         unmodified `/init` template sentence still present ("This file provides guidance to Claude Code…"); replace it with project-specific guidance or delete it
+
+RESULT  pass

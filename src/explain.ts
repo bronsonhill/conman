@@ -73,6 +73,37 @@ export const FINDING_INFO: Record<FindingType, FindingInfo> = {
     remediation:
       "Fix the YAML: give `paths` a list of strings, close the `---` fence, and give each skill a usable `name` and `description`. `conman --fix` does not repair frontmatter validity, since a malformed scope key is a change of meaning.",
   },
+  "lint-duplication": {
+    title: "Lint rule the tooling already enforces",
+    explanation:
+      "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`. The config runs on save or in CI regardless, so the sentence is context the tooling makes redundant, paid for on every request. conman reads `.prettierrc*`, `.eslintrc*` (JSON/YAML), `biome.json`, and `pyproject.toml` `[tool.ruff]` / `[tool.black]`, and matches a fixed set of keys against conservative prose phrasings.",
+    citations: [
+      "Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026), https://arxiv.org/abs/2606.15828 — a scan of 100 popular repos found lint rules the linter already enforces in 62% of files and general context bloat in 42%.",
+      "Evaluating AGENTS.md (Gloaguen et al., Feb 2026), https://arxiv.org/abs/2602.11988 — any non-essential requirement in the context file makes tasks harder and raised inference cost by more than 20% on average.",
+    ],
+    remediation:
+      "Delete the sentence and let the linter or formatter config carry the rule. If the rule is not actually configured, add it to the config rather than to the context file.",
+  },
+  "stale-boilerplate": {
+    title: "Unmodified /init boilerplate",
+    explanation:
+      "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header. It says nothing project-specific, so it is pure filler in every session's base context. conman matches a small curated set of known `/init` sentences near-verbatim.",
+    citations: [
+      "Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026), https://arxiv.org/abs/2606.15828 — stale `/init` boilerplate is one of the removable-content smells catalogued across the corpus, alongside general context bloat in 42% of files.",
+    ],
+    remediation:
+      "Replace the template sentence with guidance specific to this repository, or delete it outright.",
+  },
+  "dead-reference": {
+    title: "Reference that does not resolve",
+    explanation:
+      "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. conman checks these on ancestor memory files and `.claude/rules` entries.",
+    citations: [
+      "Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026), https://arxiv.org/abs/2606.15828 — dead references are one of the catalogued smells across the 100-repo corpus.",
+    ],
+    remediation:
+      "Fix or remove the reference: correct the `@`-import path, update the prose path, or rename the script to match package.json. A dead `@`-import is a gate error because the drop is silent; a dead prose path or script is a warning.",
+  },
 };
 
 export const FINDING_IDS = Object.keys(FINDING_INFO).sort() as FindingType[];

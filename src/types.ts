@@ -52,7 +52,10 @@ export type FindingType =
   | "unlinked-copy"
   | "value-conflict"
   | "vehicle-fit"
-  | "frontmatter";
+  | "frontmatter"
+  | "lint-duplication"
+  | "stale-boilerplate"
+  | "dead-reference";
 export type Severity = "error" | "warn" | "off";
 
 export interface Location {
