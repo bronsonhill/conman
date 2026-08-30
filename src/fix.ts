@@ -96,7 +96,7 @@ export function preferredKeeper(files: string[]): string {
 }
 
 /** Pick the file to keep the shared block in. */
-function parentFile(files: string[]): string {
+export function parentFile(files: string[]): string {
   for (const f of files) {
     if (files.every((g) => g === f || isAncestorPath(f, g))) return f;
   }

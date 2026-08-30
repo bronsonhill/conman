@@ -77,8 +77,8 @@ conman check [<entrypoint>]  analyze, then exit non-zero over budget or on a gat
 ```
 
 Flags: `--json`, `--config <path>`, `--budget <n>`, `--tokenizer <name>`,
-`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--map`
-(with `check`), and `--html <path>` (with `map`).
+`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
+`--map` (with `check`), and `--html <path>` (with `map`).
 
 A single-entry run prints the load order with per-block token counts, the total
 against the budget, then the findings. Every finding names a `file:line`, a token
@@ -142,6 +142,32 @@ discovers, so a repo with dozens of entry points is fixed in one pass rather tha
 one directory at a time. Running `--fix` on a leaf entry point can rewrite context
 files above it — a leaf inherits and overrides its ancestors — so conman prints a
 warning naming those out-of-path files before it writes.
+
+## `--trim`
+
+`conman <entrypoint> --trim` reports the whole files that are safe to delete
+outright: every file the duplication finding proved is a byte-for-byte copy of
+another file in the same resolved stack. It keeps exactly one copy of each — when
+a `CLAUDE.md` and an `AGENTS.md` are identical the `CLAUDE.md` is kept, otherwise
+the ancestor-directory copy wins — and prints the deletions cheapest-first with a
+unified diff:
+
+```
+$ conman services/api --trim
+RANKED DELETIONS  (lowest value first)
+     157 tok  pkg/CLAUDE.md    16 lines  keep CLAUDE.md  [parent-child]
+  recoverable: 157 tokens across 1 file
+
+DIFF  (apply with: git apply)
+diff --git a/pkg/CLAUDE.md b/pkg/CLAUDE.md
+...
+```
+
+conman writes nothing. Pipe the diff to `git apply` yourself if you agree with
+it. The output is a pure function of the tree — deterministic between runs, and
+empty once the redundant copies are gone. `--trim` only removes provably
+redundant whole files; trimming non-redundant content down to a budget is not
+built.
 
 ## Config
 

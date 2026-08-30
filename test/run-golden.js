@@ -52,6 +52,29 @@ const CASES = [
     name: "map-fix-dryrun-monorepo",
     args: ["map", MONO, "--repo-root", MONO, "--fix", "--dry-run"],
   },
+  {
+    name: "trim-dup",
+    args: [
+      "test/fixtures/trim-dup/pkg",
+      "--repo-root",
+      "test/fixtures/trim-dup",
+      "--trim",
+    ],
+  },
+  {
+    name: "trim-dup-json",
+    args: [
+      "test/fixtures/trim-dup/pkg",
+      "--repo-root",
+      "test/fixtures/trim-dup",
+      "--trim",
+      "--json",
+    ],
+  },
+  {
+    name: "trim-monorepo-noop",
+    args: [`${MONO}/services/api`, "--repo-root", MONO, "--trim"],
+  },
 ];
 
 function normalize(s) {

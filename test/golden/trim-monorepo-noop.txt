@@ -1,0 +1,5 @@
+# exit: 0
+conman VERSION  trim (tier 1: delete provably-redundant whole files)
+entry: services/api
+
+no provably-redundant whole-file duplicates - nothing to trim

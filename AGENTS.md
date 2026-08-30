@@ -20,7 +20,10 @@ No model or network in the analysis path.
   glob into an entry-point directory.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
   / `mapReport` / `mapHtmlReport` (`conman map --html`), with `gate`, `map`,
-  `fix`, `diff`, `config`, `tokenizer` around them. `cli.ts` is arg-parse and
+  `fix`, `diff`, `config`, `tokenizer` around them. `trim` (`conman <entry>
+  --trim`, delete-only Tier-1 advice over the whole-file duplication findings)
+  reuses `parentFile` / `preferredKeeper` from `fix.ts` to pick which copy of a
+  byte-identical cluster to keep. `cli.ts` is arg-parse and
   dispatch only. Every renderer is a pure formatter over `Analysis` / `MapResult`
   and must stay deterministic: no `Date`, no absolute paths, sort before emit.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
