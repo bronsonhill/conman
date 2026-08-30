@@ -15,7 +15,10 @@ No model or network in the analysis path.
 
 - `MODEL.md` — the resolution model (load order, `settings.json` keys, finding
   rules, default budget provenance, tokenizer caveat). Read it before changing
-  `src/resolver.ts` or the defaults in `src/config.ts`. Its "Entry-point
+  `src/resolver.ts` or the defaults in `src/config.ts`. Its "Accurate as of"
+  section pins the model to a named Claude Code release; `src/anchor.test.ts`
+  fails when resolved output drifts from it, and MODEL.md's "Bumping the version
+  anchor" section is the procedure to follow when it does. Its "Entry-point
   discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
   glob into an entry-point directory.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
