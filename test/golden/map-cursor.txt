@@ -1,0 +1,20 @@
+# exit: 0
+conman VERSION map  model 0.2
+config: conman.json
+entry points discovered: 2
+
+  entry         mode           tokens    delta   findings              result
+  .             stack             244    -3356   1 error, 0 warn       FAIL
+  src/frontend  stack             301    -3299   1 error, 0 warn       FAIL
+
+discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):
+  src/frontend
+
+repo rollup: 545 tokens across 2 entry points
+redundant tokens: 58 (11% of stack)
+
+RESULT  fail
+  .
+    - 1 duplication finding at error severity
+  src/frontend
+    - 1 duplication finding at error severity

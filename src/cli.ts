@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, type Config } from "./config.js";
+import { AGENTS, isAgent, type Agent } from "./agent.js";
 import { findRepoRoot, isDir, isFile, relPosix } from "./repo.js";
 import { analyzeEntry } from "./analyze.js";
 import { renderHuman, renderJson, type RenderContext } from "./report.js";
@@ -48,6 +49,7 @@ interface Args {
   configPath?: string;
   budget?: number;
   tokenizer: string;
+  agent: Agent;
   repoBoundary: boolean;
   fix: boolean;
   dryRun: boolean;
@@ -79,6 +81,17 @@ function applyFormat(a: Args, value: string | undefined): void {
   }
 }
 
+function applyAgent(a: Args, value: string | undefined): void {
+  if (value && isAgent(value)) {
+    a.agent = value;
+    return;
+  }
+  process.stderr.write(
+    `conman: --agent expects ${AGENTS.join(" | ")}, got ${value ?? "(nothing)"}\n`,
+  );
+  process.exit(2);
+}
+
 function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
   const a: Args = {
     command: "analyze",
@@ -86,6 +99,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
     json: false,
     sarif: false,
     tokenizer: "claude-local",
+    agent: "claude",
     repoBoundary: true,
     fix: false,
     dryRun: false,
@@ -138,6 +152,9 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
       case "--tokenizer":
         a.tokenizer = argv[++i] ?? "claude-local";
         break;
+      case "--agent":
+        applyAgent(a, argv[++i]);
+        break;
       default:
         if (t.startsWith("--format=")) applyFormat(a, t.slice("--format=".length));
         else if (t.startsWith("--budget=")) a.budget = Number(t.slice("--budget=".length));
@@ -145,6 +162,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         else if (t.startsWith("--html=")) a.html = t.slice("--html=".length);
         else if (t.startsWith("--repo-root=")) a.repoRoot = t.slice("--repo-root=".length);
         else if (t.startsWith("--tokenizer=")) a.tokenizer = t.slice("--tokenizer=".length);
+        else if (t.startsWith("--agent=")) applyAgent(a, t.slice("--agent=".length));
         else if (t.startsWith("-")) {
           process.stderr.write(`conman: unknown flag ${t}\n`);
           process.exit(2);
@@ -181,6 +199,9 @@ FLAGS
   --config <path>        config file (default: search up for conman.json)
   --budget <n>           override the total-token budget
   --tokenizer <name>     claude-local (default) | exact (unimplemented seam)
+  --agent <name>         claude (default) | codex | cursor | copilot; selects the
+                         resolution ruleset. Non-claude rulesets are best-effort
+                         (see MODEL.md)
   --no-repo-boundary     walk ancestors above the repo root
   --repo-root <path>     treat <path> as the repo root (default: nearest .git)
   --fix                  apply mechanical fixes (dedupe, sort skill keys, whitespace);
@@ -245,7 +266,7 @@ function warnOutOfPath(targetRel: string, changes: FileChange[]): void {
  */
 function runMapFix(root: string, config: Config, args: Args): void {
   const repoRoot = root;
-  const points = discoverEntryPoints(repoRoot, config);
+  const points = discoverEntryPoints(repoRoot, config, args.agent);
   const merged = new Map<string, FileChange>();
   const notes = new Set<string>();
   for (const p of points) {
@@ -253,6 +274,7 @@ function runMapFix(root: string, config: Config, args: Args): void {
       repoRoot,
       config,
       tokenizerName: args.tokenizer,
+      agent: args.agent,
     });
     const fixes = computeFixes(repoRoot, analysis);
     for (const n of fixes.notes) notes.add(n);
@@ -342,7 +364,7 @@ function main(): void {
       runMapFix(root, config, args);
       return;
     }
-    const result = runMap(root, config, args.tokenizer);
+    const result = runMap(root, config, args.tokenizer, args.agent);
     if (args.html) {
       const dest = resolve(cwd, args.html);
       writeFileSync(
@@ -369,6 +391,7 @@ function main(): void {
     repoRoot,
     config,
     tokenizerName: args.tokenizer,
+    agent: args.agent,
   });
 
   if (args.trim) {

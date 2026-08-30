@@ -1,0 +1,10 @@
+---
+description: Frontend-only rules
+globs:
+  - src/frontend
+  - src/frontend/**
+alwaysApply: false
+---
+
+Components are function components. No class components. Co-locate the test file
+next to the component it covers.

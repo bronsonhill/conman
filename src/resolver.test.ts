@@ -177,3 +177,69 @@ test("single-file mode: no ancestor walk, no rules", () => {
     ["notes.md", "shared.md"],
   );
 });
+
+test("--agent codex: ancestor AGENTS.md only, no CLAUDE.md, no rules, no skills", () => {
+  const root = fixture("cursor-rules");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, [], "codex");
+  assert.deepEqual(
+    r.blocks.map((b) => `${b.kind}:${b.source}`),
+    ["memory:AGENTS.md"],
+  );
+});
+
+test("--agent copilot: copilot-instructions first, then AGENTS.md", () => {
+  const root = fixture("copilot");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, [], "copilot");
+  assert.deepEqual(
+    r.blocks.map((b) => `${b.kind}:${b.source}`),
+    ["memory:.github/copilot-instructions.md", "memory:AGENTS.md"],
+  );
+});
+
+test("--agent cursor: AGENTS.md, .cursorrules, then .mdc rules by frontmatter", () => {
+  const root = fixture("cursor-rules");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, [], "cursor");
+  assert.deepEqual(
+    r.blocks.map((b) => `${b.kind}:${b.source}`),
+    [
+      "memory:AGENTS.md",
+      "rule-always:.cursorrules",
+      "rule-always:.cursor/rules/general.mdc",
+      "rule-always:.cursor/rules/manual.mdc",
+    ],
+  );
+  // frontend.mdc is glob-scoped to src/frontend and did not match the root entry
+  assert.ok(
+    r.notes.some((n) => n.includes("frontend.mdc") && n.includes("did not match")),
+  );
+  // manual.mdc has neither alwaysApply nor globs: loaded always-on with a note
+  assert.ok(
+    r.notes.some((n) => n.includes("manual.mdc") && n.includes("agent request")),
+  );
+});
+
+test("--agent cursor: a matching glob makes an .mdc rule path-scoped", () => {
+  const root = fixture("cursor-rules");
+  const r = resolveStack(
+    fixture("cursor-rules", "src", "frontend"),
+    root,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "cursor",
+  );
+  assert.ok(
+    r.blocks.some(
+      (b) => b.kind === "rule-scoped" && b.source === ".cursor/rules/frontend.mdc",
+    ),
+  );
+});
+
+test("non-claude agents do not read settings.json or follow @-imports", () => {
+  const root = fixture("monorepo");
+  const r = resolveStack(fixture("monorepo", "services", "api"), root, DEFAULT_CONFIG, tok, [], "codex");
+  // monorepo/CLAUDE.md @-imports docs/style.md for Claude; codex ignores it
+  assert.ok(!r.blocks.some((b) => b.source === "docs/style.md"));
+  assert.ok(!r.blocks.some((b) => b.kind === "import"));
+  assert.deepEqual(r.settings.claudeMdExcludes, []);
+});

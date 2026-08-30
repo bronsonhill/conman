@@ -1,0 +1,6 @@
+---
+description: How to cut a release
+---
+
+Bump the version, update the changelog, tag `vX.Y.Z`, then run the publish
+script. Cursor loads this rule only when the request looks release-related.

@@ -128,6 +128,79 @@ const CASES = [
     name: "analyze-dead-ref-json",
     args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref", "--json"],
   },
+  {
+    name: "analyze-codex",
+    args: [
+      "test/fixtures/agents-only",
+      "--repo-root",
+      "test/fixtures/agents-only",
+      "--agent",
+      "codex",
+    ],
+  },
+  {
+    name: "analyze-cursor",
+    args: [
+      "test/fixtures/cursor-rules",
+      "--repo-root",
+      "test/fixtures/cursor-rules",
+      "--agent",
+      "cursor",
+    ],
+  },
+  {
+    name: "analyze-cursor-json",
+    args: [
+      "test/fixtures/cursor-rules",
+      "--repo-root",
+      "test/fixtures/cursor-rules",
+      "--agent",
+      "cursor",
+      "--json",
+    ],
+  },
+  {
+    name: "analyze-cursor-frontend",
+    args: [
+      "test/fixtures/cursor-rules/src/frontend",
+      "--repo-root",
+      "test/fixtures/cursor-rules",
+      "--agent",
+      "cursor",
+    ],
+  },
+  {
+    name: "map-cursor",
+    args: [
+      "map",
+      "test/fixtures/cursor-rules",
+      "--repo-root",
+      "test/fixtures/cursor-rules",
+      "--agent",
+      "cursor",
+    ],
+  },
+  {
+    name: "analyze-copilot",
+    args: [
+      "test/fixtures/copilot",
+      "--repo-root",
+      "test/fixtures/copilot",
+      "--agent",
+      "copilot",
+    ],
+  },
+  {
+    name: "map-copilot",
+    args: [
+      "map",
+      "test/fixtures/copilot",
+      "--repo-root",
+      "test/fixtures/copilot",
+      "--agent",
+      "copilot",
+    ],
+  },
 ];
 
 function normalize(s) {

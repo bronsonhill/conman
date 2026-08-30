@@ -1,0 +1,109 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 10,
+      "lineStart": 1,
+      "source": "AGENTS.md",
+      "tokens": 101,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b2",
+      "kind": "rule-always",
+      "lineEnd": 4,
+      "lineStart": 1,
+      "source": ".cursorrules",
+      "tokens": 48,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b3",
+      "kind": "rule-always",
+      "lineEnd": 7,
+      "lineStart": 1,
+      "source": ".cursor/rules/general.mdc",
+      "tokens": 43,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b4",
+      "kind": "rule-always",
+      "lineEnd": 6,
+      "lineStart": 1,
+      "source": ".cursor/rules/manual.mdc",
+      "tokens": 52,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -3356,
+    "effective": 3600,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 244,
+    "total": 4000
+  },
+  "configSource": "conman.json",
+  "entry": ".",
+  "findings": [
+    {
+      "detail": {
+        "occurrences": 2,
+        "relation": "same-stack",
+        "segmentTokens": 29
+      },
+      "locations": [
+        {
+          "file": ".cursorrules",
+          "lineEnd": 4,
+          "lineStart": 3
+        },
+        {
+          "file": "AGENTS.md",
+          "lineEnd": 10,
+          "lineStart": 9
+        }
+      ],
+      "message": "identical 29-token block \"Run `npm ci` then `npm test` before every push. Keep each ch…\" appears in 2 files (29 redundant tokens, relation: same-stack)",
+      "severity": "error",
+      "tokens": 29,
+      "type": "duplication"
+    }
+  ],
+  "mode": "stack",
+  "modelVersion": "0.2",
+  "notes": [
+    ".cursor/rules/frontend.mdc is glob-scoped (src/frontend, src/frontend/**); did not match entry .",
+    ".cursor/rules/manual.mdc: Cursor loads this rule on agent request (no `globs`, `alwaysApply` unset); conman treats it as always-on (best-effort)"
+  ],
+  "redundant": {
+    "pctOfStack": 12,
+    "tokens": 29
+  },
+  "result": {
+    "pass": false,
+    "reasons": [
+      "1 duplication finding at error severity"
+    ]
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      ".cursor/rules/general.mdc": 43,
+      ".cursor/rules/manual.mdc": 52,
+      ".cursorrules": 48,
+      "AGENTS.md": 101
+    },
+    "skillIndexTokens": 0,
+    "stackTokens": 244
+  }
+}

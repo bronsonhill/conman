@@ -1,0 +1,23 @@
+# exit: 0
+conman VERSION  model 0.2  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source      lines         tokens
+  b1   memory       AGENTS.md   1-11             123
+  --------------------------------------------------
+  total                                          123
+
+BUDGET
+  budget          8000
+  safety margin   10%   ->  effective 7200
+  stack total     123
+  delta           -7077  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 0 warn)  none
+
+RESULT  pass

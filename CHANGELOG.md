@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## Unreleased
+
+### Added
+
+- `--agent <claude|codex|cursor|copilot>` selects the resolution ruleset. The
+  default `claude` behaviour is unchanged. `codex` and `copilot` resolve an
+  `AGENTS.md`-only stack (`copilot` also reads `.github/copilot-instructions.md`);
+  `cursor` resolves `.cursorrules` and `.cursor/rules/*.mdc` alongside `AGENTS.md`,
+  mapping `.mdc` `alwaysApply` / `globs` onto always-on vs path-scoped. Non-claude
+  rulesets are best-effort and not version-anchored; see `MODEL.md`.
+
 ## 0.1.0 — 2026-08-30
 
 First published release.

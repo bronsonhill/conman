@@ -15,6 +15,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Analysis } from "./types.js";
+import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { analyzeEntry } from "./analyze.js";
 import { evaluateGate } from "./gate.js";
@@ -85,8 +86,22 @@ export function globToEntryDir(repoRoot: string, glob: string): string | null {
   return null;
 }
 
-export function discoverEntryPoints(repoRoot: string, config: Config): DiscoveredEntry[] {
+export function discoverEntryPoints(
+  repoRoot: string,
+  config: Config,
+  agent: Agent = "claude",
+): DiscoveredEntry[] {
   const root = resolve(repoRoot);
+  // Claude Code special-cases CLAUDE.md; every other agent keys off AGENTS.md.
+  const memoryNames = agent === "claude" ? MEMORY_NAMES : ["AGENTS.md"];
+  // Which rule directory path-scopes entry points, and on which frontmatter key.
+  // Codex and Copilot have no path-scoped rule mechanism conman models.
+  const ruleSpec =
+    agent === "claude"
+      ? { dotDir: ".claude", ext: ".md", key: "paths" }
+      : agent === "cursor"
+        ? { dotDir: ".cursor", ext: ".mdc", key: "globs" }
+        : null;
   // Keyed by repo-relative POSIX path so entries dedupe regardless of how the
   // directory was reached.
   const reasons = new Map<string, Set<DiscoverySource>>();
@@ -109,10 +124,14 @@ export function discoverEntryPoints(repoRoot: string, config: Config): Discovere
     } catch {
       return;
     }
-    for (const name of MEMORY_NAMES) {
+    for (const name of memoryNames) {
       if (isFile(join(dir, name))) note(dir, "memory-file");
     }
-    if (basename(dir) === "rules" && basename(dirname(dir)) === ".claude") {
+    if (
+      ruleSpec &&
+      basename(dir) === "rules" &&
+      basename(dirname(dir)) === ruleSpec.dotDir
+    ) {
       ruleDirs.push(dir);
     }
     for (const e of entries) {
@@ -126,11 +145,11 @@ export function discoverEntryPoints(repoRoot: string, config: Config): Discovere
   };
   walk(root);
 
-  for (const rdir of ruleDirs.sort()) {
+  for (const rdir of ruleSpec ? ruleDirs.sort() : []) {
     let files: string[];
     try {
       files = readdirSync(rdir)
-        .filter((f) => f.endsWith(".md"))
+        .filter((f) => f.endsWith(ruleSpec!.ext))
         .sort();
     } catch {
       continue;
@@ -141,7 +160,7 @@ export function discoverEntryPoints(repoRoot: string, config: Config): Discovere
       let patterns: string[];
       try {
         const fm = parseFrontmatter(readFileSync(abs, "utf8"));
-        patterns = toStringArray(fm.data[RULE_SCOPE_KEY]);
+        patterns = toStringArray(fm.data[ruleSpec!.key]);
       } catch {
         continue;
       }
@@ -187,15 +206,17 @@ export function runMap(
   repoRoot: string,
   config: Config,
   tokenizerName = "claude-local",
+  agent: Agent = "claude",
 ): MapResult {
   const tok = getTokenizer(tokenizerName);
-  const points = discoverEntryPoints(repoRoot, config);
+  const points = discoverEntryPoints(repoRoot, config, agent);
   const entries: MapEntryResult[] = [];
   for (const p of points) {
     const { analysis, notes, mode } = analyzeEntry(p.abs, {
       repoRoot,
       config,
       tokenizer: tok,
+      agent,
     });
     const gate = evaluateGate(analysis, config);
     entries.push({

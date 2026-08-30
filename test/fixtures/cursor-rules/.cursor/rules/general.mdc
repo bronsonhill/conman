@@ -1,0 +1,7 @@
+---
+description: Always-on project conventions
+alwaysApply: true
+---
+
+Use tabs for indentation. Prefer named exports. Every module gets a header
+comment that says what the module owns.
