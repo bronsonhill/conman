@@ -1,0 +1,19 @@
+# exit: 0
+{
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "mode": "trim",
+  "tier": 1,
+  "entry": "pkg",
+  "recoverableTokens": 157,
+  "deletions": [
+    {
+      "file": "pkg/CLAUDE.md",
+      "keeper": "CLAUDE.md",
+      "relation": "parent-child",
+      "tokens": 157,
+      "lines": 16
+    }
+  ],
+  "diff": "diff --git a/pkg/CLAUDE.md b/pkg/CLAUDE.md\ndeleted file mode 100644\n--- a/pkg/CLAUDE.md\n+++ /dev/null\n@@ -1,16 +0,0 @@\n-# Trim fixture\n-\n-This repo ships a root CLAUDE.md and a package CLAUDE.md that are byte-for-byte\n-identical. The package copy is provably redundant: conman's trim mode should\n-rank it for deletion and keep the root copy.\n-\n-## Build and test\n-\n-Run `npm ci` then `npm test` before every push. Do not skip the lint step or the\n-type check. Keep each change scoped to one package so the review stays small.\n-\n-## House style\n-\n-Two-space indent, named exports only, `const` over `let`, and never a bare\n-`var`. Prefer a short comment that explains why over a long one that restates\n-the code.\n"
+}

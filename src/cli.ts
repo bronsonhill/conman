@@ -5,7 +5,7 @@
 //   conman check [<entrypoint>]  analyze + gate; non-zero exit over budget or on gated findings
 //
 // Flags: --json  --config <path>  --budget <n>  --tokenizer <name>
-//        --no-repo-boundary  --fix  --dry-run  --map (check only)
+//        --no-repo-boundary  --fix  --dry-run  --trim  --map (check only)
 //        --html <path> (map only)
 //
 // Exit codes: 0 ok / gate pass, 1 gate fail, 2 usage or runtime error.
@@ -22,6 +22,7 @@ import type { FileChange } from "./fix.js";
 import { renderMapHuman, renderMapJson } from "./mapReport.js";
 import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
+import { computeTrim, renderTrimHuman, renderTrimJson } from "./trim.js";
 import { unifiedDiff } from "./diff.js";
 import { evaluateGate } from "./gate.js";
 
@@ -46,6 +47,7 @@ interface Args {
   repoBoundary: boolean;
   fix: boolean;
   dryRun: boolean;
+  trim: boolean;
   map: boolean;
   html?: string;
   repoRoot?: string;
@@ -60,6 +62,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
     repoBoundary: true,
     fix: false,
     dryRun: false,
+    trim: false,
     map: false,
   };
   const positional: string[] = [];
@@ -80,6 +83,9 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         break;
       case "--dry-run":
         a.dryRun = true;
+        break;
+      case "--trim":
+        a.trim = true;
         break;
       case "--map":
         a.map = true;
@@ -143,6 +149,8 @@ FLAGS
                          with map, fixes every discovered entry point. A leaf
                          entry point warns before rewriting ancestor files.
   --dry-run              with --fix: print a diff, write nothing
+  --trim                 (analyze only) list provably-redundant whole files and a
+                         git-apply-able diff that deletes them; writes nothing
   --map                  (check only) gate across all discovered entry points
   --html <path>          (map only) write a self-contained HTML report to <path>
 
@@ -297,6 +305,16 @@ function main(): void {
     config,
     tokenizerName: args.tokenizer,
   });
+
+  if (args.trim) {
+    const trim = computeTrim(repoRoot, analysis);
+    process.stdout.write(
+      args.json
+        ? renderTrimJson(trim, analysis.entry, tv)
+        : renderTrimHuman(trim, analysis.entry, tv),
+    );
+    return;
+  }
 
   if (args.fix) {
     const fixes = computeFixes(repoRoot, analysis);

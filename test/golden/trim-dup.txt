@@ -1,0 +1,30 @@
+# exit: 0
+conman VERSION  trim (tier 1: delete provably-redundant whole files)
+entry: pkg
+
+RANKED DELETIONS  (lowest value first)
+     157 tok  pkg/CLAUDE.md    16 lines  keep CLAUDE.md  [parent-child]
+  recoverable: 157 tokens across 1 file
+
+DIFF  (apply with: git apply)
+diff --git a/pkg/CLAUDE.md b/pkg/CLAUDE.md
+deleted file mode 100644
+--- a/pkg/CLAUDE.md
++++ /dev/null
+@@ -1,16 +0,0 @@
+-# Trim fixture
+-
+-This repo ships a root CLAUDE.md and a package CLAUDE.md that are byte-for-byte
+-identical. The package copy is provably redundant: conman's trim mode should
+-rank it for deletion and keep the root copy.
+-
+-## Build and test
+-
+-Run `npm ci` then `npm test` before every push. Do not skip the lint step or the
+-type check. Keep each change scoped to one package so the review stays small.
+-
+-## House style
+-
+-Two-space indent, named exports only, `const` over `let`, and never a bare
+-`var`. Prefer a short comment that explains why over a long one that restates
+-the code.
