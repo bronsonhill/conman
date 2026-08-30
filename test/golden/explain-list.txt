@@ -1,10 +1,13 @@
 # exit: 0
 conman VERSION - finding types
 
-  duplication     Duplicated block
-  frontmatter     Malformed rule / skill frontmatter
-  unlinked-copy   Unlinked CLAUDE.md / AGENTS.md copy
-  value-conflict  Direct value conflict
-  vehicle-fit     Oversized always-loaded block
+  dead-reference     Reference that does not resolve
+  duplication        Duplicated block
+  frontmatter        Malformed rule / skill frontmatter
+  lint-duplication   Lint rule the tooling already enforces
+  stale-boilerplate  Unmodified /init boilerplate
+  unlinked-copy      Unlinked CLAUDE.md / AGENTS.md copy
+  value-conflict     Direct value conflict
+  vehicle-fit        Oversized always-loaded block
 
 Run `conman explain <id>` for the full entry.
