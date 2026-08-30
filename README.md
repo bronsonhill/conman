@@ -183,7 +183,8 @@ default comes from).
     "over-budget": "error",
     "duplication": "error",
     "value-conflict": "error",
-    "vehicle-fit": "warn"
+    "vehicle-fit": "warn",
+    "frontmatter": "error"
   },
   "resolve": { "repoBoundary": true, "importDepthLimit": 5, "skillListingBudget": null },
   "ignore": ["**/node_modules/**"]
@@ -193,6 +194,14 @@ default comes from).
 `conman check` fails when the stack is over `budget.total * (1 - safetyMargin)`
 (with `gate.over-budget: "error"`) or when any finding's type maps to `error`.
 `warn` is reported and never fails the gate.
+
+`gate.frontmatter` is a ceiling rather than a single severity: the frontmatter
+finding assigns `error` or `warn` per sub-case (a `.claude/rules` entry whose
+`paths` scope is unparseable or the wrong type is an `error` — the rule then
+silently loads always-on or never matches; a skill missing `description`, a
+bare-string `paths`, and other still-resolving cases are `warn`). `"error"` lets
+both through, `"warn"` caps every sub-case at warn, `"off"` disables it.
+`MODEL.md` lists the sub-cases.
 
 ## CI
 

@@ -175,6 +175,33 @@ as it formalizes the settings surface; a change here is a model-version change.
   350 tokens in always-loaded memory or a rule, or an always-loaded rule over
   800 tokens. Keyed off size and shape, never meaning. Left unsharpened until a
   later opt-in LLM layer.
+- **Frontmatter** — the YAML frontmatter on a file the resolver reads keys from
+  is malformed, missing a required key, or the wrong type. Scope is exactly the
+  files whose frontmatter changes what resolves: a `.claude/rules` entry (its
+  `paths` scope key) and a skill `SKILL.md` (`name` / `description`). `CLAUDE.md`
+  / `AGENTS.md` are out of scope — the resolver reads no keys from their
+  frontmatter, only `@`-imports from the body. Sub-cases and severity:
+  - **error** — a path-scoped rule whose scope cannot be read, so Claude Code
+    silently loads it always-on (unscoped) or never matches it: `paths` is
+    neither a string nor a list of strings (`scope-wrong-type`); the frontmatter
+    YAML throws a parse error and the raw text carries a `paths:` / `globs:` key
+    (`unparseable-yaml`); or the opening `---` has no closing `---` and the raw
+    text carries a scope key (`unterminated-fence`).
+  - **warn** — softer cases that still resolve: `paths` given as a bare string
+    rather than a list (`scope-scalar-string`); a rule that scopes on `globs`
+    with no `paths`, which Claude Code ignores (`scope-key-absent`); a skill
+    missing a usable `name` (`skill-missing-name`) or `description`
+    (`skill-missing-description`); a skill with no frontmatter at all
+    (`missing-frontmatter`); and unparseable YAML or an unterminated fence on a
+    file with no scoping stakes.
+
+  `config.gate.frontmatter` is a **ceiling**, not a single severity: `"error"`
+  (the default) lets both levels through, `"warn"` caps every sub-case at warn,
+  `"off"` disables the check. The rule / skill files are carried out of
+  resolution as `ResolveResult.frontmatterSubjects`; the check re-parses their
+  raw text so it also covers a path-scoped rule that did not match the entry.
+  `--fix` does not touch frontmatter validity — a malformed scope key is a
+  change of meaning to repair.
 
 ## Default budget numbers, and why
 

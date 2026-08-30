@@ -38,6 +38,32 @@ const CASES = [
     args: ["map", "test/fixtures/rule-entry", "--repo-root", "test/fixtures/rule-entry", "--json"],
   },
   { name: "check-monorepo", args: ["check", `${MONO}/services/api`, "--repo-root", MONO] },
+  {
+    name: "analyze-frontmatter-broken",
+    args: [
+      "test/fixtures/frontmatter-broken",
+      "--repo-root",
+      "test/fixtures/frontmatter-broken",
+    ],
+  },
+  {
+    name: "analyze-frontmatter-broken-json",
+    args: [
+      "test/fixtures/frontmatter-broken",
+      "--repo-root",
+      "test/fixtures/frontmatter-broken",
+      "--json",
+    ],
+  },
+  {
+    name: "map-frontmatter-broken",
+    args: [
+      "map",
+      "test/fixtures/frontmatter-broken",
+      "--repo-root",
+      "test/fixtures/frontmatter-broken",
+    ],
+  },
   { name: "analyze-imports", args: ["test/fixtures/imports", "--repo-root", "test/fixtures/imports"] },
   {
     name: "analyze-single-file",

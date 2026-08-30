@@ -1,8 +1,9 @@
 import type { Block, Finding } from "../types.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
-import type { UnlinkedAgentsCopy } from "../resolver.js";
+import type { UnlinkedAgentsCopy, FrontmatterSubject } from "../resolver.js";
 import { findDuplication } from "./duplication.js";
+import { findFrontmatterIssues } from "./frontmatter.js";
 import { findUnlinkedCopies } from "./unlinkedCopy.js";
 import { findValueConflicts } from "./valueConflict.js";
 import { findVehicleFit } from "./vehicleFit.js";
@@ -12,6 +13,7 @@ const TYPE_ORDER: Record<Finding["type"], number> = {
   "unlinked-copy": 1,
   "value-conflict": 2,
   "vehicle-fit": 3,
+  frontmatter: 4,
 };
 const SEV_ORDER: Record<string, number> = { error: 0, warn: 1, off: 2 };
 
@@ -20,12 +22,14 @@ export function runFindings(
   config: Config,
   tok: Tokenizer,
   unlinkedAgentsCopies: UnlinkedAgentsCopy[] = [],
+  frontmatterSubjects: FrontmatterSubject[] = [],
 ): Finding[] {
   const all = [
     ...findDuplication(blocks, config, tok),
     ...findUnlinkedCopies(unlinkedAgentsCopies, config),
     ...findValueConflicts(blocks, config, tok),
     ...findVehicleFit(blocks, config, tok),
+    ...findFrontmatterIssues(frontmatterSubjects, config),
   ];
   all.sort(
     (a, b) =>

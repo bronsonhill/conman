@@ -51,7 +51,8 @@ export type FindingType =
   | "duplication"
   | "unlinked-copy"
   | "value-conflict"
-  | "vehicle-fit";
+  | "vehicle-fit"
+  | "frontmatter";
 export type Severity = "error" | "warn" | "off";
 
 export interface Location {
