@@ -3,6 +3,7 @@
 
 import { resolve } from "node:path";
 import type { Analysis } from "./types.js";
+import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { getTokenizer, type Tokenizer } from "./tokenizer.js";
 import { resolveStack } from "./resolver.js";
@@ -16,6 +17,8 @@ export interface AnalyzeOptions {
   config: Config;
   tokenizerName?: string;
   tokenizer?: Tokenizer;
+  /** Resolution ruleset. Defaults to "claude". */
+  agent?: Agent;
 }
 
 export interface AnalyzeResult {
@@ -29,7 +32,14 @@ export function analyzeEntry(
   opts: AnalyzeOptions,
 ): AnalyzeResult {
   const tok = opts.tokenizer ?? getTokenizer(opts.tokenizerName ?? "claude-local");
-  const resolved = resolveStack(resolve(entryPathAbs), opts.repoRoot, opts.config, tok);
+  const resolved = resolveStack(
+    resolve(entryPathAbs),
+    opts.repoRoot,
+    opts.config,
+    tok,
+    [],
+    opts.agent ?? "claude",
+  );
   const blocks = costBlocks(resolved.blocks, tok);
   const totals = computeTotals(blocks);
   const budget = computeBudget(totals, opts.config);

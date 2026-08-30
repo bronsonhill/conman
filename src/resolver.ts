@@ -17,6 +17,7 @@
 import { readFileSync, readdirSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Block, BlockKind } from "./types.js";
+import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import type { Tokenizer } from "./tokenizer.js";
 import { parseFrontmatter } from "./frontmatter.js";
@@ -443,7 +444,11 @@ export function resolveStack(
   config: Config,
   tok: Tokenizer,
   notes: string[] = [],
+  agent: Agent = "claude",
 ): ResolveResult {
+  if (agent !== "claude") {
+    return resolveNonClaude(entryPathAbs, repoRoot, config, tok, notes, agent);
+  }
   const settings = loadSettings(repoRoot);
   const ctx: ImportCtx = {
     repoRoot,
@@ -606,4 +611,204 @@ function classifyAgentsMd(
       `${agentsRel} present but not loaded by Claude Code (it reads ${claudeRel}); the two files differ`,
     );
   }
+}
+
+// --- Non-Claude agents (best-effort) ------------------------------------------
+//
+// See MODEL.md, "Other agents (best-effort)". These rulesets are a static
+// parser's reading of each vendor's documented file-loading behavior; the real
+// tool may differ, and none of this is version-anchored the way the Claude Code
+// model is. All of it feeds the same coster and findings as the Claude path.
+
+/** Ancestor directories that hold a `<dirName>` directory, root-most first. */
+function findDirsNamed(entryDir: string, repoRoot: string, dirName: string): string[] {
+  const dirs: string[] = [];
+  let dir = resolve(entryDir);
+  const stop = resolve(repoRoot);
+  for (;;) {
+    const c = join(dir, dirName);
+    if (isDir(c)) dirs.push(c);
+    if (dir === stop) break;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return dirs.reverse();
+}
+
+/**
+ * Map Cursor `.mdc` frontmatter onto conman's always-on vs path-scoped split:
+ * `alwaysApply: true` -> always-on; a non-empty `globs` -> path-scoped, matched
+ * against the entry path; neither -> Cursor pulls the rule in on agent request,
+ * which a static resolver cannot predict, so conman loads it always-on and adds
+ * a NOTE.
+ */
+function collectCursorRules(
+  cursorDirs: string[],
+  entryTargetPosix: string,
+  ctx: ImportCtx,
+): { always: Omit<Block, "id" | "tokens">[]; scoped: Omit<Block, "id" | "tokens">[] } {
+  const always: Omit<Block, "id" | "tokens">[] = [];
+  const scoped: Omit<Block, "id" | "tokens">[] = [];
+  for (const cdir of cursorDirs) {
+    const rdir = join(cdir, "rules");
+    if (!isDir(rdir)) continue;
+    const entries = readdirSync(rdir)
+      .filter((f) => f.endsWith(".mdc"))
+      .sort();
+    for (const f of entries) {
+      const abs = join(rdir, f);
+      if (!isFile(abs)) continue;
+      const text = readFileSync(abs, "utf8");
+      const fm = parseFrontmatter(text);
+      const rel = relPosix(ctx.repoRoot, abs);
+      const lineCount = countLines(text);
+      const globs = toStringArray(fm.data["globs"]);
+      const alwaysApply = fm.data["alwaysApply"] === true;
+
+      let kind: "rule-always" | "rule-scoped" = "rule-always";
+      let matched = true;
+      if (alwaysApply) {
+        kind = "rule-always";
+      } else if (globs.length > 0 && !globs.every((g) => g === "**")) {
+        kind = "rule-scoped";
+        matched = matchesAnyGlob(entryTargetPosix, globs);
+      } else {
+        ctx.notes.push(
+          `${rel}: Cursor loads this rule on agent request (no \`globs\`, \`alwaysApply\` unset); conman treats it as always-on (best-effort)`,
+        );
+      }
+
+      const block: Omit<Block, "id" | "tokens"> = {
+        kind,
+        source: rel,
+        lineStart: 1,
+        lineEnd: Math.max(1, lineCount),
+        text,
+        depth: 0,
+      };
+      if (kind === "rule-scoped") {
+        if (matched) scoped.push(block);
+        else
+          ctx.notes.push(
+            `${rel} is glob-scoped (${globs.join(", ")}); did not match entry ${entryTargetPosix}`,
+          );
+      } else {
+        always.push(block);
+      }
+    }
+  }
+  return { always, scoped };
+}
+
+function resolveNonClaude(
+  entryPathAbs: string,
+  repoRoot: string,
+  config: Config,
+  tok: Tokenizer,
+  notes: string[],
+  agent: Agent,
+): ResolveResult {
+  const settings: Settings = {
+    claudeMdExcludes: [],
+    skillListingBudget: null,
+    raw: {},
+  };
+  const ctx: ImportCtx = {
+    repoRoot,
+    tok,
+    depthLimit: 0, // no `@`-import following for non-Claude agents
+    notes,
+    seen: new Set<string>(),
+    seenReal: new Map<string, string>(),
+    frontmatterSubjects: [],
+  };
+
+  const entryIsFile = isFile(entryPathAbs);
+  const entryBase = entryIsFile ? basename(entryPathAbs) : "";
+  const entryIsMemoryFile = entryIsFile && entryBase === "AGENTS.md";
+  const entryDir = entryIsFile ? dirname(entryPathAbs) : entryPathAbs;
+  const entryPosix = relPosix(repoRoot, entryPathAbs);
+
+  if (entryIsFile && !entryIsMemoryFile) {
+    const blocks = resolveFileBlocks(
+      entryPathAbs,
+      "memory",
+      0,
+      undefined,
+      new Set(),
+      ctx,
+    );
+    notes.push(
+      `single-file mode (--agent ${agent}): ancestor walk and rules are not resolved`,
+    );
+    return {
+      mode: "single-file",
+      entryPosix,
+      blocks,
+      settings,
+      notes,
+      unlinkedAgentsCopies: [],
+      frontmatterSubjects: ctx.frontmatterSubjects,
+    };
+  }
+
+  const blocks: Omit<Block, "id" | "tokens">[] = [];
+
+  // Copilot: the repo-wide `.github/copilot-instructions.md`, first.
+  if (agent === "copilot") {
+    const ci = join(repoRoot, ".github", "copilot-instructions.md");
+    if (isFile(ci)) {
+      blocks.push(
+        ...resolveFileBlocks(ci, "memory", 0, undefined, new Set(), ctx),
+      );
+    } else {
+      notes.push(
+        ".github/copilot-instructions.md not found; Copilot stack carries AGENTS.md only",
+      );
+    }
+  }
+
+  // Codex, Cursor, and Copilot all read AGENTS.md. Ancestor walk, root-most
+  // first, entry-closest last. No CLAUDE.md special-casing.
+  const dirs = ancestorDirs(entryDir, repoRoot, config.resolve.repoBoundary);
+  for (const dir of dirs) {
+    const abs = join(dir, "AGENTS.md");
+    if (!isFile(abs)) continue;
+    const rel = relPosix(repoRoot, abs);
+    if (ctx.seen.has(rel)) continue;
+    blocks.push(
+      ...resolveFileBlocks(abs, "memory", 0, undefined, new Set(), ctx),
+    );
+  }
+
+  // Cursor: legacy `.cursorrules` (repo root, always-on) then `.cursor/rules/*.mdc`.
+  if (agent === "cursor") {
+    const legacy = join(repoRoot, ".cursorrules");
+    if (isFile(legacy)) {
+      blocks.push(
+        ...resolveFileBlocks(legacy, "rule-always", 0, undefined, new Set(), ctx),
+      );
+    }
+    const cursorDirs = findDirsNamed(entryDir, repoRoot, ".cursor");
+    const entryTargetPosix = entryIsMemoryFile
+      ? relPosix(repoRoot, entryDir)
+      : entryPosix;
+    const { always, scoped } = collectCursorRules(
+      cursorDirs,
+      entryTargetPosix || ".",
+      ctx,
+    );
+    blocks.push(...always, ...scoped);
+  }
+
+  return {
+    mode: "stack",
+    entryPosix,
+    blocks,
+    settings,
+    notes,
+    unlinkedAgentsCopies: [],
+    frontmatterSubjects: ctx.frontmatterSubjects,
+  };
 }

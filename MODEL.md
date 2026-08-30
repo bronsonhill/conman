@@ -143,6 +143,63 @@ repo root and merges them (local wins). It acts on:
 These key names are conman's current interpretation. They will track Claude Code
 as it formalizes the settings surface; a change here is a model-version change.
 
+## Other agents (best-effort)
+
+Everything above models Claude Code. The `--agent` flag switches to a different
+resolution ruleset for another coding agent. These rulesets are **best-effort**:
+they are a static parser's reading of each vendor's *documented* file-loading
+behavior, the real tool may load more or less than this, and — unlike the Claude
+Code model — they are **not anchored to a release** and `src/anchor.test.ts` does
+not guard them. The pipeline downstream of resolution is unchanged: same coster,
+same findings, same budget gate.
+
+Common to every non-Claude agent:
+
+- `CLAUDE.md` is not special-cased. The memory file is `AGENTS.md`, walked from
+  the entry directory up to the repo root (or the filesystem root with
+  `--no-repo-boundary`), root-most first.
+- No `@`-import following, no `.claude/rules/`, no skill startup index, no
+  `.claude/settings.json` keys.
+- Single-file mode (an entry that is a file other than `AGENTS.md`) still works:
+  that one file is costed, nothing else is resolved.
+
+### `--agent codex`
+
+Ancestor `AGENTS.md` files only. Nothing else. Codex also reads
+`~/.codex/AGENTS.md`, which is out of scope for the same reason
+`~/.claude/CLAUDE.md` is: conman analyzes a repository, not a machine. Vendor
+behavior around `AGENTS.md` merge order and depth may differ from this and is not
+tracked.
+
+### `--agent copilot`
+
+The repo-root `.github/copilot-instructions.md` first (it is repo-wide), then the
+ancestor `AGENTS.md` walk. Both load as `memory` blocks. GitHub Copilot's
+`.github/instructions/*.instructions.md` path-scoped files and `applyTo`
+frontmatter are not modeled yet.
+
+### `--agent cursor`
+
+Ancestor `AGENTS.md` walk, then Cursor rules, in this order:
+
+1. Legacy `.cursorrules` at the repo root, if present — one always-on block.
+2. `.cursor/rules/*.mdc` from every `.cursor/` directory at or above the entry,
+   path-sorted within each directory.
+
+`.mdc` frontmatter maps onto conman's always-on vs path-scoped split:
+
+- `alwaysApply: true` → **always-on** (`rule-always`).
+- otherwise a non-empty `globs` (string or list) → **path-scoped**
+  (`rule-scoped`), loaded only when one glob matches the entry path, matched by
+  conman's own literal matcher (no brace expansion), exactly as `paths` is
+  matched for Claude. A `globs` of just `**` counts as no scope.
+- neither key → Cursor pulls the rule in *on agent request*, which a static
+  resolver cannot predict. conman loads it always-on and adds a NOTE.
+
+Always-on rules load before matched path-scoped rules, both path-sorted, mirroring
+the Claude rule order. `.mdc` frontmatter is not linted by the `frontmatter`
+finding — that check is Claude-specific.
+
 ## Findings
 
 - **Duplication** — a segment (a heading-delimited or blank-line-delimited run of

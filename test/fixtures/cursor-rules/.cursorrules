@@ -1,0 +1,4 @@
+Legacy .cursorrules file. Cursor loads this repo-wide, always on.
+
+Run `npm ci` then `npm test` before every push. Keep each change scoped to a
+single package so the review stays small.

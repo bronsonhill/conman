@@ -99,9 +99,9 @@ conman explain [<id>]        describe a finding type: explanation, research, rem
 ```
 
 Flags: `--json`, `--format <human|json|sarif>`, `--config <path>`, `--budget <n>`,
-`--tokenizer <name>`, `--no-repo-boundary`, `--repo-root <path>`, `--fix`,
-`--dry-run`, `--trim`, `--map` (with `check`), and `--html <path>` (with `map` or
-`check --map`).
+`--tokenizer <name>`, `--agent <claude|codex|cursor|copilot>`,
+`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
+`--map` (with `check`), and `--html <path>` (with `map` or `check --map`).
 
 A single-entry run prints the load order with per-block token counts, the total
 against the budget, then the findings. Every finding names a `file:line`, a token
@@ -226,6 +226,25 @@ empty once the redundant copies are gone. `--trim` only removes provably
 redundant whole files; trimming non-redundant content down to a budget is not
 built.
 
+## Other agents (best-effort)
+
+`--agent` switches the resolution ruleset. `claude` is the default and the only
+one anchored to a named Claude Code release. The other three model each vendor's
+documented file-loading on a best-effort basis — no version anchor, no drift
+test — and everything downstream (token costing, findings, the budget gate) runs
+unchanged on whatever stack comes out.
+
+| `--agent` | resolves |
+|---|---|
+| `claude` (default) | `CLAUDE.md` / `AGENTS.md` ancestors, `@`-imports, `.claude/rules/`, skill index, `settings.json` keys |
+| `codex` | ancestor `AGENTS.md` only |
+| `copilot` | `.github/copilot-instructions.md`, then ancestor `AGENTS.md` |
+| `cursor` | ancestor `AGENTS.md`, then `.cursorrules` and `.cursor/rules/*.mdc` (`.mdc` `alwaysApply` / `globs` mapped onto always-on vs path-scoped; a rule with neither is loaded always-on with a note) |
+
+No non-claude agent follows `@`-imports, reads `.claude/`, or reads
+`settings.json`. See `MODEL.md`, "Other agents (best-effort)", for the exact
+rules and their limits.
+
 ## Config
 
 `conman.json` at the repo root, searched upward from the entry point. Every key is
@@ -303,8 +322,9 @@ when an entry point is over budget or trips a gated finding.
 ## Deliberately out of scope for the MVP
 
 No LLM anywhere in the analysis path. No semantic contradiction detection beyond
-byte-identical duplication and direct value conflicts. No `.cursor/rules` or
-Copilot instruction files — keeping those in sync is another tool's job. No
+byte-identical duplication and direct value conflicts. Non-Claude agent rulesets
+(`--agent codex|cursor|copilot`) are best-effort and not version-anchored;
+keeping instruction files in sync across tools is still another tool's job. No
 runtime monitoring; `/context` already shows a live session's usage. The `exact`
 tokenizer mode is a documented seam with no implementation. Vehicle-fit advice
 stays coarse and structural until a later opt-in LLM layer.

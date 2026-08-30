@@ -20,7 +20,9 @@ No model or network in the analysis path.
   fails when resolved output drifts from it, and MODEL.md's "Bumping the version
   anchor" section is the procedure to follow when it does. Its "Entry-point
   discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
-  glob into an entry-point directory.
+  glob into an entry-point directory. Its "Other agents (best-effort)" section
+  documents the `--agent codex|cursor|copilot` rulesets, which are NOT
+  version-anchored and NOT guarded by `anchor.test.ts`.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
   / `mapReport` / `mapHtmlReport` (`conman map --html`, plus a gate-focused
   variant for `conman check --map --html`), with `gate`, `map`,
@@ -31,7 +33,10 @@ No model or network in the analysis path.
   (`conman <entry> --format sarif`, single entry only); `explain` holds the
   static per-finding-type reference table (`conman explain [<id>]`) that also
   supplies the SARIF rule descriptions — keep its citations in sync with
-  README's "What the research says". `cli.ts` is arg-parse and dispatch only. Every renderer is a pure formatter over `Analysis` / `MapResult`
+  README's "What the research says". `cli.ts` is arg-parse and dispatch only. `agent.ts` is the `--agent` enum;
+`resolver.ts`'s `resolveNonClaude` and `map.ts`'s agent-keyed discovery hold the
+best-effort non-Claude rulesets, and the `agent === "claude"` path is guaranteed
+byte-identical (early-return before any shared code). Every renderer is a pure formatter over `Analysis` / `MapResult`
   and must stay deterministic: no `Date`, no absolute paths, sort before emit.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
   expected CLI output. `test/run-golden.js` diffs live output against golden;

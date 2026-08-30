@@ -1,0 +1,35 @@
+# exit: 0
+conman VERSION  model 0.2  tokenizer claude-local
+entry: src/frontend   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source                      lines         tokens
+  b1   memory       AGENTS.md                   1-10             101
+  b2   rule-always  .cursorrules                1-4               48
+  b3   rule-always  .cursor/rules/general.mdc   1-7               43
+  b4   rule-always  .cursor/rules/manual.mdc    1-6               52
+  b5   rule-scoped  .cursor/rules/frontend.mdc  1-10              57
+  ------------------------------------------------------------------
+  total                                                          301
+
+BUDGET
+  budget          4000
+  safety margin   10%   ->  effective 3600
+  stack total     301
+  delta           -3299  (under budget)
+
+SAVINGS
+  redundant tokens: 29 (10% of stack)
+
+FINDINGS  (1 error, 0 warn)
+  error  duplication
+         .cursorrules:3-4
+         AGENTS.md:9-10
+         identical 29-token block "Run `npm ci` then `npm test` before every push. Keep each ch…" appears in 2 files (29 redundant tokens, relation: same-stack)
+
+NOTES
+  - .cursor/rules/manual.mdc: Cursor loads this rule on agent request (no `globs`, `alwaysApply` unset); conman treats it as always-on (best-effort)
+
+RESULT  fail
+  - 1 duplication finding at error severity
