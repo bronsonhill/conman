@@ -154,7 +154,11 @@ as it formalizes the settings surface; a change here is a model-version change.
 
   `--fix` still only dedupes `parent-child`, per-segment findings: removing a
   `same-stack` or whole-file duplicate safely means deleting a file or writing a
-  pointer, which is a change of substance conman does not make.
+  pointer, which is a change of substance conman does not make. When a
+  `parent-child` block is shared by files with no ancestor relationship (a
+  `CLAUDE.md`/`AGENTS.md` pair in one directory), the keeper is deterministic:
+  `CLAUDE.md` wins over `AGENTS.md`, then lexical order. See `preferredKeeper` in
+  `src/fix.ts`.
 - **Unlinked copy** — a directory holds a `CLAUDE.md` and an `AGENTS.md` as two
   separate byte-identical files: not a symlink, not an `@`-import. Claude Code
   loads only the `CLAUDE.md`, so this is not a token cost, but the two

@@ -137,6 +137,12 @@ normalizes whitespace. It never rewrites prose and never touches a value conflic
 resolving one of those is a judgment call, and that call is yours. `--fix
 --dry-run` prints the diff and writes nothing. The operation is idempotent.
 
+`conman map --fix` runs the same mechanical fixes across every entry point `map`
+discovers, so a repo with dozens of entry points is fixed in one pass rather than
+one directory at a time. Running `--fix` on a leaf entry point can rewrite context
+files above it — a leaf inherits and overrides its ancestors — so conman prints a
+warning naming those out-of-path files before it writes.
+
 ## Config
 
 `conman.json` at the repo root, searched upward from the entry point. Every key is

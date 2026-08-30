@@ -14,10 +14,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, type Config } from "./config.js";
-import { findRepoRoot, isDir, isFile } from "./repo.js";
+import { findRepoRoot, isDir, isFile, relPosix } from "./repo.js";
 import { analyzeEntry } from "./analyze.js";
 import { renderHuman, renderJson, type RenderContext } from "./report.js";
-import { runMap } from "./map.js";
+import { runMap, discoverEntryPoints } from "./map.js";
+import type { FileChange } from "./fix.js";
 import { renderMapHuman, renderMapJson } from "./mapReport.js";
 import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
@@ -138,7 +139,9 @@ FLAGS
   --tokenizer <name>     claude-local (default) | exact (unimplemented seam)
   --no-repo-boundary     walk ancestors above the repo root
   --repo-root <path>     treat <path> as the repo root (default: nearest .git)
-  --fix                  apply mechanical fixes (dedupe, sort skill keys, whitespace)
+  --fix                  apply mechanical fixes (dedupe, sort skill keys, whitespace);
+                         with map, fixes every discovered entry point. A leaf
+                         entry point warns before rewriting ancestor files.
   --dry-run              with --fix: print a diff, write nothing
   --map                  (check only) gate across all discovered entry points
   --html <path>          (map only) write a self-contained HTML report to <path>
@@ -160,6 +163,73 @@ function applyOverrides(config: Config, args: Args): Config {
   }
   if (!args.repoBoundary) c.resolve.repoBoundary = false;
   return c;
+}
+
+/**
+ * Files a `--fix` run would rewrite that sit outside the entry point the user
+ * named. `targetRel` is the entry-point directory relative to the repo root
+ * ("." for the root itself). A leaf entry inherits and overrides its ancestors,
+ * so `conman sub/ --fix` can legitimately rewrite the repo-root CLAUDE.md; this
+ * lists those files so the write is not a surprise.
+ */
+function outOfPathFiles(targetRel: string, files: string[]): string[] {
+  if (targetRel === "." || targetRel === "") return [];
+  const prefix = `${targetRel}/`;
+  return files.filter((f) => f !== targetRel && !f.startsWith(prefix)).sort();
+}
+
+function warnOutOfPath(targetRel: string, changes: FileChange[]): void {
+  const outside = outOfPathFiles(
+    targetRel,
+    changes.map((c) => c.file),
+  );
+  if (outside.length === 0) return;
+  process.stdout.write(
+    `warning: ${targetRel}/ inherits from ancestor context files; --fix will also modify:\n`,
+  );
+  for (const f of outside) process.stdout.write(`  ${f}\n`);
+}
+
+/**
+ * `conman map --fix`: apply mechanical fixes across every discovered entry
+ * point, not just one. Without this the map branch returns before the analyze
+ * branch's fix block, so `map --fix` writes nothing.
+ */
+function runMapFix(root: string, config: Config, args: Args): void {
+  const repoRoot = root;
+  const points = discoverEntryPoints(repoRoot, config);
+  const merged = new Map<string, FileChange>();
+  const notes = new Set<string>();
+  for (const p of points) {
+    const { analysis } = analyzeEntry(p.abs, {
+      repoRoot,
+      config,
+      tokenizerName: args.tokenizer,
+    });
+    const fixes = computeFixes(repoRoot, analysis);
+    for (const n of fixes.notes) notes.add(n);
+    if (!args.dryRun) applyFixes(repoRoot, fixes);
+    for (const c of fixes.changes) {
+      if (!merged.has(c.file)) merged.set(c.file, c);
+    }
+  }
+  const changes = [...merged.values()].sort((a, b) => (a.file < b.file ? -1 : 1));
+  const label = args.dryRun ? "map --fix --dry-run" : "map --fix";
+  if (changes.length === 0) {
+    process.stdout.write(`conman ${label}: no mechanical fixes to apply\n`);
+  } else if (args.dryRun) {
+    for (const c of changes) {
+      process.stdout.write(`# ${c.file}: ${c.operations.join(", ")}\n`);
+      process.stdout.write(unifiedDiff(c.before, c.after, c.file));
+    }
+  } else {
+    for (const c of changes) {
+      process.stdout.write(`fixed ${c.file}: ${c.operations.join(", ")}\n`);
+    }
+  }
+  for (const n of [...notes].sort()) {
+    process.stdout.write(`${args.dryRun ? "# note" : "note"}: ${n}\n`);
+  }
 }
 
 function main(): void {
@@ -198,6 +268,10 @@ function main(): void {
 
   if (args.command === "map" || (args.command === "check" && args.map)) {
     const root = args.target ? resolve(cwd, args.target) : repoRoot;
+    if (args.fix) {
+      runMapFix(root, config, args);
+      return;
+    }
     const result = runMap(root, config, args.tokenizer);
     if (args.html) {
       const dest = resolve(cwd, args.html);
@@ -226,6 +300,7 @@ function main(): void {
 
   if (args.fix) {
     const fixes = computeFixes(repoRoot, analysis);
+    warnOutOfPath(relPosix(repoRoot, startDir), fixes.changes);
     if (args.dryRun) {
       if (fixes.changes.length === 0) {
         process.stdout.write("conman --fix --dry-run: no mechanical fixes to apply\n");

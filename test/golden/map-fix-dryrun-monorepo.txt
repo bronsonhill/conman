@@ -1,7 +1,4 @@
 # exit: 0
-warning: services/api/ inherits from ancestor context files; --fix will also modify:
-  .claude/skills/alpha/SKILL.md
-  .claude/skills/gamma/SKILL.md
 # .claude/skills/alpha/SKILL.md: sorted skill frontmatter keys
 --- a/.claude/skills/alpha/SKILL.md
 +++ b/.claude/skills/alpha/SKILL.md
