@@ -10,8 +10,12 @@
 //
 // When every qualifying segment of one file also appears in another (a whole-file
 // duplicate), the pair is rolled up into a single finding instead of one finding
-// per shared segment, so an AGENTS.md that copies its sibling CLAUDE.md verbatim
+// per shared segment, so a child CLAUDE.md that repeats its parent wholesale
 // reads as one line, not sixty.
+//
+// A bare AGENTS.md sitting beside a byte-identical CLAUDE.md is NOT this finding:
+// the resolver leaves it out of the stack (Claude Code never loads it), and the
+// `unlinked-copy` warn finding covers the drift risk instead.
 
 import type { Block, Finding, Location } from "../types.js";
 import type { Config } from "../config.js";

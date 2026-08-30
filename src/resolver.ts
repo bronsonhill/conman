@@ -5,14 +5,16 @@
 // ordering rules and the assumptions behind each step.
 //
 // Load order:
-//   1. ancestor memory files, root-most first, entry-closest last;
-//      CLAUDE.md before AGENTS.md within a directory;
-//      each file's @-imports inlined immediately after it, depth-first
+//   1. ancestor CLAUDE.md files, root-most first, entry-closest last;
+//      each file's @-imports inlined immediately after it, depth-first.
+//      A bare AGENTS.md is NOT loaded: Claude Code reads CLAUDE.md only. An
+//      AGENTS.md reaches the stack only when CLAUDE.md @-imports it, or the two
+//      are the same file (a CLAUDE.md -> AGENTS.md symlink, the multi-tool norm).
 //   2. .claude/rules entries with no path scope (always loaded), path-sorted
 //   3. .claude/rules entries whose `paths` matched the entry path, path-sorted
 //   4. the skill startup index (name + description per skill), budget-truncated
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Block, BlockKind } from "./types.js";
 import type { Config } from "./config.js";
@@ -43,12 +45,26 @@ export interface Settings {
   raw: Record<string, unknown>;
 }
 
+/**
+ * A directory that ships a CLAUDE.md and an AGENTS.md as two separate,
+ * byte-identical files — not a symlink, not an `@`-import. Claude Code loads the
+ * CLAUDE.md and never opens the AGENTS.md, so this is not a cost, but the two
+ * copies drift. Fuel for the `unlinked-copy` finding.
+ */
+export interface UnlinkedAgentsCopy {
+  claudeMd: string;
+  agentsMd: string;
+  /** Line count of the shared content, for the finding's locations. */
+  lines: number;
+}
+
 export interface ResolveResult {
   mode: "stack" | "single-file";
   entryPosix: string;
   blocks: Omit<Block, "id" | "tokens">[];
   settings: Settings;
   notes: string[];
+  unlinkedAgentsCopies: UnlinkedAgentsCopy[];
 }
 
 export function loadSettings(repoRoot: string): Settings {
@@ -118,6 +134,35 @@ interface ImportCtx {
   notes: string[];
   /** Repo-relative paths of every block emitted so far, across the whole walk. */
   seen: Set<string>;
+  /**
+   * Real (symlink-resolved) absolute path of every file loaded as a block ->
+   * the repo-relative path it was loaded under. Lets the sibling walk spot a
+   * CLAUDE.md -> AGENTS.md symlink and not count the target a second time.
+   */
+  seenReal: Map<string, string>;
+}
+
+/** Symlink-resolved absolute path, or the input unchanged if it cannot resolve. */
+function realOrSelf(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+}
+
+/**
+ * Trailing-whitespace- and blank-edge-insensitive view of a file's bytes, for
+ * deciding whether two memory files are "the same content".
+ */
+function normalizeForCompare(s: string): string {
+  return s
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((l) => l.replace(/[ \t]+$/, ""))
+    .join("\n")
+    .replace(/^\n+/, "")
+    .replace(/\n+$/, "");
 }
 
 /** Line indices (0-based) that sit inside a fenced code block. */
@@ -182,6 +227,7 @@ function resolveFileBlocks(
   const lineCount = countLines(text);
   const rel = relPosix(ctx.repoRoot, norm);
   ctx.seen.add(rel);
+  if (!ctx.seenReal.has(realOrSelf(norm))) ctx.seenReal.set(realOrSelf(norm), rel);
   const out: Omit<Block, "id" | "tokens">[] = [
     {
       kind,
@@ -381,7 +427,9 @@ export function resolveStack(
     depthLimit: config.resolve.importDepthLimit,
     notes,
     seen: new Set<string>(),
+    seenReal: new Map<string, string>(),
   };
+  const unlinkedAgentsCopies: UnlinkedAgentsCopy[] = [];
 
   const entryIsFile = isFile(entryPathAbs);
   const entryIsMemoryFile =
@@ -402,7 +450,14 @@ export function resolveStack(
     notes.push(
       "single-file mode: ancestor walk, rules, and skill index are not resolved",
     );
-    return { mode: "single-file", entryPosix, blocks, settings, notes };
+    return {
+      mode: "single-file",
+      entryPosix,
+      blocks,
+      settings,
+      notes,
+      unlinkedAgentsCopies,
+    };
   }
 
   const excludes = settings.claudeMdExcludes;
@@ -423,6 +478,16 @@ export function resolveStack(
         );
         continue;
       }
+
+      // Claude Code reads CLAUDE.md, not AGENTS.md. A bare AGENTS.md costs a
+      // Claude Code session nothing. It enters the stack only when CLAUDE.md
+      // @-imports it (the ctx.seen check above already caught that) or the two
+      // are the same file on disk (a CLAUDE.md -> AGENTS.md symlink).
+      if (name === "AGENTS.md") {
+        classifyAgentsMd(dir, abs, rel, repoRoot, ctx, unlinkedAgentsCopies);
+        continue;
+      }
+
       memoryBlocks.push(
         ...resolveFileBlocks(abs, "memory", 0, undefined, new Set(), ctx),
       );
@@ -445,5 +510,73 @@ export function resolveStack(
     ...scoped,
     ...(skillIndex ? [skillIndex] : []),
   ];
-  return { mode: "stack", entryPosix, blocks, settings, notes };
+  return {
+    mode: "stack",
+    entryPosix,
+    blocks,
+    settings,
+    notes,
+    unlinkedAgentsCopies,
+  };
+}
+
+/**
+ * Decide what a directory's AGENTS.md means for the resolved stack, given that
+ * it was not already pulled in as an `@`-import. Never adds a block — a bare
+ * AGENTS.md is not stack cost — but records a note, and an `unlinkedAgentsCopy`
+ * when it is a separate byte-identical twin of the sibling CLAUDE.md.
+ */
+function classifyAgentsMd(
+  dir: string,
+  agentsAbs: string,
+  agentsRel: string,
+  repoRoot: string,
+  ctx: ImportCtx,
+  out: UnlinkedAgentsCopy[],
+): void {
+  // Same underlying file as something already loaded — the common
+  // `CLAUDE.md -> AGENTS.md` symlink, or the reverse. Counted once already.
+  const real = realOrSelf(agentsAbs);
+  const loadedAs = ctx.seenReal.get(real);
+  if (loadedAs) {
+    ctx.notes.push(
+      `${agentsRel} is the same file as ${loadedAs} (symlink); Claude Code loads it once, as ${loadedAs}`,
+    );
+    return;
+  }
+
+  const claudeAbs = join(dir, "CLAUDE.md");
+  const claudeRel = relPosix(repoRoot, claudeAbs);
+
+  if (!isFile(claudeAbs)) {
+    ctx.notes.push(
+      `${agentsRel} present but not loaded: Claude Code reads CLAUDE.md, and this directory has none, so no project instructions load here`,
+    );
+    return;
+  }
+  if (!ctx.seen.has(claudeRel)) {
+    // CLAUDE.md exists but was excluded or otherwise not loaded; nothing to
+    // compare the AGENTS.md against.
+    ctx.notes.push(
+      `${agentsRel} present but not loaded by Claude Code (it reads ${claudeRel})`,
+    );
+    return;
+  }
+
+  const agentsText = readFileSync(agentsAbs, "utf8");
+  const claudeText = readFileSync(claudeAbs, "utf8");
+  if (normalizeForCompare(agentsText) === normalizeForCompare(claudeText)) {
+    ctx.notes.push(
+      `${agentsRel} present but not loaded: Claude Code reads ${claudeRel}, not AGENTS.md, and the two are byte-identical here`,
+    );
+    out.push({
+      claudeMd: claudeRel,
+      agentsMd: agentsRel,
+      lines: Math.max(1, countLines(claudeText)),
+    });
+  } else {
+    ctx.notes.push(
+      `${agentsRel} present but not loaded by Claude Code (it reads ${claudeRel}); the two files differ`,
+    );
+  }
 }

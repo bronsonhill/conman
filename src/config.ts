@@ -36,6 +36,7 @@ export const DEFAULT_CONFIG: Config = {
   gate: {
     "over-budget": "error",
     duplication: "error",
+    "unlinked-copy": "warn",
     "value-conflict": "error",
     "vehicle-fit": "warn",
   },

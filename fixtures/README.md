@@ -69,7 +69,8 @@ against the new tree, and re-run the fetch.
 | path-scoped `.claude/rules/`        | `motrix`, `ack-nestjs-boilerplate`, `cockroach`, `posthog` |
 | large / nested skills directory     | `ruflo`, `cockroach`, `firstmate` |
 | `settings.json` resolution keys     | `ack-nestjs-boilerplate` (`claudeMdExcludes`), `ruflo` (`skillListingBudgetFraction`) |
-| byte-identical parent/child dup     | `posthog` (root and `common/` `CLAUDE.md` == `AGENTS.md`), `lila` (root pair) |
+| symlinked `CLAUDE.md` -> `AGENTS.md` (counted once, no finding) | `posthog` (~40 dirs), `lila` (root) |
+| whole-stack / parent-child block dup | (hand-built `test/fixtures/monorepo`) |
 | direct value conflict               | `posthog` (drifted `CLAUDE.md` / `AGENTS.md` sibling pairs) |
 | plainly overgrown stack             | `ruflo`, `posthog` |
 | scale: large tree, many `conman map` entry points | `lila` (~16.7k files, 765 dirs, 85 SBT modules + 42 UI packages) |

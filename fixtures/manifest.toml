@@ -117,15 +117,16 @@ entry_points = [
   "products/customer_analytics/frontend/components/Accounts",
 ]
 notes = """
-Overgrown monorepo. CLAUDE.md and AGENTS.md exist as a pair in ~20 directories;
-at the pinned SHA the root pair is byte-identical (42408 bytes each) and the
-common/ pair is byte-identical (1739 bytes each), so this is the fixture for
-byte-identical parent/child (and sibling) block duplication.
+Overgrown monorepo. CLAUDE.md and AGENTS.md exist as a pair in ~40 directories,
+and in every one CLAUDE.md is a symlink to its sibling AGENTS.md (the root
+AGENTS.md is 42408 bytes; common/ is 1739). So the pair is one file on disk, not
+a duplicated copy: the resolver counts it once and raises no finding. This is the
+fixture that proves conman does not flag the symlinked multi-tool layout, and
+that it does not double-count a symlinked CLAUDE.md/AGENTS.md into the stack.
 Nesting runs 6 levels deep
 (products/customer_analytics/frontend/components/Accounts/). 13 .claude/rules/.
 .claude/settings.json is hooks + plugins, no resolution keys. Many entry points
-for `conman map`. Best candidate for a direct value conflict between a CLAUDE.md
-and its sibling AGENTS.md where the two have drifted.
+for `conman map`, all large enough to fail on over-budget.
 """
 
 [[fixture]]
@@ -156,8 +157,8 @@ Scale stress test: ~16.7k files, 765 directories, 85 SBT modules under modules/
 and 42 UI packages under ui/, so `conman map` discovers a large number of entry
 points that all inherit the same root stack. The stack itself is shallow: a
 root CLAUDE.md and AGENTS.md only, no .claude/ directory, no imports, no rules,
-no skills. The two root files are byte-identical (6387 bytes each), a second
-byte-identical sibling-pair duplication case alongside posthog. Exercises
-discovery and per-entry resolution across a large tree, and duplication
-detection at the root.
+no skills. At the pinned SHA the root CLAUDE.md is a symlink to AGENTS.md (6387
+bytes), so like posthog it is one file counted once, with no finding. Exercises
+discovery and per-entry resolution across a large tree with a symlinked memory
+file at the root.
 """

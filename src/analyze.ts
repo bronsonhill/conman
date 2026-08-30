@@ -33,7 +33,12 @@ export function analyzeEntry(
   const blocks = costBlocks(resolved.blocks, tok);
   const totals = computeTotals(blocks);
   const budget = computeBudget(totals, opts.config);
-  const findings = runFindings(blocks, opts.config, tok);
+  const findings = runFindings(
+    blocks,
+    opts.config,
+    tok,
+    resolved.unlinkedAgentsCopies,
+  );
 
   const analysis: Analysis = {
     modelVersion: MODEL_VERSION,

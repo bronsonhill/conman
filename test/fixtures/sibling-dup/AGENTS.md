@@ -1,9 +1,10 @@
 # Sibling duplication fixture
 
-This directory ships a CLAUDE.md and an AGENTS.md that are byte-for-byte the
-same file. Neither is an ancestor of the other and neither imports the other, so
-the relationship is `same-stack`. conman should report one rolled-up whole-file
-duplication finding, not one finding per shared paragraph.
+This directory ships a CLAUDE.md and an AGENTS.md that are two separate files
+with byte-for-byte the same content. Neither is a symlink and neither @-imports
+the other. Claude Code loads CLAUDE.md and never opens AGENTS.md, so this is not
+a token cost, but the two hand-maintained copies drift. conman should raise one
+`unlinked-copy` finding at warn severity and no duplication finding.
 
 ## Build and test
 

@@ -51,25 +51,24 @@ test("--fix dedupes the child block, sorts skill keys, and is idempotent", () =>
   }
 });
 
-test("--fix leaves a same-stack whole-file duplicate untouched", () => {
-  // findings-only: removing a byte-identical sibling means deleting a file or
-  // writing a pointer, which --fix does not do.
+test("--fix leaves an unlinked CLAUDE.md/AGENTS.md copy untouched", () => {
+  // findings-only: linking the pair means a symlink or an @-import pointer,
+  // which is a change of substance --fix does not make.
   const root = staged("sibling-dup");
   try {
     const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
     assert.ok(
-      analysis.findings.some(
-        (f) => f.type === "duplication" && f.detail?.["relation"] === "same-stack",
-      ),
-      "the fixture does raise a same-stack duplication finding",
+      analysis.findings.some((f) => f.type === "unlinked-copy"),
+      "the fixture raises an unlinked-copy finding",
     );
     const fixes = computeFixes(root, analysis);
-    assert.deepEqual(fixes.changes, [], "no fix is proposed for the same-stack duplicate");
+    assert.deepEqual(fixes.changes, [], "no fix is proposed for the unlinked copy");
 
-    const before = readFileSync(join(root, "AGENTS.md"), "utf8");
+    const beforeA = readFileSync(join(root, "AGENTS.md"), "utf8");
+    const beforeC = readFileSync(join(root, "CLAUDE.md"), "utf8");
     applyFixes(root, fixes);
-    const after = readFileSync(join(root, "AGENTS.md"), "utf8");
-    assert.equal(after, before, "AGENTS.md is byte-for-byte unchanged");
+    assert.equal(readFileSync(join(root, "AGENTS.md"), "utf8"), beforeA);
+    assert.equal(readFileSync(join(root, "CLAUDE.md"), "utf8"), beforeC);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
