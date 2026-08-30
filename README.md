@@ -241,7 +241,10 @@ default comes from).
     "duplication": "error",
     "value-conflict": "error",
     "vehicle-fit": "warn",
-    "frontmatter": "error"
+    "frontmatter": "error",
+    "lint-duplication": "warn",
+    "stale-boilerplate": "warn",
+    "dead-reference": "error"
   },
   "resolve": { "repoBoundary": true, "importDepthLimit": 5, "skillListingBudget": null },
   "ignore": ["**/node_modules/**"]
@@ -259,6 +262,21 @@ silently loads always-on or never matches; a skill missing `description`, a
 bare-string `paths`, and other still-resolving cases are `warn`). `"error"` lets
 both through, `"warn"` caps every sub-case at warn, `"off"` disables it.
 `MODEL.md` lists the sub-cases.
+
+Three more finding types trim context that pays no rent:
+
+- **lint-duplication** (`warn`) — a context file restates a rule a linter or
+  formatter config in the repo already enforces (`.prettierrc`, `.eslintrc*`,
+  `biome.json`, `pyproject.toml` `[tool.ruff]` / `[tool.black]`). "Use 2-space
+  indent" next to a `.prettierrc` with `tabWidth: 2` is budget the tooling makes
+  redundant. The matcher is narrow: known keys, conservative phrasings.
+- **stale-boilerplate** (`warn`) — a stock sentence Claude Code's `/init` writes
+  into a fresh `CLAUDE.md`, still there unmodified (the "This file provides
+  guidance to Claude Code…" header and close variants).
+- **dead-reference** — a pointer that does not resolve on disk: a missing
+  `@`-import (`error`, since Claude Code drops it from the stack with no
+  warning), or a prose path or `npm run <script>` name with nothing behind it
+  (`warn`). `gate.dead-reference` is a ceiling like `gate.frontmatter`.
 
 ## CI
 

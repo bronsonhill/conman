@@ -44,6 +44,13 @@ export const DEFAULT_CONFIG: Config = {
     // "error" lets both through, "warn" caps every sub-case at warn, "off"
     // disables the check.
     frontmatter: "error",
+    "lint-duplication": "warn",
+    "stale-boilerplate": "warn",
+    // Ceiling for the dead-reference finding, which assigns per sub-case:
+    // "error" for a dead `@`-import (silently dropped from the resolved stack),
+    // "warn" for a dead prose path or script name. "warn" caps the import case
+    // at warn; "off" disables the check.
+    "dead-reference": "error",
   },
   resolve: {
     repoBoundary: true,

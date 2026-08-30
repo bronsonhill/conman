@@ -112,6 +112,22 @@ const CASES = [
     name: "trim-monorepo-noop",
     args: [`${MONO}/services/api`, "--repo-root", MONO, "--trim"],
   },
+  {
+    name: "analyze-lint-dup",
+    args: ["test/fixtures/lint-dup", "--repo-root", "test/fixtures/lint-dup"],
+  },
+  {
+    name: "analyze-stale-init",
+    args: ["test/fixtures/stale-init", "--repo-root", "test/fixtures/stale-init"],
+  },
+  {
+    name: "analyze-dead-ref",
+    args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref"],
+  },
+  {
+    name: "analyze-dead-ref-json",
+    args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref", "--json"],
+  },
 ];
 
 function normalize(s) {

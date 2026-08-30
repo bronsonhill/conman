@@ -1,0 +1,100 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 8,
+      "lineStart": 1,
+      "source": "CLAUDE.md",
+      "tokens": 65,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -1735,
+    "effective": 1800,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 65,
+    "total": 2000
+  },
+  "configSource": "conman.json",
+  "entry": ".",
+  "findings": [
+    {
+      "detail": {
+        "ref": "./missing-setup.md",
+        "subcase": "dead-import"
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 5,
+          "lineStart": 5
+        }
+      ],
+      "message": "`@./missing-setup.md` in CLAUDE.md does not resolve on disk; Claude Code silently drops the import from the resolved stack",
+      "severity": "error",
+      "type": "dead-reference"
+    },
+    {
+      "detail": {
+        "ref": "docs/architecture.md",
+        "subcase": "dead-path"
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 6,
+          "lineStart": 6
+        }
+      ],
+      "message": "referenced path `docs/architecture.md` does not exist in the repo",
+      "severity": "warn",
+      "type": "dead-reference"
+    },
+    {
+      "detail": {
+        "ref": "lint",
+        "subcase": "dead-script"
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 7,
+          "lineStart": 7
+        }
+      ],
+      "message": "`npm run lint` names a script with no matching entry in package.json",
+      "severity": "warn",
+      "type": "dead-reference"
+    }
+  ],
+  "mode": "stack",
+  "modelVersion": "0.2",
+  "notes": [
+    "unresolved @-import \"./missing-setup.md\" in CLAUDE.md:5"
+  ],
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
+  "result": {
+    "pass": false,
+    "reasons": [
+      "1 dead-reference finding at error severity"
+    ]
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      "CLAUDE.md": 65
+    },
+    "skillIndexTokens": 0,
+    "stackTokens": 65
+  }
+}

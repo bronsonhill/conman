@@ -7,6 +7,9 @@ import { findFrontmatterIssues } from "./frontmatter.js";
 import { findUnlinkedCopies } from "./unlinkedCopy.js";
 import { findValueConflicts } from "./valueConflict.js";
 import { findVehicleFit } from "./vehicleFit.js";
+import { findLintDuplication } from "./lintDuplication.js";
+import { findStaleBoilerplate } from "./staleBoilerplate.js";
+import { findDeadReferences } from "./deadReference.js";
 
 const TYPE_ORDER: Record<Finding["type"], number> = {
   duplication: 0,
@@ -14,6 +17,9 @@ const TYPE_ORDER: Record<Finding["type"], number> = {
   "value-conflict": 2,
   "vehicle-fit": 3,
   frontmatter: 4,
+  "lint-duplication": 5,
+  "stale-boilerplate": 6,
+  "dead-reference": 7,
 };
 const SEV_ORDER: Record<string, number> = { error: 0, warn: 1, off: 2 };
 
@@ -23,6 +29,7 @@ export function runFindings(
   tok: Tokenizer,
   unlinkedAgentsCopies: UnlinkedAgentsCopy[] = [],
   frontmatterSubjects: FrontmatterSubject[] = [],
+  repoRoot = "",
 ): Finding[] {
   const all = [
     ...findDuplication(blocks, config, tok),
@@ -30,6 +37,9 @@ export function runFindings(
     ...findValueConflicts(blocks, config, tok),
     ...findVehicleFit(blocks, config, tok),
     ...findFrontmatterIssues(frontmatterSubjects, config),
+    ...findLintDuplication(blocks, config, repoRoot),
+    ...findStaleBoilerplate(blocks, config),
+    ...findDeadReferences(blocks, config, repoRoot),
   ];
   all.sort(
     (a, b) =>

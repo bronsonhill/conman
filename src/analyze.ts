@@ -39,6 +39,7 @@ export function analyzeEntry(
     tok,
     resolved.unlinkedAgentsCopies,
     resolved.frontmatterSubjects,
+    opts.repoRoot,
   );
 
   const analysis: Analysis = {

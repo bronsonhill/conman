@@ -217,6 +217,43 @@ as it formalizes the settings surface; a change here is a model-version change.
   raw text so it also covers a path-scoped rule that did not match the entry.
   `--fix` does not touch frontmatter validity — a malformed scope key is a
   change of meaning to repair.
+- **Lint duplication** — an always-loaded context file (`memory` / `import` /
+  rule) restates a rule that a linter or formatter config at the repo root
+  already enforces mechanically. Configs read: `.prettierrc*` (JSON/YAML, and
+  `package.json#prettier`), `.eslintrc*` (JSON/YAML, and
+  `package.json#eslintConfig`), `biome.json(c)`, and `pyproject.toml`
+  `[tool.ruff*]` / `[tool.black]` (`line-length`, `indent-width`, scanned
+  without a full TOML parse). JS config files are skipped — reading them means
+  running them. The matcher recognises a fixed set of keys (indent style/width,
+  line width, `semi`, quote style, `no-console`, trailing comma) and a short
+  list of conservative prose phrasings per key, matched on rule intent. One
+  finding per (file, rule), at **warn** (`config.gate["lint-duplication"]`;
+  `"off"` disables). Numbers must match: "100-column limit" only collides with a
+  config that sets 100.
+- **Stale boilerplate** — a sentence from Claude Code's `/init` template still
+  sitting unmodified in a `memory` file. The match set is a small curated list
+  of known `/init` sentences (currently the "This file provides guidance to
+  Claude Code (claude.ai/code)…" header and two near-verbatim variants),
+  compared with whitespace collapsed and case folded. One finding per file, at
+  **warn** (`config.gate["stale-boilerplate"]`; `"off"` disables).
+- **Dead reference** — a pointer in a depth-0 block (ancestor memory file or
+  `.claude/rules` entry) that does not resolve on disk. Sub-cases:
+  - `dead-import` (**error**) — an `@`-import whose target file is missing.
+    Claude Code drops it from the resolved stack silently, so content the author
+    expected never loads. Only path-shaped tokens (`@x/y`, `@x.md`) count; a
+    bare `@handle` is treated as prose.
+  - `dead-path` (**warn**) — a repo-relative path named inside backticks
+    (`` `docs/architecture.md` ``) that does not exist. Flagged only when the
+    path has a file extension, no globs or `..`, and its parent directory
+    already exists and holds a real (non-dotfile) file — a reference into a
+    tree that has not been created yet is not guessed at.
+  - `dead-script` (**warn**) — `npm|pnpm|yarn run <name>` with no matching key
+    in the repo-root `package.json` `scripts`. Skipped when there is no
+    `package.json` or it has no `scripts`.
+
+  `config.gate["dead-reference"]` is a **ceiling** like `gate.frontmatter`:
+  `"warn"` caps the import case at warn, `"off"` disables the check. This is a
+  read-only lint; `--fix` does not touch references.
 
 ## Default budget numbers, and why
 

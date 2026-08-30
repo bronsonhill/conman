@@ -1,0 +1,36 @@
+# exit: 0
+conman VERSION  model 0.2  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source      lines         tokens
+  b1   memory       CLAUDE.md   1-8               65
+  --------------------------------------------------
+  total                                           65
+
+BUDGET
+  budget          2000
+  safety margin   10%   ->  effective 1800
+  stack total     65
+  delta           -1735  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (1 error, 2 warn)
+  error  dead-reference
+         CLAUDE.md:5-5
+         `@./missing-setup.md` in CLAUDE.md does not resolve on disk; Claude Code silently drops the import from the resolved stack
+  warn   dead-reference
+         CLAUDE.md:6-6
+         referenced path `docs/architecture.md` does not exist in the repo
+  warn   dead-reference
+         CLAUDE.md:7-7
+         `npm run lint` names a script with no matching entry in package.json
+
+NOTES
+  - unresolved @-import "./missing-setup.md" in CLAUDE.md:5
+
+RESULT  fail
+  - 1 dead-reference finding at error severity

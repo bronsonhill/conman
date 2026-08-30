@@ -207,6 +207,120 @@ test("monorepo parent/child duplication is tagged relation: parent-child", () =>
   assert.ok(!dup!.detail?.["wholeFileDuplicate"], "a partial overlap, not a whole-file rollup");
 });
 
+test("lint-dup: prose that restates .prettierrc keys raises one lint-duplication warn per rule", () => {
+  const root = fixture("lint-dup");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const ld = analysis.findings.filter((f) => f.type === "lint-duplication");
+  assert.deepEqual(
+    ld.map((f) => f.detail?.["rule"]).sort(),
+    ["indent-spaces", "line-length", "quotes-single", "semi-omit"],
+  );
+  assert.ok(ld.every((f) => f.severity === "warn"));
+  assert.ok(ld.every((f) => f.detail?.["config"] === ".prettierrc"));
+});
+
+test("lint-clean: config present, prose does not restate it, no lint-duplication finding", () => {
+  const root = fixture("lint-clean");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  assert.deepEqual(analysis.findings.filter((f) => f.type === "lint-duplication"), []);
+});
+
+test("lint-duplication: gate.lint-duplication = 'off' disables the check", () => {
+  const root = fixture("lint-dup");
+  const config = {
+    ...DEFAULT_CONFIG,
+    gate: { ...DEFAULT_CONFIG.gate, "lint-duplication": "off" as const },
+  };
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config });
+  assert.deepEqual(analysis.findings.filter((f) => f.type === "lint-duplication"), []);
+});
+
+test("stale-init: the unmodified /init header sentence is one stale-boilerplate warn", () => {
+  const root = fixture("stale-init");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const sb = analysis.findings.filter((f) => f.type === "stale-boilerplate");
+  assert.equal(sb.length, 1);
+  assert.equal(sb[0]!.severity, "warn");
+  assert.equal(sb[0]!.locations[0]!.file, "CLAUDE.md");
+  assert.equal(sb[0]!.locations[0]!.lineStart, 3);
+});
+
+test("stale-clean: a rewritten header raises no stale-boilerplate finding", () => {
+  const root = fixture("stale-clean");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  assert.deepEqual(analysis.findings.filter((f) => f.type === "stale-boilerplate"), []);
+});
+
+test("dead-ref: a missing @-import is error, a missing prose path and script are warn", () => {
+  const root = fixture("dead-ref");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const dr = analysis.findings.filter((f) => f.type === "dead-reference");
+  assert.deepEqual(
+    dr.map((f) => [f.detail?.["subcase"], f.severity]).sort(),
+    [
+      ["dead-import", "error"],
+      ["dead-path", "warn"],
+      ["dead-script", "warn"],
+    ],
+  );
+});
+
+test("dead-reference: gate.dead-reference = 'warn' caps the import case at warn", () => {
+  const root = fixture("dead-ref");
+  const config = {
+    ...DEFAULT_CONFIG,
+    gate: { ...DEFAULT_CONFIG.gate, "dead-reference": "warn" as const },
+  };
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config });
+  const dr = analysis.findings.filter((f) => f.type === "dead-reference");
+  assert.equal(dr.length, 3);
+  assert.ok(dr.every((f) => f.severity === "warn"));
+});
+
+test("dead-reference: gate.dead-reference = 'off' disables the check", () => {
+  const root = fixture("dead-ref");
+  const config = {
+    ...DEFAULT_CONFIG,
+    gate: { ...DEFAULT_CONFIG.gate, "dead-reference": "off" as const },
+  };
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config });
+  assert.deepEqual(analysis.findings.filter((f) => f.type === "dead-reference"), []);
+});
+
+test("dead-ref-clean: resolving imports, paths, and scripts raise no dead-reference finding", () => {
+  const root = fixture("dead-ref-clean");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  assert.deepEqual(analysis.findings.filter((f) => f.type === "dead-reference"), []);
+});
+
+test("no-regression: the pre-existing fixtures raise none of the three new finding types", () => {
+  const cases: [string, string[]][] = [
+    ["monorepo", ["services", "api"]],
+    ["monorepo", []],
+    ["rule-entry", []],
+    ["rule-scope-keys", ["app", "api"]],
+    ["clean", []],
+    ["imports", []],
+    ["frontmatter-broken", []],
+    ["single-file", ["notes.md"]],
+    ["sibling-dup", []],
+    ["sibling-clean", []],
+  ];
+  const NEW = new Set(["lint-duplication", "stale-boilerplate", "dead-reference"]);
+  for (const [name, sub] of cases) {
+    const root = fixture(name);
+    const { analysis } = analyzeEntry(fixture(name, ...sub), {
+      repoRoot: root,
+      config: DEFAULT_CONFIG,
+    });
+    assert.deepEqual(
+      analysis.findings.filter((f) => NEW.has(f.type)),
+      [],
+      `${name} should raise no new-type finding`,
+    );
+  }
+});
+
 test("analysis is deterministic byte-for-byte", () => {
   const root = fixture("monorepo");
   const a = analyzeEntry(fixture("monorepo", "services", "api"), {

@@ -1,0 +1,8 @@
+{
+  "name": "dead-ref-clean-fixture",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test"
+  }
+}
