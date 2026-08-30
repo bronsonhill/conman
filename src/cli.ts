@@ -6,7 +6,7 @@
 //
 // Flags: --json  --config <path>  --budget <n>  --tokenizer <name>
 //        --no-repo-boundary  --fix  --dry-run  --trim  --map (check only)
-//        --html <path> (map only)
+//        --html <path> (map, or check --map)
 //
 // Exit codes: 0 ok / gate pass, 1 gate fail, 2 usage or runtime error.
 
@@ -152,7 +152,9 @@ FLAGS
   --trim                 (analyze only) list provably-redundant whole files and a
                          git-apply-able diff that deletes them; writes nothing
   --map                  (check only) gate across all discovered entry points
-  --html <path>          (map only) write a self-contained HTML report to <path>
+  --html <path>          (map, or check --map) write a self-contained HTML report
+                         to <path>; with check --map the page leads with the gate
+                         verdict, effective budget, and failing entry points
 
 EXIT CODES
   0  ok / gate pass    1  gate fail    2  usage or runtime error
@@ -283,7 +285,10 @@ function main(): void {
     const result = runMap(root, config, args.tokenizer);
     if (args.html) {
       const dest = resolve(cwd, args.html);
-      writeFileSync(dest, renderMapHtml(result, tv, configSource));
+      writeFileSync(
+        dest,
+        renderMapHtml(result, tv, configSource, { gate: args.command === "check" }),
+      );
       process.stdout.write(`wrote ${args.html}\n`);
     } else {
       process.stdout.write(

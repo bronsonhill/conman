@@ -327,11 +327,63 @@ ${rows}
       <p>redundant tokens: ${esc(red.tokens)} (${esc(red.pctOfStack)}% of stack).</p>`;
 }
 
+/**
+ * The gate verdict block for `conman check --map --html`: pass/fail up front, the
+ * effective budget the gate applied, and every failing entry with its reasons.
+ * Mirrors the trailing RESULT section of `check --map` text output, hoisted to
+ * the top of the page so the verdict is the first thing read.
+ */
+function renderGateVerdict(result: MapResult): string {
+  const b = result.entries[0]?.analysis.budget;
+  const budgetRows = b
+    ? `      <dt>budget</dt><dd>${esc(b.total)}</dd>
+      <dt>safety margin</dt><dd>${esc(Math.round(b.safetyMargin * 100))}% &rarr; effective ${esc(
+        b.effective,
+      )}</dd>`
+    : "      <dt>budget</dt><dd>(no entry points)</dd>";
+
+  const failing = result.entries.filter((e) => !e.pass);
+  let failBlock: string;
+  if (failing.length === 0) {
+    failBlock = "    <p>No entry point fails the gate.</p>";
+  } else {
+    const items = failing
+      .map((e) => {
+        const idx = result.entries.indexOf(e);
+        const reasons = e.reasons
+          .map((r) => `          <li>${esc(r)}</li>`)
+          .join("\n");
+        return `        <li><a href="#entry-${idx}">${esc(e.entry)}</a>
+${reasons ? `        <ul class="reasons">\n${reasons}\n        </ul>` : "        <p>gate failure, no reason recorded</p>"}
+        </li>`;
+      })
+      .join("\n");
+    failBlock = `    <h3>Failing entry points (${failing.length})</h3>
+    <ul class="reasons">
+${items}
+    </ul>`;
+  }
+
+  return `  <section id="verdict">
+    <h2>Gate verdict</h2>
+    <p class="${result.pass ? "pass" : "fail"}" style="font-size:1.3rem">${
+      result.pass ? "PASS" : "FAIL"
+    }</p>
+    <dl class="kv">
+${budgetRows}
+      <dt>entry points checked</dt><dd>${esc(result.entries.length)}</dd>
+    </dl>
+${failBlock}
+  </section>`;
+}
+
 export function renderMapHtml(
   result: MapResult,
   toolVersion: string,
   configSource: string | null,
+  opts: { gate?: boolean } = {},
 ): string {
+  const gate = opts.gate === true;
   const toc = result.entries
     .map((e, i) => `<a href="#entry-${i}">${esc(e.entry)}</a>`)
     .join("\n        ");
@@ -340,12 +392,14 @@ export function renderMapHtml(
     .map((e, i) => renderEntrySection(e, i))
     .join("\n\n");
 
+  const title = gate ? "conman check --map report" : "conman map report";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>conman map report</title>
+<title>${title}</title>
 <style>
 ${STYLE}
 </style>
@@ -353,7 +407,7 @@ ${STYLE}
 <body>
 <main>
   <header>
-    <h1>conman map report</h1>
+    <h1>${title}</h1>
     <dl class="kv">
       <dt>tool</dt><dd>conman ${esc(toolVersion)}</dd>
       <dt>model</dt><dd>${esc(MODEL_VERSION)}</dd>
@@ -365,7 +419,7 @@ ${STYLE}
     </dl>
   </header>
 
-  <section id="summary">
+${gate ? renderGateVerdict(result) + "\n" : ""}  <section id="summary">
     <h2>Summary</h2>
     <p class="toc mono">
         ${toc || "(no entry points)"}
