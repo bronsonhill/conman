@@ -1,0 +1,28 @@
+# exit: 0
+conman VERSION - explain duplication
+
+DUPLICATED BLOCK
+
+A run of text (a heading- or blank-line-delimited segment, or a whole fenced
+code block) whose trimmed bytes are identical in two or more files of the
+resolved stack. Every copy past the first is loaded into the same session
+context, so it is paid for on every request with no added information. When
+every qualifying segment of one file also appears in another, the whole file is
+flagged as one duplicate rather than segment by segment.
+
+RESEARCH
+  - Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026),
+    https://arxiv.org/abs/2606.15828 — a scan of 100 popular repos found lint
+    rules the linter already enforces in 62% of files and general context bloat
+    in 42%.
+  - Evaluating AGENTS.md (Gloaguen et al., Feb 2026),
+    https://arxiv.org/abs/2602.11988 — providing a context file raised inference
+    cost by more than 20% on average; the authors recommend keeping
+    human-written context minimal.
+
+REMEDIATION
+  Keep one copy at the broadest scope that needs it and delete the rest, or
+  replace a child copy with an `@`-import of the parent. `conman --fix` removes
+  byte-identical parent/child blocks mechanically; whole-file and same-stack
+  duplicates it leaves for you, since removing them means deleting a file or
+  writing a pointer.

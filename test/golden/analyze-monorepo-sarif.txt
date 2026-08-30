@@ -1,0 +1,152 @@
+# exit: 0
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "VERSION",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "conman",
+          "informationUri": "https://github.com/bronsonhill/conman",
+          "version": "VERSION",
+          "rules": [
+            {
+              "id": "duplication",
+              "name": "duplication",
+              "shortDescription": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack."
+              },
+              "fullDescription": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack. Every copy past the first is loaded into the same session context, so it is paid for on every request with no added information. When every qualifying segment of one file also appears in another, the whole file is flagged as one duplicate rather than segment by segment."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack. Every copy past the first is loaded into the same session context, so it is paid for on every request with no added information. When every qualifying segment of one file also appears in another, the whole file is flagged as one duplicate rather than segment by segment.\n\nRemediation: Keep one copy at the broadest scope that needs it and delete the rest, or replace a child copy with an `@`-import of the parent. `conman --fix` removes byte-identical parent/child blocks mechanically; whole-file and same-stack duplicates it leaves for you, since removing them means deleting a file or writing a pointer."
+              }
+            },
+            {
+              "id": "frontmatter",
+              "name": "frontmatter",
+              "shortDescription": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type."
+              },
+              "fullDescription": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type. Scope is exactly the files whose frontmatter changes what resolves: a `.claude/rules` entry (its `paths` scope key) and a skill SKILL.md (`name` / `description`). An unreadable `paths` scope silently makes a rule load always-on or never match; a skill missing `name` or `description` weakens or breaks its startup listing."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type. Scope is exactly the files whose frontmatter changes what resolves: a `.claude/rules` entry (its `paths` scope key) and a skill SKILL.md (`name` / `description`). An unreadable `paths` scope silently makes a rule load always-on or never match; a skill missing `name` or `description` weakens or breaks its startup listing.\n\nRemediation: Fix the YAML: give `paths` a list of strings, close the `---` fence, and give each skill a usable `name` and `description`. `conman --fix` does not repair frontmatter validity, since a malformed scope key is a change of meaning."
+              }
+            },
+            {
+              "id": "unlinked-copy",
+              "name": "unlinked-copy",
+              "shortDescription": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import."
+              },
+              "fullDescription": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import. Claude Code loads only the CLAUDE.md, so this costs no extra tokens, but the two hand-maintained copies drift apart over time and a reader cannot tell which one is authoritative."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import. Claude Code loads only the CLAUDE.md, so this costs no extra tokens, but the two hand-maintained copies drift apart over time and a reader cannot tell which one is authoritative.\n\nRemediation: Link the two files with a symlink, or make CLAUDE.md a one-line `@AGENTS.md` import so a single file is the source of truth."
+              }
+            },
+            {
+              "id": "value-conflict",
+              "name": "value-conflict",
+              "shortDescription": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack."
+              },
+              "fullDescription": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack. The agent sees both and has no rule for which wins, so behaviour depends on load order and attention rather than intent."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack. The agent sees both and has no rule for which wins, so behaviour depends on load order and attention rather than intent.\n\nRemediation: Decide the real value, set it once at the broadest scope that applies, and remove the other binding. If both are genuinely correct in their own scope, make the scope explicit in the surrounding text so the narrower one clearly overrides."
+              }
+            },
+            {
+              "id": "vehicle-fit",
+              "name": "vehicle-fit",
+              "shortDescription": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens."
+              },
+              "fullDescription": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens. This check is structural only — it keys off size and shape, never meaning — and flags content large enough that it probably belongs in a skill, a linked doc, or a path-scoped rule rather than in every session's base context."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens. This check is structural only — it keys off size and shape, never meaning — and flags content large enough that it probably belongs in a skill, a linked doc, or a path-scoped rule rather than in every session's base context.\n\nRemediation: Move the bulk into a skill or a separate document referenced on demand, or scope it to the paths that need it with a `.claude/rules` entry. Leave only the part every session needs in always-loaded memory. This advice is structural; conman does not judge the content itself."
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "duplication",
+          "level": "error",
+          "message": {
+            "text": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens, relation: parent-child)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 7,
+                  "endLine": 8
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "services/api/CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 7,
+                  "endLine": 8
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "value-conflict",
+          "level": "error",
+          "message": {
+            "text": "key \"node version\" is set to different values across the stack: \"20\" vs \"22\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 3,
+                  "endLine": 3
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "services/api/CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 3,
+                  "endLine": 3
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -74,11 +74,13 @@ npm run build
 conman <entrypoint>          analyze one entry point (a directory, or a file for scoped checks)
 conman map [root]            analyze every entry point discovered in the repo
 conman check [<entrypoint>]  analyze, then exit non-zero over budget or on a gated finding
+conman explain [<id>]        describe a finding type: explanation, research, remediation
 ```
 
-Flags: `--json`, `--config <path>`, `--budget <n>`, `--tokenizer <name>`,
-`--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
-`--map` (with `check`), and `--html <path>` (with `map` or `check --map`).
+Flags: `--json`, `--format <human|json|sarif>`, `--config <path>`, `--budget <n>`,
+`--tokenizer <name>`, `--no-repo-boundary`, `--repo-root <path>`, `--fix`,
+`--dry-run`, `--trim`, `--map` (with `check`), and `--html <path>` (with `map` or
+`check --map`).
 
 A single-entry run prints the load order with per-block token counts, the total
 against the budget, then the findings. Every finding names a `file:line`, a token
@@ -135,6 +137,33 @@ applied, and every failing entry point with its reasons (over budget,
 duplication error, value-conflict error), then the same per-entry detail. The
 process exit code still follows the gate (0 pass, 1 fail). Plain `map --html`
 stays the inventory view with no verdict framing.
+
+## SARIF output
+
+`conman <entrypoint> --format sarif` emits the findings as a SARIF 2.1.0
+document. Upload it with `github/codeql-action/upload-sarif` and the findings
+land in the repository's Security → Code scanning tab, one alert per finding,
+annotated on the context file and line it originates from. Each finding type is
+registered as a SARIF rule with a short description; `error` findings map to
+SARIF `error`, `warn` to `warning`. The document carries no timestamps and only
+repo-relative URIs, so it is deterministic for a given tree. Only single-entry
+runs support it; `map` does not.
+
+```
+conman check src/renderer --format sarif > conman.sarif
+```
+
+## `conman explain`
+
+`conman explain <finding-id>` prints the one-paragraph explanation for a finding
+type, the research citations behind that class of problem, and how to fix it.
+`conman explain` with no argument lists the ids (`duplication`, `unlinked-copy`,
+`value-conflict`, `vehicle-fit`, `frontmatter`). The same reference text feeds
+the SARIF rule descriptions.
+
+```
+$ conman explain value-conflict
+```
 
 ## `--fix`
 
@@ -215,6 +244,22 @@ both through, `"warn"` caps every sub-case at warn, `"off"` disables it.
 `.github/workflows/ci.yml` builds, runs the tests, then runs `conman check --map`
 against this repo. Point the same step at your own repo and context growth fails
 the build on the PR that introduced it, instead of being discovered months later.
+
+### pre-commit
+
+conman ships a [pre-commit](https://pre-commit.com) hook. Add two entries to your
+`.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/bronsonhill/conman
+  rev: v0.1.0
+  hooks:
+    - id: conman
+```
+
+The hook runs `conman check --map` over the whole repo whenever a `CLAUDE.md`,
+`AGENTS.md`, `.claude/` file, or `conman.json` is staged, and blocks the commit
+when an entry point is over budget or trips a gated finding.
 
 ## Deliberately out of scope for the MVP
 

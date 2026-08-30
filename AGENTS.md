@@ -24,8 +24,11 @@ No model or network in the analysis path.
   `fix`, `diff`, `config`, `tokenizer` around them. `trim` (`conman <entry>
   --trim`, delete-only Tier-1 advice over the whole-file duplication findings)
   reuses `parentFile` / `preferredKeeper` from `fix.ts` to pick which copy of a
-  byte-identical cluster to keep. `cli.ts` is arg-parse and
-  dispatch only. Every renderer is a pure formatter over `Analysis` / `MapResult`
+  byte-identical cluster to keep. `sarif` renders findings as SARIF 2.1.0
+  (`conman <entry> --format sarif`, single entry only); `explain` holds the
+  static per-finding-type reference table (`conman explain [<id>]`) that also
+  supplies the SARIF rule descriptions — keep its citations in sync with
+  README's "What the research says". `cli.ts` is arg-parse and dispatch only. Every renderer is a pure formatter over `Analysis` / `MapResult`
   and must stay deterministic: no `Date`, no absolute paths, sort before emit.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
   expected CLI output. `test/run-golden.js` diffs live output against golden;

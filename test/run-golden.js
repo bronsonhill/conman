@@ -26,6 +26,12 @@ const MONO = "test/fixtures/monorepo";
 const CASES = [
   { name: "analyze-monorepo", args: [`${MONO}/services/api`, "--repo-root", MONO] },
   { name: "analyze-monorepo-json", args: [`${MONO}/services/api`, "--repo-root", MONO, "--json"] },
+  {
+    name: "analyze-monorepo-sarif",
+    args: [`${MONO}/services/api`, "--repo-root", MONO, "--format", "sarif"],
+  },
+  { name: "explain-list", args: ["explain"] },
+  { name: "explain-duplication", args: ["explain", "duplication"] },
   { name: "map-monorepo", args: ["map", MONO, "--repo-root", MONO] },
   { name: "map-monorepo-json", args: ["map", MONO, "--repo-root", MONO, "--json"] },
   { name: "map-monorepo-html", args: ["map", MONO, "--repo-root", MONO], html: true },
@@ -109,7 +115,9 @@ const CASES = [
 ];
 
 function normalize(s) {
-  return s.replace(/conman \d+\.\d+\.\d+/g, "conman VERSION");
+  return s
+    .replace(/conman \d+\.\d+\.\d+/g, "conman VERSION")
+    .replace(/"version": "\d+\.\d+\.\d+"/g, '"version": "VERSION"');
 }
 
 function run(args) {
