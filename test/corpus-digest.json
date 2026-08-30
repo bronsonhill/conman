@@ -13,13 +13,13 @@
     },
     {
       "repo": "firstmate",
-      "entryPoints": 2,
-      "stackTokens": 37401,
+      "entryPoints": 1,
+      "stackTokens": 18299,
       "redundantTokens": 0,
-      "overBudgetEntryPoints": 2,
+      "overBudgetEntryPoints": 1,
       "valueConflictEntryPoints": 0,
       "findingsByType": {
-        "vehicle-fit": 11
+        "vehicle-fit": 5
       }
     },
     {
@@ -81,17 +81,17 @@
     },
     {
       "repo": "ruflo",
-      "entryPoints": 10,
-      "stackTokens": 242653,
-      "redundantTokens": 3376,
-      "overBudgetEntryPoints": 10,
-      "valueConflictEntryPoints": 4,
+      "entryPoints": 6,
+      "stackTokens": 143051,
+      "redundantTokens": 1688,
+      "overBudgetEntryPoints": 6,
+      "valueConflictEntryPoints": 2,
       "findingsByType": {
-        "dead-reference": 34,
-        "duplication": 60,
+        "dead-reference": 20,
+        "duplication": 30,
         "stale-boilerplate": 1,
-        "value-conflict": 20,
-        "vehicle-fit": 14
+        "value-conflict": 10,
+        "vehicle-fit": 8
       }
     },
     {
@@ -126,14 +126,14 @@
   ],
   "corpus": {
     "repoCount": 11,
-    "totalEntryPoints": 128,
-    "redundantTokenPct": 0.18,
-    "redundantTokens": 3376,
-    "stackTokens": 1831289,
-    "valueConflictEntryPoints": 4,
-    "valueConflictRatePct": 3.13,
-    "medianResolvedStackTokens": 19676,
-    "overBudgetEntryPoints": 66,
-    "overBudgetRatePct": 51.56
+    "totalEntryPoints": 123,
+    "redundantTokenPct": 0.1,
+    "redundantTokens": 1688,
+    "stackTokens": 1712585,
+    "valueConflictEntryPoints": 2,
+    "valueConflictRatePct": 1.63,
+    "medianResolvedStackTokens": 5472,
+    "overBudgetEntryPoints": 61,
+    "overBudgetRatePct": 49.59
   }
 }

@@ -8,9 +8,11 @@
 //   node scripts/corpus-digest.mjs                 # print digest JSON to stdout
 //   node scripts/corpus-digest.mjs --write <path>  # also write it to <path>
 //
-// Fixture SHAs are pinned, so for a given conman build the output is stable.
-// When findings logic changes on purpose, regenerate with
-// `npm run test:corpus:update` and commit the diff.
+// Fixture SHAs are pinned, so on a case-sensitive filesystem the output is
+// stable for a given conman build. Run it on Linux (CI does): macOS matches
+// lowercase `claude.md` / `agents.md` case-insensitively and over-discovers
+// entry points in a few fixtures. When findings logic changes on purpose,
+// regenerate from the CI `corpus-digest` artifact and commit the diff.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, openSync, closeSync, rmSync } from "node:fs";

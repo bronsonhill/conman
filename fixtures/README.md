@@ -72,8 +72,8 @@ against the new tree, and re-run the fetch.
 | `settings.json` resolution keys     | `ack-nestjs-boilerplate` (`claudeMdExcludes`), `ruflo` (`skillListingBudgetFraction`) |
 | hooks-only `settings.json` (no resolution keys) | `firstmate`, `posthog`, `vercel-ai` |
 | symlinked `CLAUDE.md` -> `AGENTS.md` (counted once, no finding) | `posthog` (~40 dirs), `lila` (root) |
-| whole-stack / parent-child block dup | `ruflo` (60 findings), (hand-built `test/fixtures/monorepo`) |
-| direct value conflict               | `ruflo` (`v3/` subtree, 4 entry points) |
+| whole-stack / parent-child block dup | `ruflo` (30 findings), (hand-built `test/fixtures/monorepo`) |
+| direct value conflict               | `ruflo` (`v3/` subtree, 2 entry points) |
 | plainly overgrown stack             | `ruflo`, `posthog` |
 | mid-size adopter, under budget, no findings (skew counterweight) | `inbox-zero`, `vercel-ai`, `humanlayer` |
 | scale: large tree, many `conman map` entry points | `lila` (~16.7k files, 765 dirs, 85 SBT modules + 42 UI packages) |
