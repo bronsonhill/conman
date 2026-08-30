@@ -4,7 +4,7 @@
 // and testable.
 
 import { existsSync, statSync } from "node:fs";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, relative, resolve, sep } from "node:path";
 
 export function findRepoRoot(startDir: string): string {
   let dir = resolve(startDir);
@@ -79,8 +79,4 @@ export function matchesAnyGlob(pathPosix: string, globs: string[]): boolean {
     const norm = g.replace(/^\.\//, "");
     return globToRegExp(norm).test(pathPosix) || globToRegExp(norm).test("/" + pathPosix);
   });
-}
-
-export function toAbs(base: string, p: string): string {
-  return isAbsolute(p) ? p : resolve(base, p);
 }

@@ -22,16 +22,9 @@ import type { Config } from "./config.js";
 import type { Tokenizer } from "./tokenizer.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
+import { MEMORY_NAMES, RULE_SCOPE_KEY, toStringArray } from "./claudeContext.js";
 
-const MEMORY_NAMES = ["CLAUDE.md", "AGENTS.md"];
 const FENCE = /^(\s*)(`{3,}|~{3,})/;
-
-/**
- * The one `.claude/rules/` frontmatter key Claude Code reads to path-scope a
- * rule. Confirmed against the docs and Claude Code's own parser; see MODEL.md.
- * `globs` / `alwaysApply` are Cursor `.mdc` keys and are not honored.
- */
-const RULE_SCOPE_KEY = "paths";
 
 /** Line count that does not overcount a trailing newline. */
 function countLines(text: string): number {
@@ -362,12 +355,6 @@ function collectRuleBlocks(
     }
   }
   return { always, scoped };
-}
-
-function toStringArray(v: unknown): string[] {
-  if (typeof v === "string") return v.trim() ? [v.trim()] : [];
-  if (Array.isArray(v)) return v.filter((x) => typeof x === "string").map((x) => (x as string).trim());
-  return [];
 }
 
 function buildSkillIndex(
