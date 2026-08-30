@@ -43,6 +43,14 @@ No model or network in the analysis path.
 - `npm test` — builds, then `node --test` over compiled unit tests and the
   golden runner.
 
+## Release
+
+- Published to npm as `@bronsonhill/conman` (the bare `conman` name is taken by
+  an unrelated hapi plugin). `publishConfig.access` is `public`; `prepublishOnly`
+  runs the build. `files` ships `dist/` minus `*.test.js`/`testutil.js`, plus
+  `README.md`, `MODEL.md`, `LICENSE`. Bump `version` here and in `CHANGELOG.md`,
+  then `npm publish` and tag `vX.Y.Z`.
+
 ## House rules
 
 - Determinism is the contract: same input → same bytes out. No `Date`, no
