@@ -3,8 +3,9 @@
 //   conman <entrypoint>          analyze one entry point (a dir, or a file for scoped checks)
 //   conman map [root]            discover and analyze every entry point in the repo
 //   conman check [<entrypoint>]  analyze + gate; non-zero exit over budget or on gated findings
+//   conman explain [<id>]        describe a finding type (explanation, research, fix)
 //
-// Flags: --json  --config <path>  --budget <n>  --tokenizer <name>
+// Flags: --json  --format <human|json|sarif>  --config <path>  --budget <n>  --tokenizer <name>
 //        --no-repo-boundary  --fix  --dry-run  --trim  --map (check only)
 //        --html <path> (map, or check --map)
 //
@@ -25,6 +26,8 @@ import { computeFixes, applyFixes } from "./fix.js";
 import { computeTrim, renderTrimHuman, renderTrimJson } from "./trim.js";
 import { unifiedDiff } from "./diff.js";
 import { evaluateGate } from "./gate.js";
+import { renderSarif } from "./sarif.js";
+import { renderExplain, renderExplainList } from "./explain.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -38,9 +41,10 @@ function toolVersion(): string {
 }
 
 interface Args {
-  command: "analyze" | "map" | "check";
+  command: "analyze" | "map" | "check" | "explain";
   target: string | null;
   json: boolean;
+  sarif: boolean;
   configPath?: string;
   budget?: number;
   tokenizer: string;
@@ -53,11 +57,34 @@ interface Args {
   repoRoot?: string;
 }
 
+function applyFormat(a: Args, value: string | undefined): void {
+  switch (value) {
+    case "human":
+      a.json = false;
+      a.sarif = false;
+      break;
+    case "json":
+      a.json = true;
+      a.sarif = false;
+      break;
+    case "sarif":
+      a.json = false;
+      a.sarif = true;
+      break;
+    default:
+      process.stderr.write(
+        `conman: --format expects human | json | sarif, got ${value ?? "(nothing)"}\n`,
+      );
+      process.exit(2);
+  }
+}
+
 function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
   const a: Args = {
     command: "analyze",
     target: null,
     json: false,
+    sarif: false,
     tokenizer: "claude-local",
     repoBoundary: true,
     fix: false,
@@ -77,6 +104,9 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         return { version: true };
       case "--json":
         a.json = true;
+        break;
+      case "--format":
+        applyFormat(a, argv[++i]);
         break;
       case "--fix":
         a.fix = true;
@@ -109,7 +139,8 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         a.tokenizer = argv[++i] ?? "claude-local";
         break;
       default:
-        if (t.startsWith("--budget=")) a.budget = Number(t.slice("--budget=".length));
+        if (t.startsWith("--format=")) applyFormat(a, t.slice("--format=".length));
+        else if (t.startsWith("--budget=")) a.budget = Number(t.slice("--budget=".length));
         else if (t.startsWith("--config=")) a.configPath = t.slice("--config=".length);
         else if (t.startsWith("--html=")) a.html = t.slice("--html=".length);
         else if (t.startsWith("--repo-root=")) a.repoRoot = t.slice("--repo-root=".length);
@@ -121,7 +152,11 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
     }
   }
 
-  if (positional[0] === "map" || positional[0] === "check") {
+  if (
+    positional[0] === "map" ||
+    positional[0] === "check" ||
+    positional[0] === "explain"
+  ) {
     a.command = positional[0];
     a.target = positional[1] ?? null;
   } else {
@@ -137,9 +172,12 @@ USAGE
   conman <entrypoint> [flags]      analyze one entry point
   conman map [root] [flags]        analyze every entry point (memory files + path-scoped rule targets)
   conman check [<entrypoint>]      analyze + gate on budget / findings
+  conman explain [<finding-id>]    describe a finding type, its research, its fix
 
 FLAGS
-  --json                 machine-readable output
+  --json                 machine-readable output (alias for --format json)
+  --format <fmt>         human (default) | json | sarif; sarif is SARIF 2.1.0
+                         for GitHub code scanning (single entry point only)
   --config <path>        config file (default: search up for conman.json)
   --budget <n>           override the total-token budget
   --tokenizer <name>     claude-local (default) | exact (unimplemented seam)
@@ -261,6 +299,23 @@ function main(): void {
     process.exit(2);
   }
 
+  if (args.command === "explain") {
+    if (!args.target) {
+      process.stdout.write(renderExplainList(toolVersion()));
+      return;
+    }
+    const text = renderExplain(args.target, toolVersion());
+    if (text === null) {
+      process.stderr.write(
+        `conman: no such finding type: ${args.target}\n` +
+          `run \`conman explain\` with no argument to list them\n`,
+      );
+      process.exit(2);
+    }
+    process.stdout.write(text);
+    return;
+  }
+
   const cwd = process.cwd();
   const rawTarget = args.target ? resolve(cwd, args.target) : cwd;
   const repoRoot = args.repoRoot
@@ -275,6 +330,11 @@ function main(): void {
   );
   const config = applyOverrides(baseConfig, args);
   const tv = toolVersion();
+
+  if (args.sarif && (args.command === "map" || args.map)) {
+    process.stderr.write("conman: --format sarif is not supported with map\n");
+    process.exit(2);
+  }
 
   if (args.command === "map" || (args.command === "check" && args.map)) {
     const root = args.target ? resolve(cwd, args.target) : repoRoot;
@@ -356,7 +416,13 @@ function main(): void {
     mode,
     toolVersion: tv,
   };
-  process.stdout.write(args.json ? renderJson(ctx) : renderHuman(ctx));
+  process.stdout.write(
+    args.sarif
+      ? renderSarif(analysis, tv)
+      : args.json
+        ? renderJson(ctx)
+        : renderHuman(ctx),
+  );
 
   if (args.command === "check") {
     const gate = evaluateGate(analysis, config);

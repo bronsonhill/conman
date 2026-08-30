@@ -1,0 +1,19 @@
+# pre-commit hook definition. A consumer repo adds this to its
+# .pre-commit-config.yaml:
+#
+#   - repo: https://github.com/bronsonhill/conman
+#     rev: v0.1.0
+#     hooks:
+#       - id: conman
+#
+# The hook runs `conman check --map` over the whole repo (not the staged file
+# list) and fails the commit when any entry point is over budget or trips a
+# gated finding.
+- id: conman
+  name: conman (Claude Code context stack lint)
+  description: Budget-gated check of the repo's resolved Claude Code context stack.
+  entry: conman check --map
+  language: node
+  pass_filenames: false
+  require_serial: true
+  files: '(^|/)(CLAUDE|AGENTS)\.md$|(^|/)\.claude/.*\.(md|ya?ml|json)$|(^|/)conman\.json$'

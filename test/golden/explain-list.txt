@@ -1,0 +1,10 @@
+# exit: 0
+conman VERSION - finding types
+
+  duplication     Duplicated block
+  frontmatter     Malformed rule / skill frontmatter
+  unlinked-copy   Unlinked CLAUDE.md / AGENTS.md copy
+  value-conflict  Direct value conflict
+  vehicle-fit     Oversized always-loaded block
+
+Run `conman explain <id>` for the full entry.
