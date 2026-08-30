@@ -77,6 +77,23 @@ testing. Full workflow: `fixtures/README.md`.
 repo. Keep `AGENTS.md`, `CLAUDE.md`, and any other context files under the budget
 in `conman.json`.
 
+## Releasing
+
+`@bronsonhill/conman` publishes to npm through npm trusted publishing (OIDC) —
+no token, no `npm login`. The `.github/workflows/release.yml` workflow does it:
+
+1. Bump `version` in `package.json` (and the matching `CHANGELOG.md` entry).
+2. Commit, then tag: `git tag vX.Y.Z`.
+3. `git push origin vX.Y.Z`. The pushed `v*` tag triggers `release.yml`, which
+   builds and runs `npm publish --access public` with an OIDC token.
+
+`workflow_dispatch` is also wired if you need to re-run a publish by hand.
+
+**One-time prerequisite (maintainer):** the npm side needs a trusted publisher
+configured on npmjs.com for the `@bronsonhill/conman` package — GitHub repo
+`bronsonhill/conman`, workflow `release.yml`. Until that's set, `npm publish`
+in the workflow fails with an auth error.
+
 ## Pull requests
 
 - One logical change per PR. Keep the diff scoped.

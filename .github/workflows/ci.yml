@@ -17,6 +17,9 @@ jobs:
       - run: npm run build
       - run: npm test
 
-      # conman is held to its own checks: gate this repo's context stack.
+      # conman is held to its own checks: gate this repo's context stack,
+      # dogfooding the published action rather than the local build.
       - name: conman self-check
-        run: node dist/cli.js check --map --repo-root .
+        uses: bronsonhill/conman-action@v1
+        with:
+          path: .
