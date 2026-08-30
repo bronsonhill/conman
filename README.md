@@ -52,7 +52,12 @@ hygiene are not.
 - **[Probe-and-Refine Tuning of Repository
   Guidance](https://arxiv.org/abs/2606.20512)** (Shepard & Albrecht, June 2026).
   A guidance file iteratively pruned against synthetic bug-fix probes beat running
-  with no guidance file on SWE-bench Verified, 33.0% resolved versus 25.5%.
+  with no guidance file on SWE-bench Verified, 33.0% resolved versus 25.5%. The
+  static knowledge base the pruning started from already scored 28.3%, so +2.8
+  points come from having a static file at all and the remaining +4.7 from
+  pruning it against outcome probes. That pruning is a model-in-the-loop process,
+  which `VISION.md` rules out of conman's path; the paper supports "pruned beats
+  static", not "mechanical dedupe beats static".
 
 conman targets the settled part: duplication, self-contradiction, and per-session
 token cost you can measure and budget before a session starts. Whether a leaner
