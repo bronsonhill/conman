@@ -11,7 +11,7 @@
 // Every operation is idempotent: a second `--fix` run produces no further change.
 
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import type { Analysis, Finding } from "./types.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, relPosix } from "./repo.js";
@@ -82,12 +82,25 @@ function isAncestorPath(a: string, b: string): boolean {
   return as.every((s, i) => s === bs[i]);
 }
 
+/**
+ * Deterministic keeper when two context files hold a byte-identical block and
+ * neither sits above the other in the load order (a CLAUDE.md/AGENTS.md pair in
+ * the same directory, most often). CLAUDE.md wins over AGENTS.md, and over
+ * anything else; failing that, the lexicographically first path. Shared with
+ * conman-trim-mode.
+ */
+export function preferredKeeper(files: string[]): string {
+  const byName = (name: string) =>
+    files.filter((f) => basename(f) === name).sort()[0];
+  return byName("CLAUDE.md") ?? byName("AGENTS.md") ?? [...files].sort()[0]!;
+}
+
 /** Pick the file to keep the shared block in. */
 function parentFile(files: string[]): string {
   for (const f of files) {
     if (files.every((g) => g === f || isAncestorPath(f, g))) return f;
   }
-  return [...files].sort()[0]!;
+  return preferredKeeper(files);
 }
 
 function applyDedupe(

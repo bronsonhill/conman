@@ -48,6 +48,10 @@ const CASES = [
     name: "fix-dryrun-monorepo",
     args: [`${MONO}/services/api`, "--repo-root", MONO, "--fix", "--dry-run"],
   },
+  {
+    name: "map-fix-dryrun-monorepo",
+    args: ["map", MONO, "--repo-root", MONO, "--fix", "--dry-run"],
+  },
 ];
 
 function normalize(s) {
