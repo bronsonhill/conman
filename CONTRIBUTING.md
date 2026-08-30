@@ -32,7 +32,7 @@ enforced by the golden tests. Concretely, in any code that reaches output:
 
 ## Goldens
 
-`test/golden/` holds expected CLI output; `test/run-golden.js` runs the built CLI
+`test/golden/` holds expected CLI output; `test/run-golden-*.js` run the built CLI
 against the synthetic fixtures in `test/fixtures/` and diffs stdout plus exit
 code.
 

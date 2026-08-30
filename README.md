@@ -362,7 +362,7 @@ npm test
 ```
 
 Unit tests sit next to the code (`src/*.test.ts`). Golden-output tests
-(`test/run-golden.js`) run the built CLI against synthetic fixtures under
+(`test/run-golden-*.js`) run the built CLI against synthetic fixtures under
 `test/fixtures/` and diff against `test/golden/`; `npm run test:update-golden`
 regenerates them. `npm test` needs no network.
 

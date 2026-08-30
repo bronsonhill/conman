@@ -39,7 +39,8 @@ best-effort non-Claude rulesets, and the `agent === "claude"` path is guaranteed
 byte-identical (early-return before any shared code). Every renderer is a pure formatter over `Analysis` / `MapResult`
   and must stay deterministic: no `Date`, no absolute paths, sort before emit.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
-  expected CLI output. `test/run-golden.js` diffs live output against golden;
+  expected CLI output. `test/run-golden-*.js` diff live output against golden (shared harness in
+  `test/golden-lib.js`);
   `npm run test:update-golden` regenerates.
 
 ## Build and test
