@@ -301,6 +301,7 @@ function findClaudeDirs(entryDir: string, repoRoot: string): string[] {
 function collectRuleBlocks(
   claudeDirs: string[],
   entryTargetPosix: string,
+  excludes: string[],
   ctx: ImportCtx,
 ): { always: Omit<Block, "id" | "tokens">[]; scoped: Omit<Block, "id" | "tokens">[] } {
   const always: Omit<Block, "id" | "tokens">[] = [];
@@ -314,6 +315,14 @@ function collectRuleBlocks(
     for (const f of entries) {
       const abs = join(rdir, f);
       if (!isFile(abs)) continue;
+      // `claudeMdExcludes` covers rules files too: the settings docs' own
+      // example excludes a `.claude/rules/**` glob, and Claude Code's
+      // changelog (v2.1.2xx) fixes exclusion of symlinked rules entries.
+      const relForExclude = relPosix(ctx.repoRoot, abs);
+      if (excludes.length > 0 && matchesAnyGlob(relForExclude, excludes)) {
+        ctx.notes.push(`excluded by settings claudeMdExcludes: ${relForExclude}`);
+        continue;
+      }
       const text = readFileSync(abs, "utf8");
       const fm = parseFrontmatter(text);
       const lineCount = countLines(text);
@@ -516,7 +525,12 @@ export function resolveStack(
   const entryTargetPosix = entryIsMemoryFile
     ? relPosix(repoRoot, entryDir)
     : entryPosix;
-  const { always, scoped } = collectRuleBlocks(claudeDirs, entryTargetPosix || ".", ctx);
+  const { always, scoped } = collectRuleBlocks(
+    claudeDirs,
+    entryTargetPosix || ".",
+    excludes,
+    ctx,
+  );
 
   const skillBudget =
     config.resolve.skillListingBudget ?? settings.skillListingBudget ?? null;

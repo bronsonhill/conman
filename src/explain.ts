@@ -97,7 +97,7 @@ export const FINDING_INFO: Record<FindingType, FindingInfo> = {
   "dead-reference": {
     title: "Reference that does not resolve",
     explanation:
-      "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. conman checks these on ancestor memory files and `.claude/rules` entries.",
+      "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. An npm scoped package name in prose (`@superset-ui/core`) is not counted as a dead import: Claude Code drops it silently too, but nothing the author meant to load is missing. conman checks these on ancestor memory files and `.claude/rules` entries.",
     citations: [
       "Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026), https://arxiv.org/abs/2606.15828 — dead references are one of the catalogued smells across the 100-repo corpus.",
     ],

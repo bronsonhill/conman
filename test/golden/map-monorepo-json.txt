@@ -63,6 +63,7 @@
       "mode": "stack",
       "notes": [
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .",
+        "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
       "redundant": {
@@ -145,6 +146,7 @@
       "mode": "stack",
       "notes": [
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy",
+        "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
       "redundant": {
@@ -219,6 +221,7 @@
       "notes": [
         "excluded by settings claudeMdExcludes: services/CLAUDE.md",
         "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services",
+        "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
       "redundant": {
@@ -360,6 +363,7 @@
       "mode": "stack",
       "notes": [
         "excluded by settings claudeMdExcludes: services/CLAUDE.md",
+        "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
       "redundant": {
@@ -377,7 +381,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.2",
+  "modelVersion": "0.3",
   "pass": false,
   "redundant": {
     "pctOfStack": 3,

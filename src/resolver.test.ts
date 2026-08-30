@@ -23,6 +23,11 @@ test("monorepo: ancestor chain, import, rules, skill index, exclude", () => {
 
   // services/CLAUDE.md is on the ancestor path but excluded by settings
   assert.ok(r.notes.some((n) => n.includes("claudeMdExcludes: services/CLAUDE.md")));
+  // claudeMdExcludes drops matching rules files too, like Claude Code does
+  assert.ok(!r.blocks.some((b) => b.source === ".claude/rules/excluded.md"));
+  assert.ok(
+    r.notes.some((n) => n.includes("claudeMdExcludes: .claude/rules/excluded.md")),
+  );
   // path-scoped rule matched services/**
   assert.ok(r.blocks.some((b) => b.kind === "rule-scoped"));
 });

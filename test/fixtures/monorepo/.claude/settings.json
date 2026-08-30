@@ -1,4 +1,4 @@
 {
-  "claudeMdExcludes": ["services/CLAUDE.md"],
+  "claudeMdExcludes": ["services/CLAUDE.md", "**/.claude/rules/excluded.md"],
   "skillListingBudget": 45
 }

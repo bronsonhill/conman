@@ -69,6 +69,7 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
     ],
     notes: [
       "excluded by settings claudeMdExcludes: services/CLAUDE.md",
+      "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
       "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45",
     ],
     unlinkedAgentsCopies: [],
