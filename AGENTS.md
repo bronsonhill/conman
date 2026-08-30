@@ -39,9 +39,13 @@ No model or network in the analysis path.
 
 ## Build and test
 
-- `npm run build` — `tsc` to `dist/` (`rootDir: src`, so `bin` is `dist/cli.js`).
-- `npm test` — builds, then `node --test` over compiled unit tests and the
-  golden runner.
+- `npm run build` — clean `tsc` to `dist/` (`rootDir: src`, so `bin` is
+  `dist/cli.js`).
+- `npm test` — `scripts/build-if-stale.sh` (skips `tsc` when `dist/` is newer
+  than every build input), then `node --test` over compiled unit tests and the
+  golden runner. CI runs `npm run build` first, so CI always gets a full compile.
+- Contributor-facing workflow (determinism contract, goldens, `--fix` rule,
+  adding a fixture): `CONTRIBUTING.md`.
 
 ## Release
 
