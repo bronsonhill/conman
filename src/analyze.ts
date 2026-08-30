@@ -9,7 +9,7 @@ import { resolveStack } from "./resolver.js";
 import { costBlocks, computeTotals, computeBudget } from "./coster.js";
 import { runFindings } from "./findings/index.js";
 
-export const MODEL_VERSION = "0.1";
+export const MODEL_VERSION = "0.2";
 
 export interface AnalyzeOptions {
   repoRoot: string;
@@ -33,7 +33,12 @@ export function analyzeEntry(
   const blocks = costBlocks(resolved.blocks, tok);
   const totals = computeTotals(blocks);
   const budget = computeBudget(totals, opts.config);
-  const findings = runFindings(blocks, opts.config, tok);
+  const findings = runFindings(
+    blocks,
+    opts.config,
+    tok,
+    resolved.unlinkedAgentsCopies,
+  );
 
   const analysis: Analysis = {
     modelVersion: MODEL_VERSION,

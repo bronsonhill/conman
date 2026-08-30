@@ -51,6 +51,47 @@ test("a file pulled in via @-import is not loaded again as a sibling", () => {
   assert.equal(agentsBlocks.length, 1);
   assert.equal(agentsBlocks[0]!.kind, "import");
   assert.ok(r.notes.some((n) => n.includes("not loaded again as a sibling")));
+  assert.deepEqual(r.unlinkedAgentsCopies, [], "an @-imported AGENTS.md is linked, not a copy");
+});
+
+test("a bare AGENTS.md beside a byte-identical CLAUDE.md is not loaded, but is recorded as a copy", () => {
+  const root = fixture("sibling-dup");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, []);
+  assert.ok(
+    !r.blocks.some((b) => b.source === "AGENTS.md"),
+    "Claude Code reads CLAUDE.md only; the AGENTS.md twin is not a block",
+  );
+  assert.ok(r.blocks.some((b) => b.source === "CLAUDE.md" && b.kind === "memory"));
+  assert.deepEqual(r.unlinkedAgentsCopies, [
+    { claudeMd: "CLAUDE.md", agentsMd: "AGENTS.md", lines: 18 },
+  ]);
+  assert.ok(r.notes.some((n) => n.includes("AGENTS.md present but not loaded")));
+});
+
+test("a CLAUDE.md -> AGENTS.md symlink loads the content once and is not a copy", () => {
+  const root = fixture("sibling-symlink");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, []);
+  const memory = r.blocks.filter((b) => b.kind === "memory");
+  assert.equal(memory.length, 1, "one file on disk, one block");
+  assert.equal(memory[0]!.source, "CLAUDE.md");
+  assert.deepEqual(r.unlinkedAgentsCopies, []);
+  assert.ok(r.notes.some((n) => n.includes("same file as CLAUDE.md (symlink)")));
+});
+
+test("a bare AGENTS.md with no CLAUDE.md contributes no memory block", () => {
+  const root = fixture("agents-only");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, []);
+  assert.deepEqual(
+    r.blocks.filter((b) => b.kind === "memory"),
+    [],
+    "no CLAUDE.md means Claude Code loads no project instructions here",
+  );
+  assert.deepEqual(r.unlinkedAgentsCopies, [], "nothing to compare against");
+  assert.ok(
+    r.notes.some(
+      (n) => n.includes("AGENTS.md present but not loaded") && n.includes("this directory has none"),
+    ),
+  );
 });
 
 // --- .claude/rules/ path-scoping keys ---------------------------------------

@@ -58,6 +58,10 @@
         "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry .",
         "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry ."
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -119,6 +123,10 @@
         "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry docs",
         "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry docs"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -180,6 +188,10 @@
         "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src",
         "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -250,6 +262,10 @@
         "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src/main",
         "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src/main"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -320,6 +336,10 @@
         "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src/renderer",
         "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src/renderer"
       ],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
       "result": {
         "pass": true,
         "reasons": []
@@ -328,8 +348,12 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.1",
+  "modelVersion": "0.2",
   "pass": true,
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
   "tool": "conman",
   "toolVersion": "0.1.0"
 }

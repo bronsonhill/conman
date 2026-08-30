@@ -14,6 +14,12 @@ function stagedMonorepo(): string {
   return dir;
 }
 
+function staged(name: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "conman-fix-"));
+  cpSync(fixture(name), dir, { recursive: true });
+  return dir;
+}
+
 test("--fix dedupes the child block, sorts skill keys, and is idempotent", () => {
   const root = stagedMonorepo();
   try {
@@ -40,6 +46,29 @@ test("--fix dedupes the child block, sorts skill keys, and is idempotent", () =>
     const second = analyzeEntry(entry, { repoRoot: root, config: DEFAULT_CONFIG });
     const again = computeFixes(root, second.analysis);
     assert.deepEqual(again.changes, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("--fix leaves an unlinked CLAUDE.md/AGENTS.md copy untouched", () => {
+  // findings-only: linking the pair means a symlink or an @-import pointer,
+  // which is a change of substance --fix does not make.
+  const root = staged("sibling-dup");
+  try {
+    const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+    assert.ok(
+      analysis.findings.some((f) => f.type === "unlinked-copy"),
+      "the fixture raises an unlinked-copy finding",
+    );
+    const fixes = computeFixes(root, analysis);
+    assert.deepEqual(fixes.changes, [], "no fix is proposed for the unlinked copy");
+
+    const beforeA = readFileSync(join(root, "AGENTS.md"), "utf8");
+    const beforeC = readFileSync(join(root, "CLAUDE.md"), "utf8");
+    applyFixes(root, fixes);
+    assert.equal(readFileSync(join(root, "AGENTS.md"), "utf8"), beforeA);
+    assert.equal(readFileSync(join(root, "CLAUDE.md"), "utf8"), beforeC);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

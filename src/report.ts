@@ -90,6 +90,12 @@ export function renderHuman(ctx: RenderContext): string {
   );
   out.push("");
 
+  // savings: what removing duplicated content would recover
+  const red = redundancy(a);
+  out.push("SAVINGS");
+  out.push(`  redundant tokens: ${red.tokens} (${red.pctOfStack}% of stack)`);
+  out.push("");
+
   // findings
   const counts = countBySeverity(a.findings);
   out.push(
@@ -121,6 +127,20 @@ export function renderHuman(ctx: RenderContext): string {
   out.push(`RESULT  ${gate.pass ? "pass" : "fail"}`);
   for (const r of gate.reasons) out.push(`  - ${r}`);
   return out.join("\n") + "\n";
+}
+
+/**
+ * Redundant tokens the duplication findings account for, and that as a share of
+ * the resolved stack. `tokens` on each duplication finding is already the
+ * "remove one copy" saving, and the whole-file rollup and per-segment passes
+ * never count the same copy twice, so a plain sum is the stack-wide figure.
+ */
+export function redundancy(a: Analysis): { tokens: number; pctOfStack: number } {
+  const tokens = a.findings
+    .filter((f) => f.type === "duplication")
+    .reduce((n, f) => n + (f.tokens ?? 0), 0);
+  const stack = a.totals.stackTokens;
+  return { tokens, pctOfStack: stack > 0 ? Math.round((tokens / stack) * 100) : 0 };
 }
 
 function countBySeverity(findings: Finding[]) {
@@ -168,6 +188,7 @@ export function renderJson(ctx: RenderContext): string {
     })),
     totals: ctx.analysis.totals,
     budget: ctx.analysis.budget,
+    redundant: redundancy(ctx.analysis),
     findings: ctx.analysis.findings,
     notes: ctx.notes,
     result: { pass: gate.pass, reasons: gate.reasons },

@@ -2,6 +2,14 @@
 
 import type { MapResult } from "./map.js";
 import { MODEL_VERSION } from "./analyze.js";
+import { redundancy } from "./report.js";
+
+/** Redundant tokens across every entry point, and that as a share of the rollup. */
+export function mapRedundancy(result: MapResult): { tokens: number; pctOfStack: number } {
+  const stack = result.entries.reduce((n, e) => n + e.analysis.totals.stackTokens, 0);
+  const tokens = result.entries.reduce((n, e) => n + redundancy(e.analysis).tokens, 0);
+  return { tokens, pctOfStack: stack > 0 ? Math.round((tokens / stack) * 100) : 0 };
+}
 
 function pad(s: string, w: number): string {
   return s.length >= w ? s : s + " ".repeat(w - s.length);
@@ -62,7 +70,9 @@ export function renderMapHuman(
     (n, e) => n + e.analysis.totals.stackTokens,
     0,
   );
+  const red = mapRedundancy(result);
   out.push(`repo rollup: ${totalTokens} tokens across ${result.entries.length} entry points`);
+  out.push(`redundant tokens: ${red.tokens} (${red.pctOfStack}% of stack)`);
   out.push("");
 
   const failing = result.entries.filter((e) => !e.pass);
@@ -98,12 +108,14 @@ export function renderMapJson(
     command: "map",
     configSource,
     pass: result.pass,
+    redundant: mapRedundancy(result),
     entryPoints: result.entries.map((e) => ({
       entry: e.entry,
       discovery: e.discovery,
       mode: e.mode,
       tokenizer: e.analysis.tokenizer,
       stackTokens: e.analysis.totals.stackTokens,
+      redundant: redundancy(e.analysis),
       budget: e.analysis.budget,
       blocks: e.analysis.blocks.map((b) => ({
         id: b.id,

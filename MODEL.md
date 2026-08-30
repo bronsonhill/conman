@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.1` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.2` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -16,15 +16,24 @@ order. Order matters because nothing overrides anything: the session accumulates
 every block.
 
 1. **Ancestor memory files.** Walk from the entry directory upward. At each
-   directory, load `CLAUDE.md` then `AGENTS.md` if present. Root-most directory
-   first, entry-closest last. With `resolve.repoBoundary: true` (default) the walk
-   stops at the repo root (nearest `.git`); `--no-repo-boundary` continues to the
+   directory, load `CLAUDE.md` if present. Root-most directory first,
+   entry-closest last. With `resolve.repoBoundary: true` (default) the walk stops
+   at the repo root (nearest `.git`); `--no-repo-boundary` continues to the
    filesystem root.
    - `~/.claude/CLAUDE.md` and other home-directory context are out of scope:
      conman analyzes a repository, not a machine.
-   - If both `CLAUDE.md` and `AGENTS.md` exist in one directory, both load, in
-     that order. Some repos have one `@`-import the other; conman does not assume
-     that arrangement.
+   - **`AGENTS.md` is not loaded on its own.** Claude Code reads `CLAUDE.md`;
+     `AGENTS.md` is the cross-tool file that Codex, Cursor and Aider read. A bare
+     `AGENTS.md` costs a Claude Code session nothing, so conman leaves it out of
+     the stack and records a NOTE. An `AGENTS.md` enters the stack only when:
+     - `CLAUDE.md` `@`-imports it — then it is counted once, as an import block
+       (see step 2), or
+     - `CLAUDE.md` is a symlink to it (or it to `CLAUDE.md`) — one file on disk,
+       counted once under the `CLAUDE.md` path.
+   - Two *separate* byte-identical files — a hand-maintained `CLAUDE.md` and
+     `AGENTS.md` that are not linked — are the normal multi-tool setup, not a
+     double charge. conman loads the `CLAUDE.md`, ignores the `AGENTS.md` for
+     cost, and raises the `unlinked-copy` finding (below) for the drift risk.
 
 2. **`@`-imports**, inlined immediately after the file that imports them,
    depth-first, in the order the `@` references appear.
@@ -122,10 +131,36 @@ as it formalizes the settings surface; a change here is a model-version change.
 ## Findings
 
 - **Duplication** — a segment (a heading-delimited or blank-line-delimited run of
-  text, or a whole fenced code block) whose trimmed bytes are identical in two
-  files of the stack, where one file's directory is an ancestor of the other's or
-  one `@`-imports the other. Segments under 8 tokens and heading-only segments are
-  ignored. The finding carries both `file:line`s and the redundant token count.
+  text, or a whole fenced code block) whose trimmed bytes are identical in two or
+  more files of the *resolved stack*, whatever the relationship between those
+  files. Segments under 8 tokens and heading-only segments are ignored. Each
+  finding carries every `file:line` and the redundant token count, and records
+  the file relationship in `detail.relation`:
+  - `parent-child` — one file's directory is an ancestor of the other's
+  - `import` — one file `@`-imports the other, directly or through a chain
+  - `same-stack` — neither; two files of the stack that merely share text (two
+    rules, a rule and a memory file, a memory file and a `@`-import sibling)
+
+  Only content that a Claude Code session actually loads is in scope: a bare
+  `AGENTS.md` is not part of the stack (see step 1), so a `CLAUDE.md` and an
+  unlinked `AGENTS.md` twin never produce a duplication finding — the
+  `unlinked-copy` finding covers that case instead.
+
+  When every qualifying segment of one file also appears in another (a whole-file
+  duplicate), the pair — or the whole cluster of mutually-duplicated files — is
+  reported as one finding with `detail.wholeFileDuplicate: true`, not one finding
+  per shared segment. The report leads with a `redundant tokens: N (M% of stack)`
+  line summing what removing the duplicate copies would recover.
+
+  `--fix` still only dedupes `parent-child`, per-segment findings: removing a
+  `same-stack` or whole-file duplicate safely means deleting a file or writing a
+  pointer, which is a change of substance conman does not make.
+- **Unlinked copy** — a directory holds a `CLAUDE.md` and an `AGENTS.md` as two
+  separate byte-identical files: not a symlink, not an `@`-import. Claude Code
+  loads only the `CLAUDE.md`, so this is not a token cost, but the two
+  hand-maintained copies drift. One finding per pair, at **warn** (a
+  maintainability smell, not a gate failure). The message carries the remedy:
+  link them with a symlink, or make `CLAUDE.md` a one-line `@AGENTS.md` import.
 - **Value conflict** — a definitional markdown line (`` `Key`: value ``,
   `**Key:** value`, or `- Key: value` with an uppercase key) where the same
   normalized key is bound to two different short values in two different files of
@@ -162,3 +197,34 @@ guarantees is determinism: the same text always costs the same number, and
 budgets are set against this counter. `--tokenizer exact` is a documented seam
 for a future token-counting API call; it is not implemented and ships no network
 code.
+
+## Model version history
+
+- **0.2** — Two changes to how repeated context is scored.
+
+  *Whole-stack duplication.* Duplication fires across the whole resolved stack,
+  not just parent/child file pairs. Any byte-identical segment (≥ 8 tokens)
+  repeated between two files a Claude Code session loads is a finding;
+  `detail.relation` records whether the files are `parent-child`, `import`, or
+  `same-stack`. Whole-file duplicates roll up into one finding per cluster. The
+  report leads with a `redundant tokens: N (M% of stack)` line, and the map
+  JSON/HTML reports carry the same figure per entry point. Duplication severity
+  is unchanged (`error`): a genuine repeat that loads twice — an ancestor and a
+  child `CLAUDE.md` sharing a block, a `CLAUDE.md` and its own `@`-import — now
+  fails a repo that passed under 0.1.
+
+  *`AGENTS.md` is not Claude stack cost.* Claude Code reads `CLAUDE.md`, not a
+  bare `AGENTS.md`. The resolver now leaves a standalone `AGENTS.md` out of the
+  stack; it counts only when `CLAUDE.md` `@`-imports it or the two are one file
+  via symlink. A directory with a separate byte-identical `CLAUDE.md`/`AGENTS.md`
+  pair — the common multi-tool layout — is no longer a duplication `error`; it
+  raises the new **`unlinked-copy`** finding at `warn` instead. On a corpus like
+  PostHog, where every `CLAUDE.md` is a symlink to its `AGENTS.md`, this removes
+  a large block of false `error` findings and roughly halves the measured stack.
+
+  `--fix` behaviour is unchanged: it still only dedupes `parent-child`,
+  per-segment duplication findings, and never touches `unlinked-copy`,
+  `same-stack`, or whole-file findings.
+- **0.1** — Initial model: ancestor memory walk, `@`-imports, `.claude/rules/`,
+  skill startup index, `settings.json` resolution keys. Duplication limited to
+  parent/child file pairs.

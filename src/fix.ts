@@ -99,6 +99,12 @@ function applyDedupe(
   const deletions = new Map<string, { start: number; end: number; keep: string }[]>();
   for (const f of findings) {
     if (f.type !== "duplication") continue;
+    // --fix stays a parent/child block dedupe only. `same-stack` / `import`
+    // duplicates and whole-file rollups are findings-only: removing them safely
+    // means deleting a file or rewriting a pointer, which is a change of
+    // substance conman does not make (VISION.md). See findings/duplication.ts.
+    if (f.detail?.["relation"] !== "parent-child") continue;
+    if (f.detail?.["wholeFileDuplicate"]) continue;
     const files = [...new Set(f.locations.map((l) => l.file))];
     if (files.length < 2) continue;
     const keep = parentFile(files);

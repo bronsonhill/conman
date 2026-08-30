@@ -77,7 +77,7 @@
     <h1>conman map report</h1>
     <dl class="kv">
       <dt>tool</dt><dd>conman VERSION</dd>
-      <dt>model</dt><dd>0.1</dd>
+      <dt>model</dt><dd>0.2</dd>
       <dt>config</dt><dd>conman.json</dd>
       <dt>entry points discovered</dt><dd>4</dd>
       <dt>result</dt><dd class="fail">fail</dd>
@@ -103,6 +103,7 @@
         <tfoot><tr><th colspan="2">repo rollup</th><td class="num">812</td><td colspan="4"></td></tr></tfoot>
       </table>
       <p>812 tokens across 4 entry points.</p>
+      <p>redundant tokens: 27 (3% of stack).</p>
   </section>
 
     <section class="entry" id="entry-0">
@@ -143,6 +144,7 @@
         <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
         <dt>stack total</dt><dd>171</dd>
         <dt>delta</dt><dd>-189 (under budget)</dd>
+        <dt>redundant tokens</dt><dd>0 (0% of stack)</dd>
       </dl>
 
       <h3>Findings</h3>
@@ -204,6 +206,7 @@
         <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
         <dt>stack total</dt><dd>202</dd>
         <dt>delta</dt><dd>-158 (under budget)</dd>
+        <dt>redundant tokens</dt><dd>0 (0% of stack)</dd>
       </dl>
 
       <h3>Findings</h3>
@@ -263,6 +266,7 @@
         <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
         <dt>stack total</dt><dd>171</dd>
         <dt>delta</dt><dd>-189 (under budget)</dd>
+        <dt>redundant tokens</dt><dd>0 (0% of stack)</dd>
       </dl>
 
       <h3>Findings</h3>
@@ -327,13 +331,14 @@
         <dt>safety margin</dt><dd>10% &rarr; effective 360</dd>
         <dt>stack total</dt><dd>268</dd>
         <dt>delta</dt><dd>-92 (under budget)</dd>
+        <dt>redundant tokens</dt><dd>27 (10% of stack)</dd>
       </dl>
 
       <h3>Findings</h3>
       <p>2 error, 0 warn</p>
       <article class="finding sev-error">
         <h4>duplication &mdash; error</h4>
-        <p class="message">identical 27-token block &quot;Run `npm ci` then `npm test`. Do not skip the lint step.…&quot; appears in 2 files (27 redundant tokens)</p>
+        <p class="message">identical 27-token block &quot;Run `npm ci` then `npm test`. Do not skip the lint step.…&quot; appears in 2 files (27 redundant tokens, relation: parent-child)</p>
         <ul class="locations">
           <li>CLAUDE.md:7-8</li>
           <li>services/api/CLAUDE.md:7-8</li>
@@ -341,6 +346,7 @@
         <p>token cost: 27</p>
         <dl class="kv">
           <dt>occurrences</dt><dd>2</dd>
+          <dt>relation</dt><dd>parent-child</dd>
           <dt>segmentTokens</dt><dd>27</dd>
         </dl>
       </article>

@@ -47,7 +47,11 @@ export interface Segment {
   tokens: number;
 }
 
-export type FindingType = "duplication" | "value-conflict" | "vehicle-fit";
+export type FindingType =
+  | "duplication"
+  | "unlinked-copy"
+  | "value-conflict"
+  | "vehicle-fit";
 export type Severity = "error" | "warn" | "off";
 
 export interface Location {
