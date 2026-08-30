@@ -1,7 +1,7 @@
 // Rendering for `conman map`: a per-entry rollup plus a repo total. Deterministic.
 
 import type { MapResult } from "./map.js";
-import { MODEL_VERSION } from "./analyze.js";
+import { MODEL_VERSION } from "./types.js";
 import { redundancy } from "./report.js";
 
 /** Redundant tokens across every entry point, and that as a share of the rollup. */

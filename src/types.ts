@@ -3,13 +3,15 @@
 // Everything here is plain data. The pipeline is: resolver -> blocks, coster ->
 // per-block token counts, findings engine -> findings, report renderer -> text.
 
+/** conman analysis-model version; bump when resolution semantics change. */
+export const MODEL_VERSION = "0.2";
+
 export type BlockKind =
   | "memory" // an ancestor CLAUDE.md / AGENTS.md
   | "import" // an @-imported file, inlined at its import site
   | "rule-always" // a .claude/rules entry with no path scope
   | "rule-scoped" // a .claude/rules entry whose glob matched the entry path
-  | "skill-index" // the skill startup listing
-  | "settings"; // text derived from settings.json that enters the stack
+  | "skill-index"; // the skill startup listing
 
 export interface Block {
   /** Stable identifier, assigned in load order: "b1", "b2", ... */

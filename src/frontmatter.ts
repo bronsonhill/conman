@@ -79,24 +79,3 @@ export function parseFrontmatter(text: string): Frontmatter {
     ...(parseError ? { parseError } : {}),
   };
 }
-
-/** Flatten a nested object to dotted paths with scalar leaves. */
-export function flattenScalars(
-  obj: unknown,
-  prefix = "",
-  out: Record<string, string> = {},
-): Record<string, string> {
-  if (obj === null || obj === undefined) return out;
-  if (typeof obj !== "object") {
-    out[prefix] = String(obj);
-    return out;
-  }
-  if (Array.isArray(obj)) {
-    obj.forEach((v, i) => flattenScalars(v, prefix ? `${prefix}[${i}]` : `[${i}]`, out));
-    return out;
-  }
-  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-    flattenScalars(v, prefix ? `${prefix}.${k}` : k, out);
-  }
-  return out;
-}

@@ -2,15 +2,13 @@
 // (single entry, map, check) runs through.
 
 import { resolve } from "node:path";
-import type { Analysis } from "./types.js";
+import { MODEL_VERSION, type Analysis } from "./types.js";
 import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { getTokenizer, type Tokenizer } from "./tokenizer.js";
 import { resolveStack } from "./resolver.js";
 import { costBlocks, computeTotals, computeBudget } from "./coster.js";
 import { runFindings } from "./findings/index.js";
-
-export const MODEL_VERSION = "0.2";
 
 export interface AnalyzeOptions {
   repoRoot: string;

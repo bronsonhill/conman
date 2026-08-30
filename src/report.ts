@@ -2,10 +2,9 @@
 // and `json` (for CI and tooling). Both are deterministic byte-for-byte given
 // the same Analysis.
 
-import type { Analysis, Finding } from "./types.js";
+import { MODEL_VERSION, type Analysis, type Finding } from "./types.js";
 import { evaluateGate } from "./gate.js";
 import type { Config } from "./config.js";
-import { MODEL_VERSION } from "./analyze.js";
 
 const KIND_LABEL: Record<string, string> = {
   memory: "memory",
@@ -13,7 +12,6 @@ const KIND_LABEL: Record<string, string> = {
   "rule-always": "rule-always",
   "rule-scoped": "rule-scoped",
   "skill-index": "skill-index",
-  settings: "settings",
 };
 
 function pad(s: string, w: number): string {

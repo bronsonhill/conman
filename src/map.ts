@@ -22,15 +22,9 @@ import { evaluateGate } from "./gate.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 import { getTokenizer } from "./tokenizer.js";
+import { MEMORY_NAMES, RULE_SCOPE_KEY, toStringArray } from "./claudeContext.js";
 
 const ALWAYS_SKIP = new Set([".git", "node_modules", "dist", ".treehouse"]);
-const MEMORY_NAMES = ["CLAUDE.md", "AGENTS.md"];
-
-/**
- * The one `.claude/rules/` frontmatter key Claude Code path-scopes a rule on.
- * Kept in step with `RULE_SCOPE_KEY` in `src/resolver.ts`; see MODEL.md.
- */
-const RULE_SCOPE_KEY = "paths";
 
 /**
  * A path segment containing any of these ends the literal prefix of a glob.
@@ -48,14 +42,6 @@ export interface DiscoveredEntry {
   abs: string;
   /** Why this directory is an entry point. Sorted, deduped, never empty. */
   discovery: DiscoverySource[];
-}
-
-function toStringArray(v: unknown): string[] {
-  if (typeof v === "string") return v.trim() ? [v.trim()] : [];
-  if (Array.isArray(v)) {
-    return v.filter((x) => typeof x === "string").map((x) => (x as string).trim());
-  }
-  return [];
 }
 
 /**

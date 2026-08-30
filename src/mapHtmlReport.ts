@@ -10,8 +10,7 @@
 // sorts findings) or is sorted here before rendering.
 
 import type { MapResult, MapEntryResult } from "./map.js";
-import type { Finding } from "./types.js";
-import { MODEL_VERSION } from "./analyze.js";
+import { MODEL_VERSION, type Finding } from "./types.js";
 import { redundancy } from "./report.js";
 import { mapRedundancy } from "./mapReport.js";
 
@@ -21,7 +20,6 @@ const KIND_LABEL: Record<string, string> = {
   "rule-always": "rule-always",
   "rule-scoped": "rule-scoped",
   "skill-index": "skill-index",
-  settings: "settings",
 };
 
 // Entry-level keys this renderer lays out explicitly. Anything else on a
