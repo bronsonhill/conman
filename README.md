@@ -78,7 +78,7 @@ conman check [<entrypoint>]  analyze, then exit non-zero over budget or on a gat
 
 Flags: `--json`, `--config <path>`, `--budget <n>`, `--tokenizer <name>`,
 `--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
-`--map` (with `check`), and `--html <path>` (with `map`).
+`--map` (with `check`), and `--html <path>` (with `map` or `check --map`).
 
 A single-entry run prints the load order with per-block token counts, the total
 against the budget, then the findings. Every finding names a `file:line`, a token
@@ -128,6 +128,13 @@ other checked-in artifact.
 ```
 conman map --html report.html
 ```
+
+`conman check --map --html <path>` writes a gate-focused variant of the same
+page: it leads with the pass/fail verdict, the effective budget the gate
+applied, and every failing entry point with its reasons (over budget,
+duplication error, value-conflict error), then the same per-entry detail. The
+process exit code still follows the gate (0 pass, 1 fail). Plain `map --html`
+stays the inventory view with no verdict framing.
 
 ## `--fix`
 

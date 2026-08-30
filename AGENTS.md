@@ -19,7 +19,8 @@ No model or network in the analysis path.
   discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
   glob into an entry-point directory.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
-  / `mapReport` / `mapHtmlReport` (`conman map --html`), with `gate`, `map`,
+  / `mapReport` / `mapHtmlReport` (`conman map --html`, plus a gate-focused
+  variant for `conman check --map --html`), with `gate`, `map`,
   `fix`, `diff`, `config`, `tokenizer` around them. `trim` (`conman <entry>
   --trim`, delete-only Tier-1 advice over the whole-file duplication findings)
   reuses `parentFile` / `preferredKeeper` from `fix.ts` to pick which copy of a

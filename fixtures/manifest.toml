@@ -23,9 +23,11 @@ branch = "main"
 license = "Apache-2.0"
 entry_points = ["."]
 notes = """
-Smallest possible stack: a single root AGENTS.md, no .claude/ directory, no
-imports, no rules, no skills. Baseline for the one-file resolved stack and for
-checking conman does nothing surprising when there is nothing to accumulate.
+A single root AGENTS.md, no CLAUDE.md, no .claude/ directory, no imports, no
+rules, no skills. At resolution model 0.2 a bare AGENTS.md with no CLAUDE.md is
+not loaded, so this resolves to a zero-file, zero-token stack with the
+"AGENTS.md present but not loaded" note. Exercises the bare-AGENTS.md-is-not-
+loaded path and checks conman does nothing surprising when the stack is empty.
 """
 
 [[fixture]]
@@ -118,12 +120,13 @@ entry_points = [
 ]
 notes = """
 Overgrown monorepo. CLAUDE.md and AGENTS.md exist as a pair in ~40 directories,
-and in every one CLAUDE.md is a symlink to its sibling AGENTS.md (the root
-AGENTS.md is 42408 bytes; common/ is 1739). So the pair is one file on disk, not
-a duplicated copy: the resolver counts it once and raises no finding. This is the
-fixture that proves conman does not flag the symlinked multi-tool layout, and
-that it does not double-count a symlinked CLAUDE.md/AGENTS.md into the stack.
-Nesting runs 6 levels deep
+and in every one CLAUDE.md is a symlink to its sibling AGENTS.md. Sizes vary by
+directory: the root pair is ~42 KB (42408 bytes), the common/ pair is 1739
+bytes. Because each pair is one file on disk, the resolver counts it once and
+raises no finding; no pair has drifted, so there are zero value-conflict
+findings across the map. This is the fixture that proves conman does not flag
+the symlinked multi-tool layout and does not double-count a symlinked
+CLAUDE.md/AGENTS.md into the stack. Nesting runs 6 levels deep
 (products/customer_analytics/frontend/components/Accounts/). 13 .claude/rules/.
 .claude/settings.json is hooks + plugins, no resolution keys. Many entry points
 for `conman map`, all large enough to fail on over-budget.
@@ -153,12 +156,13 @@ branch = "master"
 license = "AGPL-3.0"
 entry_points = [".", "modules/tournament", "modules/game", "ui/analyse"]
 notes = """
-Scale stress test: ~16.7k files, 765 directories, 85 SBT modules under modules/
-and 42 UI packages under ui/, so `conman map` discovers a large number of entry
-points that all inherit the same root stack. The stack itself is shallow: a
-root CLAUDE.md and AGENTS.md only, no .claude/ directory, no imports, no rules,
-no skills. At the pinned SHA the root CLAUDE.md is a symlink to AGENTS.md (6387
-bytes), so like posthog it is one file counted once, with no finding. Exercises
-discovery and per-entry resolution across a large tree with a symlinked memory
-file at the root.
+Single-entry scale fixture: ~16.7k files, 765 directories, 85 SBT modules under
+modules/ and 42 UI packages under ui/, yet `conman map` discovers exactly one
+entry point (the root). None of those subdirs carry a CLAUDE.md or AGENTS.md,
+and there is no .claude/rules/ with `paths:` globs, so nothing below the root is
+discoverable. The stack itself is shallow: a root CLAUDE.md and AGENTS.md only,
+no .claude/ directory, no imports, no rules, no skills. At the pinned SHA the
+root CLAUDE.md is a symlink to AGENTS.md (6387 bytes), so like posthog it is one
+file counted once, with no finding. Exercises discovery and resolution over a
+large tree that still collapses to a single entry point.
 """

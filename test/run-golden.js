@@ -30,6 +30,11 @@ const CASES = [
   { name: "map-monorepo-json", args: ["map", MONO, "--repo-root", MONO, "--json"] },
   { name: "map-monorepo-html", args: ["map", MONO, "--repo-root", MONO], html: true },
   {
+    name: "check-map-monorepo-html",
+    args: ["check", MONO, "--map", "--repo-root", MONO],
+    html: true,
+  },
+  {
     name: "map-rule-entry",
     args: ["map", "test/fixtures/rule-entry", "--repo-root", "test/fixtures/rule-entry"],
   },
