@@ -329,14 +329,40 @@ visible, not a standard. Override them per repo in `conman.json`.
 
 ## The tokenizer is an estimate
 
-Default costing uses `@anthropic-ai/tokenizer`, which bundles Anthropic's
-released Claude tokenizer and runs offline. It is not the current
-frontier-model vocab, which Anthropic has not published. On English prose and
-markdown its counts track the `count_tokens` API within a few percent. What conman
-guarantees is determinism: the same text always costs the same number, and
-budgets are set against this counter. `--tokenizer exact` is a documented seam
-for a future token-counting API call; it is not implemented and ships no network
-code.
+Default costing uses `@anthropic-ai/tokenizer` (the `claude-local` path), which
+bundles Anthropic's released Claude tokenizer and runs offline. It is not the
+current frontier-model vocab, which Anthropic has not published. On English prose
+and markdown its counts track the `count_tokens` API within a few percent. What
+conman guarantees is determinism: the same text always costs the same number, and
+budgets are set against this counter.
+
+### The `exact` seam
+
+`--tokenizer exact` swaps the local estimate for Anthropic's
+`POST /v1/messages/count_tokens`. It is the only code path in conman that makes a
+network call, and it is gated twice: the caller passes `--tokenizer exact` **and**
+`ANTHROPIC_API_KEY` is set in the environment. Missing key with the flag is a
+usage error (exit 2) naming the env var; the key is read from `ANTHROPIC_API_KEY`
+only, never from a flag or a file. With the flag absent, conman never opens a
+socket — `claude-local` stays fully offline and deterministic, which is why it,
+not the API, is what budgets and the CI gate are measured against.
+
+The request wraps each block as a one-message prompt, so `count_tokens` returns a
+few tokens of turn-structure framing on top of the text. conman measures that
+framing once from a short probe and subtracts it, so an `exact` count is
+comparable to the local text-only count. Results are cached per block text (a
+duplicated stack resolves to a handful of distinct blocks), so `conman map` over
+a large repo makes tens of calls, not thousands. `exact` is never wired into a
+golden or a CI job; CI has no key and stays offline.
+
+`CONMAN_EXACT_MODEL` overrides the model whose vocab the count is taken against
+(default `claude-opus-5`). `count_tokens` is model-specific.
+
+Measured drift `(local - exact) / exact` over the pinned corpus: within a few
+percent against the older-generation vocab (`claude-haiku-4-5`, ≤ 9% per stack),
+but a systematic ~32% undercount against the Opus 4.7 / Sonnet 4.6 generation.
+Full table and corpus SHAs: README "How accurate is the token estimate?".
+Regenerate with `node scripts/measure-tokenizer.mjs`.
 
 ## Bumping the version anchor
 

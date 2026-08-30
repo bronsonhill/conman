@@ -14,6 +14,14 @@ follow semantic versioning.
   `cursor` resolves `.cursorrules` and `.cursor/rules/*.mdc` alongside `AGENTS.md`,
   mapping `.mdc` `alwaysApply` / `globs` onto always-on vs path-scoped. Non-claude
   rulesets are best-effort and not version-anchored; see `MODEL.md`.
+- `--tokenizer exact` is now implemented: an opt-in path that counts tokens via
+  Anthropic's `count_tokens` API. It is the only code path that makes a network
+  call, gated on the flag plus `ANTHROPIC_API_KEY` (missing key is a usage error
+  naming the env var). The default `claude-local` path stays fully offline and
+  deterministic; `exact` is never used by a golden or CI job.
+- README "How accurate is the token estimate?" — a measured drift table
+  (`local` vs `count_tokens`) over the pinned corpus, plus
+  `scripts/measure-tokenizer.mjs` to regenerate it.
 
 ## 0.1.0 — 2026-08-30
 

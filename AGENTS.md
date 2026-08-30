@@ -9,7 +9,13 @@ the code.
 Deterministic, offline CLI that resolves a repo's Claude Code context stack for an
 entry point and reports load order, token cost, block duplication, and direct
 value conflicts, plus a budget-gated CI check. Scope and non-goals: `VISION.md`.
-No model or network in the analysis path.
+No model in the analysis path. The only code that ever makes a network call is
+`--tokenizer exact` (`src/tokenizer.ts`), gated on the flag plus
+`ANTHROPIC_API_KEY`; the default `claude-local` path is fully offline. Keep it
+that way — never add a network call on any other path, and never wire `exact`
+into a golden or CI job. `scripts/measure-tokenizer.mjs` (not built, not
+shipped) regenerates the local-vs-`count_tokens` drift table in README's "How
+accurate is the token estimate?".
 
 ## Where things are
 

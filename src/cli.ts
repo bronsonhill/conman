@@ -16,6 +16,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, type Config } from "./config.js";
 import { AGENTS, isAgent, type Agent } from "./agent.js";
+import { EXACT_API_KEY_ENV } from "./tokenizer.js";
 import { findRepoRoot, isDir, isFile, relPosix } from "./repo.js";
 import { analyzeEntry } from "./analyze.js";
 import { renderHuman, renderJson, type RenderContext } from "./report.js";
@@ -198,7 +199,8 @@ FLAGS
                          for GitHub code scanning (single entry point only)
   --config <path>        config file (default: search up for conman.json)
   --budget <n>           override the total-token budget
-  --tokenizer <name>     claude-local (default) | exact (unimplemented seam)
+  --tokenizer <name>     claude-local (default, offline) | exact (opt-in; calls
+                         Anthropic count_tokens, needs ANTHROPIC_API_KEY)
   --agent <name>         claude (default) | codex | cursor | copilot; selects the
                          resolution ruleset. Non-claude rulesets are best-effort
                          (see MODEL.md)
@@ -314,9 +316,11 @@ function main(): void {
   }
   const args = parsed;
 
-  if (args.tokenizer === "exact") {
+  if (args.tokenizer === "exact" && !process.env[EXACT_API_KEY_ENV]) {
     process.stderr.write(
-      "conman: exact-mode token counting is a documented seam, not implemented in the MVP\n",
+      `conman: --tokenizer exact needs ${EXACT_API_KEY_ENV} in the environment\n` +
+        `  (it is the only path that makes a network call; the key is read from\n` +
+        `  ${EXACT_API_KEY_ENV} only, never from a flag or a file)\n`,
     );
     process.exit(2);
   }
