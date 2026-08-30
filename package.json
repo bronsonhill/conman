@@ -1,21 +1,47 @@
 {
-  "name": "conman",
+  "name": "@bronsonhill/conman",
   "version": "0.1.0",
   "description": "Deterministic, offline linter for a repository's Claude Code context stack: load order, token cost, duplication, value conflicts, and a budget-gated CI check.",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agents-md",
+    "claude-md",
+    "context",
+    "linter",
+    "cli",
+    "tokens",
+    "ci"
+  ],
+  "homepage": "https://github.com/bronsonhill/conman#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bronsonhill/conman.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bronsonhill/conman/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "conman": "dist/cli.js"
   },
   "files": [
     "dist",
+    "!dist/**/*.test.js",
+    "!dist/testutil.js",
+    "README.md",
     "MODEL.md",
-    "README.md"
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test dist/*.test.js test/run-golden.js",
     "test:update-golden": "npm run build && UPDATE_GOLDEN=1 node --test test/run-golden.js",
+    "prepublishOnly": "npm run build",
     "conman": "node dist/cli.js"
   },
   "dependencies": {

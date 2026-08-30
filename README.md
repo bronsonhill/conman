@@ -1,5 +1,21 @@
 # conman
 
+## Quickstart
+
+```sh
+npx @bronsonhill/conman <path>          # resolve and lint the context stack for an entry point
+npx @bronsonhill/conman map <path>      # map every entry point in the repo and its budget status
+```
+
+Point it at a directory (or a `CLAUDE.md`/`AGENTS.md`). It prints the exact
+stack a Claude Code session would load from there — load order, token cost,
+duplicated blocks, and keys set to conflicting values — and exits non-zero when a
+budget-gated check fails. Offline, no model, same bytes for the same input.
+
+Full docs below; the resolution model is in [`MODEL.md`](MODEL.md).
+
+---
+
 **Don't be conned.** `conman` is short for context manager. The con is the
 context stack itself: files that are each defensible on their own while, together,
 they make the model worse and every session more expensive.
