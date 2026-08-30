@@ -62,17 +62,20 @@ against the new tree, and re-run the fetch.
 
 | behavior | fixtures |
 |----------|----------|
-| small single-file stack            | `llm`, `lila` |
-| `@`-import of one oversized block   | `firstmate` |
+| small single-file stack            | `llm`, `lila`, `vercel-ai` |
+| `@`-import-only `CLAUDE.md`         | `firstmate` (one oversized block), `inbox-zero` (small `AGENTS.md`) |
+| bare `AGENTS.md`, discovered but not loaded | `llm` (root), `vercel-ai` (`packages/ai`) |
 | deep ancestor `CLAUDE.md` chain     | `cockroach`, `posthog`, `ruflo` |
-| monorepo, several entry points      | `humanlayer`, `posthog`, `lila` |
+| monorepo, several entry points      | `humanlayer`, `posthog`, `motrix`, `inbox-zero` |
 | path-scoped `.claude/rules/`        | `motrix`, `ack-nestjs-boilerplate`, `cockroach`, `posthog` |
-| large / nested skills directory     | `ruflo`, `cockroach`, `firstmate` |
+| large / nested skills directory     | `ruflo`, `cockroach`, `firstmate`, `inbox-zero` |
 | `settings.json` resolution keys     | `ack-nestjs-boilerplate` (`claudeMdExcludes`), `ruflo` (`skillListingBudgetFraction`) |
+| hooks-only `settings.json` (no resolution keys) | `firstmate`, `posthog`, `vercel-ai` |
 | symlinked `CLAUDE.md` -> `AGENTS.md` (counted once, no finding) | `posthog` (~40 dirs), `lila` (root) |
-| whole-stack / parent-child block dup | (hand-built `test/fixtures/monorepo`) |
-| direct value conflict               | `posthog` (drifted `CLAUDE.md` / `AGENTS.md` sibling pairs) |
+| whole-stack / parent-child block dup | `ruflo` (60 findings), (hand-built `test/fixtures/monorepo`) |
+| direct value conflict               | `ruflo` (`v3/` subtree, 4 entry points) |
 | plainly overgrown stack             | `ruflo`, `posthog` |
+| mid-size adopter, under budget, no findings (skew counterweight) | `inbox-zero`, `vercel-ai`, `humanlayer` |
 | scale: large tree, many `conman map` entry points | `lila` (~16.7k files, 765 dirs, 85 SBT modules + 42 UI packages) |
 
 ## Licensing
@@ -80,9 +83,9 @@ against the new tree, and re-run the fetch.
 Every repo is cloned at a pinned SHA for local testing only. We do not
 redistribute them; `fixtures/repos/` is gitignored and nothing from it is
 committed here. Licenses of the pinned repos, recorded in `manifest.toml`:
-Apache-2.0 (`llm`, `humanlayer`), MIT (`firstmate`, `motrix`,
+Apache-2.0 (`llm`, `humanlayer`, `vercel-ai`), MIT (`firstmate`, `motrix`,
 `ack-nestjs-boilerplate`, `ruflo`), MIT Expat with a proprietary `ee/` subtree
-that is not an entry point (`posthog`), AGPL-3.0 (`lila`), and the
+that is not an entry point (`posthog`), AGPL-3.0 (`lila`, `inbox-zero`), and the
 source-available CockroachDB Software License (`cockroach`). All permit local
 cloning for testing; AGPL obligations attach to distributing or network-serving
 modified versions, which this corpus does not do. If you add a repo, record its

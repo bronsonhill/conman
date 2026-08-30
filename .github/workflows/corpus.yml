@@ -1,0 +1,37 @@
+name: Corpus sweep (full)
+
+# The whole 11-repo pinned corpus: fetch every fixture, run `conman map` over
+# each, assert crash-free resolution, and diff the digest against
+# test/corpus-digest.json. This is what keeps the "What conman finds in the wild"
+# numbers in the README honest. It clones ~2 GB of fixture repos, so it runs
+# weekly and on demand rather than per-PR; the per-PR CI job sweeps a small
+# subset instead.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "fixtures/manifest.toml"
+      - "scripts/fetch-fixtures.sh"
+      - "scripts/corpus-digest.mjs"
+      - "test/corpus-sweep.js"
+      - "test/corpus-digest.json"
+
+jobs:
+  full-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run test:corpus:all
+      - name: Digest drift check
+        # test:corpus:update rewrites the baseline; on a green tree that is a
+        # no-op. A diff here means the committed numbers are stale.
+        run: |
+          npm run test:corpus:update
+          git diff --exit-code test/corpus-digest.json

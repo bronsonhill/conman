@@ -166,3 +166,39 @@ root CLAUDE.md is a symlink to AGENTS.md (6387 bytes), so like posthog it is one
 file counted once, with no finding. Exercises discovery and resolution over a
 large tree that still collapses to a single entry point.
 """
+
+[[fixture]]
+name = "inbox-zero"
+url = "https://github.com/elie222/inbox-zero.git"
+sha = "780453c5d351a0b59b6ca2d7b60f6a58d213078b"
+branch = "main"
+license = "AGPL-3.0"
+entry_points = [".", "apps/web"]
+notes = """
+Mid-size production SaaS monorepo, not an overgrown one. Root CLAUDE.md is
+`@AGENTS.md` and nothing else (11 bytes), so the whole root memory stack is one
+import of a small AGENTS.md. .claude/ holds agents/ and a 25-entry skills/ tree
+(no .claude/rules/, no resolution keys in settings). apps/web carries its own
+CLAUDE.md + AGENTS.md. Counterweight to posthog and ruflo: a real adopter whose
+resolved stack is ~2.7k tokens at the root, under the default budget, with no
+duplication or value-conflict finding. Exercises the `@`-import-only CLAUDE.md
+and a moderate skill startup index.
+"""
+
+[[fixture]]
+name = "vercel-ai"
+url = "https://github.com/vercel/ai.git"
+sha = "1c6854096fbe9aa55ae59cfa2bdee03d55e95c8e"
+branch = "main"
+license = "Apache-2.0"
+entry_points = [".", "packages/ai"]
+notes = """
+The Vercel AI SDK monorepo. Single ~13 KB root CLAUDE.md, no root AGENTS.md, no
+.claude/rules/. .claude/settings.json is hooks-only (a PostToolUse `pnpm fix`),
+no resolution keys, and .claude/skills is a symlink. packages/ai carries a bare
+AGENTS.md with no sibling CLAUDE.md, which at resolution model 0.2 is discovered
+as an entry point but not loaded. Counterweight repo: a widely used library
+whose resolved root stack is ~4k tokens, under the default budget, with zero
+findings. Exercises a plain single-file stack, a hooks-only settings.json, and
+the bare-AGENTS.md-not-loaded path at a nested entry point.
+"""

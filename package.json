@@ -42,6 +42,9 @@
     "test": "bash scripts/build-if-stale.sh && node --test dist/*.test.js test/run-golden.js",
     "test:update-golden": "npm run build && UPDATE_GOLDEN=1 node --test test/run-golden.js",
     "prepublishOnly": "npm run build",
+    "test:corpus": "npm run build && scripts/fetch-fixtures.sh llm ack-nestjs-boilerplate firstmate humanlayer motrix && node --test test/corpus-sweep.js",
+    "test:corpus:all": "npm run build && scripts/fetch-fixtures.sh && CONMAN_CORPUS_REQUIRE_ALL=1 node --test test/corpus-sweep.js",
+    "test:corpus:update": "npm run build && scripts/fetch-fixtures.sh && UPDATE_CORPUS_DIGEST=1 node --test test/corpus-sweep.js",
     "conman": "node dist/cli.js"
   },
   "dependencies": {

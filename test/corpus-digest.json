@@ -1,0 +1,139 @@
+{
+  "tool": "conman",
+  "modelVersion": "0.2",
+  "repos": [
+    {
+      "repo": "llm",
+      "entryPoints": 1,
+      "stackTokens": 0,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {}
+    },
+    {
+      "repo": "firstmate",
+      "entryPoints": 2,
+      "stackTokens": 37401,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 2,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "vehicle-fit": 11
+      }
+    },
+    {
+      "repo": "motrix",
+      "entryPoints": 38,
+      "stackTokens": 92356,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {}
+    },
+    {
+      "repo": "ack-nestjs-boilerplate",
+      "entryPoints": 2,
+      "stackTokens": 49600,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 2,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "dead-reference": 2,
+        "frontmatter": 4,
+        "vehicle-fit": 33
+      }
+    },
+    {
+      "repo": "cockroach",
+      "entryPoints": 9,
+      "stackTokens": 28442,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "frontmatter": 9,
+        "stale-boilerplate": 9
+      }
+    },
+    {
+      "repo": "humanlayer",
+      "entryPoints": 9,
+      "stackTokens": 13080,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "stale-boilerplate": 9
+      }
+    },
+    {
+      "repo": "posthog",
+      "entryPoints": 52,
+      "stackTokens": 1352459,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 52,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "dead-reference": 5,
+        "vehicle-fit": 394
+      }
+    },
+    {
+      "repo": "ruflo",
+      "entryPoints": 10,
+      "stackTokens": 242653,
+      "redundantTokens": 3376,
+      "overBudgetEntryPoints": 10,
+      "valueConflictEntryPoints": 4,
+      "findingsByType": {
+        "dead-reference": 34,
+        "duplication": 60,
+        "stale-boilerplate": 1,
+        "value-conflict": 20,
+        "vehicle-fit": 14
+      }
+    },
+    {
+      "repo": "lila",
+      "entryPoints": 1,
+      "stackTokens": 1814,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {}
+    },
+    {
+      "repo": "inbox-zero",
+      "entryPoints": 2,
+      "stackTokens": 5566,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {
+        "vehicle-fit": 6
+      }
+    },
+    {
+      "repo": "vercel-ai",
+      "entryPoints": 2,
+      "stackTokens": 7918,
+      "redundantTokens": 0,
+      "overBudgetEntryPoints": 0,
+      "valueConflictEntryPoints": 0,
+      "findingsByType": {}
+    }
+  ],
+  "corpus": {
+    "repoCount": 11,
+    "totalEntryPoints": 128,
+    "redundantTokenPct": 0.18,
+    "redundantTokens": 3376,
+    "stackTokens": 1831289,
+    "valueConflictEntryPoints": 4,
+    "valueConflictRatePct": 3.13,
+    "medianResolvedStackTokens": 19676,
+    "overBudgetEntryPoints": 66,
+    "overBudgetRatePct": 51.56
+  }
+}
