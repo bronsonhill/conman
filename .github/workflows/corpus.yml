@@ -1,0 +1,54 @@
+name: Corpus sweep (full)
+
+# The whole 11-repo pinned corpus: fetch every fixture, run `conman map` over
+# each, assert crash-free resolution, and diff the digest against
+# test/corpus-digest.json. This is what keeps the "What conman finds in the wild"
+# numbers in the README honest. It clones ~2 GB of fixture repos, so it runs
+# weekly and on demand rather than per-PR; the per-PR CI job sweeps a small
+# subset instead.
+#
+# The digest is generated here, on a case-sensitive Linux filesystem. A
+# case-insensitive dev machine (macOS) over-discovers entry points from
+# lowercase `claude.md` / `agents.md` files in some fixtures, so the committed
+# baseline must come from this job, not a local run. Regenerate by reading the
+# uploaded `corpus-digest` artifact from a run of this workflow.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "fixtures/manifest.toml"
+      - "scripts/fetch-fixtures.sh"
+      - "scripts/corpus-digest.mjs"
+      - "test/corpus-sweep.js"
+      - "test/corpus-digest.json"
+
+jobs:
+  full-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run build
+      - run: scripts/fetch-fixtures.sh
+
+      - name: Regenerate digest
+        run: UPDATE_CORPUS_DIGEST=1 node --test test/corpus-sweep.js
+
+      - run: cat test/corpus-digest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corpus-digest
+          path: test/corpus-digest.json
+
+      - name: Digest drift check
+        # The committed baseline must equal what a clean Linux run produces.
+        run: git diff --exit-code test/corpus-digest.json
+
+      - name: Full sweep
+        run: CONMAN_CORPUS_REQUIRE_ALL=1 node --test test/corpus-sweep.js

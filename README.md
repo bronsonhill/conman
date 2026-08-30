@@ -80,6 +80,32 @@ token cost you can measure and budget before a session starts. Whether a leaner
 stack also improves task outcomes is a question for a future eval, not a claim
 conman makes.
 
+## What conman finds in the wild
+
+`conman map` was run over a pinned corpus of 11 public repos with real Claude
+Code adoption (`fixtures/manifest.toml`), each at a fixed SHA, with built-in
+defaults (12,000-token budget, 0.10 safety margin, so a 10,800-token gate line).
+That is 123 entry points. Numbers below are exact counts from `conman 0.1.0`,
+resolution model `0.2`, generated on Linux by the `full-sweep` CI job; the full
+breakdown with per-repo figures and SHAs is in
+[`data/conman-corpus-map-reports/report.md`](data/conman-corpus-map-reports/report.md),
+and CI diffs them against `test/corpus-digest.json` on every change.
+
+| measure | corpus result |
+|---------|---------------|
+| redundant tokens (byte-identical blocks loaded twice) | **1,688 of 1,712,585 — 0.10%**, all in `ruflo` (`d33ef4b`); zero in the other ten repos |
+| entry points with a direct value conflict | **2 of 123 — 1.63%**, both in `ruflo`'s `v3/` subtree |
+| median resolved stack | **5,472 tokens**, but lopsided: `posthog` (52 entry points) and `ruflo` (6) resolve to 15k–40k each and are 58 of the 123; the rest sit under 6k |
+| entry points over the effective budget | **61 of 123 — 49.59%**: `posthog` (52, `41570ae`), `ruflo` (6), `ack-nestjs-boilerplate` (2, `ab70ad2`), `firstmate` (1, `4207214`) |
+
+The corpus is skewed by two repos: `posthog` and `motrix` (`7861034`) supply 90
+of the 123 entry points, and `ruflo` is the only source of any duplication or
+value-conflict finding. The boring results are real and left in: `llm`
+(`a463c63`) resolves to a zero-token stack (a bare `AGENTS.md` is not loaded at
+model 0.2); `lila` (`9b49f37`), 16.7k files, collapses to one root entry point at
+1,814 tokens with no findings; `motrix` raises zero findings across all 38 of its
+entry points. Overgrowth in the wild is real and concentrated, not the median.
+
 ## Install
 
 ```
@@ -338,6 +364,24 @@ npm test
 Unit tests sit next to the code (`src/*.test.ts`). Golden-output tests
 (`test/run-golden.js`) run the built CLI against synthetic fixtures under
 `test/fixtures/` and diff against `test/golden/`; `npm run test:update-golden`
-regenerates them. A pinned corpus of real public repos lives under `fixtures/`
-(see `fixtures/README.md`) and is fetched on demand; nothing in the test suite
-depends on it.
+regenerates them. `npm test` needs no network.
+
+A pinned corpus of real public repos lives under `fixtures/` (see
+`fixtures/README.md`) and is fetched on demand. The corpus regression sweep
+(`test/corpus-sweep.js`) runs `conman map` over every fetched fixture, asserts it
+resolves crash-free, and diffs a compact digest against `test/corpus-digest.json`
+so the "What conman finds in the wild" numbers stay honest as findings evolve. It
+is not in `npm test`:
+
+```
+npm run test:corpus         # fetch the 5-repo fast subset, sweep it (~20s)
+npm run test:corpus:all     # fetch every fixture, sweep all 11 (~60s)
+npm run test:corpus:update  # regenerate the digest baseline
+```
+
+The baseline is generated on Linux by CI. On a case-insensitive dev filesystem
+(macOS) the `firstmate` and `ruflo` records will not match, because lowercase
+`claude.md` / `agents.md` files in those fixtures get discovered as extra entry
+points — expected, and why the numbers come from the CI `corpus-digest` artifact.
+CI runs the fast subset on every PR and the full sweep weekly and whenever the
+corpus tooling changes (see `.github/workflows/`).

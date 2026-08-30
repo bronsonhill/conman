@@ -23,3 +23,17 @@ jobs:
         uses: bronsonhill/conman-action@v1
         with:
           path: .
+
+  corpus-fast:
+    # Sweep the small-clone subset of the pinned corpus on every PR: assert
+    # `conman map` runs crash-free and the digest still matches
+    # test/corpus-digest.json. The full 11-repo sweep runs on a schedule
+    # (corpus.yml) to keep PR runtime and clone bandwidth sane.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run test:corpus
