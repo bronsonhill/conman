@@ -149,6 +149,36 @@ FINDINGS  (2 error, 0 warn)
 RESULT  fail
 ```
 
+### How accurate is the token estimate?
+
+Default costing (`--tokenizer claude-local`) uses `@anthropic-ai/tokenizer`,
+which runs offline and is what budgets and the CI gate are measured against.
+`--tokenizer exact` swaps in Anthropic's `count_tokens` API (opt-in; needs
+`ANTHROPIC_API_KEY`, the only thing in conman that makes a network call). Running
+both over the pinned corpus (`fixtures/manifest.toml` — 9 public repos, 123
+resolved stacks, 468 distinct blocks) gives the drift `(local - exact) / exact`:
+
+| `count_tokens` model | per stack (mean / median / p90 / max) | per block (mean / min / max) |
+|---|---|---|
+| `claude-haiku-4-5` | −4.2% / −4.3% / −3.1% / −8.6% | −4.3% / −14.2% / +4.1% |
+| `claude-opus-5` | −32.1% / −32.5% / −31.0% / −35.5% | −31.9% / −43.3% / −22.3% |
+
+The bundled tokenizer closely matches Claude's older-generation vocab — through
+Sonnet 4.5 / Haiku 4.5 it is within a few percent, and never off by more than
+~9% on a whole stack. The Opus 4.7 / Sonnet 4.6 generation shipped a denser
+tokenizer, and against that the local estimate runs a consistent ~32% low (the
+spread is tight: −29% to −35% per stack). That gap is systematic, not
+content-dependent, so it does not change which stacks look heavy relative to
+each other — but a stack the local counter puts at 12k tokens is closer to 17k
+for a current Claude Code model. Set the budget with that headroom in mind, or
+run `--tokenizer exact` when the absolute number matters. `CONMAN_EXACT_MODEL`
+picks the model the exact count is taken against (default `claude-opus-5`).
+
+Numbers from corpus SHAs: llm `a463c63`, firstmate `4207214`, motrix `7861034`,
+ack-nestjs-boilerplate `ab70ad2`, cockroach `8812064`, humanlayer `99abe67`,
+posthog `41570ae`, ruflo `d33ef4b`, lila `9b49f37`. Regenerate with
+`node scripts/measure-tokenizer.mjs` (needs the key and network).
+
 ## `conman map`
 
 `conman map` runs the same analysis across every entry point in the repo and rolls
@@ -351,9 +381,10 @@ No LLM anywhere in the analysis path. No semantic contradiction detection beyond
 byte-identical duplication and direct value conflicts. Non-Claude agent rulesets
 (`--agent codex|cursor|copilot`) are best-effort and not version-anchored;
 keeping instruction files in sync across tools is still another tool's job. No
-runtime monitoring; `/context` already shows a live session's usage. The `exact`
-tokenizer mode is a documented seam with no implementation. Vehicle-fit advice
-stays coarse and structural until a later opt-in LLM layer.
+runtime monitoring; `/context` already shows a live session's usage. The
+analysis path is offline by default and stays that way; `--tokenizer exact` is
+the one opt-in exception (see "How accurate is the token estimate?"). Vehicle-fit
+advice stays coarse and structural until a later opt-in LLM layer.
 
 ## Tests
 
