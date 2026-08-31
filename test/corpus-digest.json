@@ -20,6 +20,8 @@
       "valueConflictEntryPoints": 0,
       "findingsByType": {
         "max-skills": 1,
+        "per-file-budget": 1,
+        "skill-index-budget": 1,
         "vehicle-fit": 5
       }
     },
@@ -78,6 +80,8 @@
       "findingsByType": {
         "dead-reference": 5,
         "max-skills": 52,
+        "per-file-budget": 71,
+        "skill-index-budget": 52,
         "vehicle-fit": 394
       }
     },
@@ -92,6 +96,8 @@
         "dead-reference": 12,
         "duplication": 30,
         "max-skills": 6,
+        "per-file-budget": 8,
+        "skill-index-budget": 6,
         "stale-boilerplate": 1,
         "value-conflict": 10,
         "vehicle-fit": 8

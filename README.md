@@ -275,23 +275,23 @@ conman makes.
 Code adoption (`fixtures/manifest.toml`), each at a fixed SHA, with built-in
 defaults (12,000-token budget, 0.10 safety margin, so a 10,800-token gate line).
 That is 123 entry points. Numbers below are exact counts from `conman 0.1.0`,
-resolution model `0.2`, generated on Linux by the `full-sweep` CI job; the full
+resolution model `0.4`, generated on Linux by the `full-sweep` CI job; the full
 breakdown with per-repo figures and SHAs is in
 [`data/conman-corpus-map-reports/report.md`](data/conman-corpus-map-reports/report.md),
 and CI diffs them against `test/corpus-digest.json` on every change.
 
 | measure | corpus result |
 |---------|---------------|
-| redundant tokens (byte-identical blocks loaded twice) | **1,688 of 1,712,585 — 0.10%**, all in `ruflo` (`d33ef4b`); zero in the other ten repos |
+| redundant tokens (byte-identical blocks loaded twice) | **1,688 of 1,669,985 — 0.10%**, all in `ruflo` (`d33ef4b`); zero in the other ten repos |
 | entry points with a direct value conflict | **2 of 123 — 1.63%**, both in `ruflo`'s `v3/` subtree |
-| median resolved stack | **5,472 tokens**, but lopsided: `posthog` (52 entry points) and `ruflo` (6) resolve to 15k–40k each and are 58 of the 123; the rest sit under 6k |
-| entry points over the effective budget | **61 of 123 — 49.59%**: `posthog` (52, `41570ae`), `ruflo` (6), `ack-nestjs-boilerplate` (2, `ab70ad2`), `firstmate` (1, `4207214`) |
+| median resolved stack | **4,270 tokens**, but lopsided: `posthog` (52 entry points) and `ruflo` (6) resolve to 15k–40k each and are 58 of the 123; the rest sit under 6k |
+| entry points over the effective budget | **59 of 123 — 47.97%**: `posthog` (52, `41570ae`), `ruflo` (6), `firstmate` (1, `4207214`) |
 
 The corpus is skewed by two repos: `posthog` and `motrix` (`7861034`) supply 90
 of the 123 entry points, and `ruflo` is the only source of any duplication or
 value-conflict finding. The boring results are real and left in: `llm`
 (`a463c63`) resolves to a zero-token stack (a bare `AGENTS.md` is not loaded at
-model 0.2); `lila` (`9b49f37`), 16.7k files, collapses to one root entry point at
+model 0.4); `lila` (`9b49f37`), 16.7k files, collapses to one root entry point at
 1,814 tokens with no findings; `motrix` raises zero findings across all 38 of its
 entry points. Overgrowth in the wild is real and concentrated, not the median.
 
