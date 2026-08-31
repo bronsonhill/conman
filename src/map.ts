@@ -193,6 +193,7 @@ export function runMap(
   config: Config,
   tokenizerName = "claude-local",
   agent: Agent = "claude",
+  userConfigDir?: string,
 ): MapResult {
   const tok = getTokenizer(tokenizerName);
   const points = discoverEntryPoints(repoRoot, config, agent);
@@ -203,6 +204,7 @@ export function runMap(
       config,
       tokenizer: tok,
       agent,
+      userConfigDir,
     });
     const gate = evaluateGate(analysis, config);
     entries.push({

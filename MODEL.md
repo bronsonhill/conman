@@ -35,8 +35,9 @@ every block.
    entry-closest last. With `resolve.repoBoundary: true` (default) the walk stops
    at the repo root (nearest `.git`); `--no-repo-boundary` continues to the
    filesystem root.
-   - `~/.claude/CLAUDE.md` and other home-directory context are out of scope:
-     conman analyzes a repository, not a machine.
+   - `~/.claude/CLAUDE.md` (Claude Code's "User" memory) is not read by default —
+     conman's default output describes a repository, not a machine. Pass `--user`
+     to fold it in; see "User-level config" below.
    - **`AGENTS.md` is not loaded on its own.** Claude Code reads `CLAUDE.md`;
      `AGENTS.md` is the cross-tool file that Codex, Cursor and Aider read. A bare
      `AGENTS.md` costs a Claude Code session nothing, so conman leaves it out of
@@ -139,8 +140,9 @@ in `settings.local.json` replaces the one in `settings.json`. So a
 `claudeMdExcludes` entry in `settings.local.json` *adds to* the project list —
 it does not replace it. (conman previously did a shallow `Object.assign`, which
 let a local `claudeMdExcludes` drop every project-level exclude.) Precedence,
-lowest first: `~/.claude/settings.json` (not yet modelled) < project
-`settings.json` < local `settings.local.json` < managed policy.
+lowest first: `~/.claude/settings.json` (only with `--user`; see "User-level
+config" below) < project `settings.json` < local `settings.local.json` < managed
+policy. Managed policy is still not modelled.
 
 It acts on:
 
@@ -156,6 +158,39 @@ It acts on:
 
 These key names are conman's current interpretation. They will track Claude Code
 as it formalizes the settings surface; a change here is a model-version change.
+
+## User-level config (`--user`)
+
+By default conman reads only the repository. `--user` (alias
+`--include-user-config`) additionally resolves Claude Code's **User** memory and
+user-level settings from this machine, so a `conman check` / `conman map` run at
+a developer's desk matches how their own harness assembles context.
+
+Modelled for `--agent claude` only — user-level files are Claude Code's own
+memory model, and every other agent has its own home-directory files, which
+conman does not read. `--user` with any other `--agent` is ignored, with a NOTE.
+
+**What it reads**, from `$CLAUDE_CONFIG_DIR` if set, else `~/.claude`
+(`--user-config-dir <path>` overrides both):
+
+- **`<dir>/CLAUDE.md`** — loaded as the **root-most memory block**, ahead of the
+  repo's own root `CLAUDE.md`. It is the most global instruction file (it applies
+  to every repo on the machine), so it sits at the top of the stack. It is
+  loaded as a single block: conman does **not** follow `@`-imports out of the
+  user file (that would pull in more machine-local paths), and it is emitted
+  under the stable label `~/.claude/CLAUDE.md` rather than a real path, so the
+  load-order table stays portable. A NOTE reports any unfollowed `@`-imports.
+- **`<dir>/settings.json`** — merged into the settings layer **below** every
+  repo-root file: `~/.claude/settings.json` < project `settings.json` < local
+  `settings.local.json`. Same deep-merge as the repo files, so a user-level
+  `claudeMdExcludes` *adds to* the project list.
+
+**Reproducibility caveat.** This breaks conman's default guarantee that the same
+input produces the same bytes: the output now depends on whose machine it ran
+on. conman marks it. The human report carries a `scope: machine-specific` line
+under the header, the JSON report sets `"machineSpecific": true`, and both emit a
+NOTE. `conman map` records the NOTE per affected entry point. Leave `--user` out
+of CI and any shared/committed report; it is a desk-time convenience.
 
 ## Other agents (best-effort)
 
@@ -180,10 +215,9 @@ Common to every non-Claude agent:
 ### `--agent codex`
 
 Ancestor `AGENTS.md` files only. Nothing else. Codex also reads
-`~/.codex/AGENTS.md`, which is out of scope for the same reason
-`~/.claude/CLAUDE.md` is: conman analyzes a repository, not a machine. Vendor
-behavior around `AGENTS.md` merge order and depth may differ from this and is not
-tracked.
+`~/.codex/AGENTS.md`; conman does not read it (there is no non-Claude equivalent
+of `--user`). Vendor behavior around `AGENTS.md` merge order and depth may differ
+from this and is not tracked.
 
 ### `--agent copilot`
 

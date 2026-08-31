@@ -127,7 +127,17 @@ conman explain [<id>]        describe a finding type: explanation, research, rem
 Flags: `--json`, `--format <human|json|sarif>`, `--config <path>`, `--budget <n>`,
 `--tokenizer <name>`, `--agent <claude|codex|cursor|copilot>`,
 `--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
-`--map` (with `check`), and `--html <path>` (with `map` or `check --map`).
+`--map` (with `check`), `--html <path>` (with `map` or `check --map`), and
+`--user` (with `--user-config-dir <path>`).
+
+`--user` (alias `--include-user-config`) also resolves this machine's user-level
+Claude config: `~/.claude/CLAUDE.md` as the root-most memory block and
+`~/.claude/settings.json` merged below the repo settings, so a run at your desk
+matches how your own Claude Code harness assembles context. It honours
+`$CLAUDE_CONFIG_DIR`, applies to `--agent claude` only, and is off by default —
+when on, the report reads machine-local files and will not reproduce on another
+machine, so conman marks it `machine-specific` and it does not belong in CI. See
+MODEL.md, "User-level config".
 
 A single-entry run prints the load order with per-block token counts, the total
 against the budget, then the findings. Every finding names a `file:line`, a token

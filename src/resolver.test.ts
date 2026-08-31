@@ -259,6 +259,90 @@ test("--agent cursor: a matching glob makes an .mdc rule path-scoped", () => {
   );
 });
 
+// --- user-level config (`--user`) ------------------------------------------
+
+const USER_HOME = fixture("user-config", "home");
+const USER_REPO = fixture("user-config", "repo");
+const USER_ENTRY = fixture("user-config", "repo", "skip", "deep");
+
+test("--user off: default run is reproducible, no ~/.claude, skip/CLAUDE.md loads", () => {
+  const r = resolveStack(USER_ENTRY, USER_REPO, DEFAULT_CONFIG, tok, []);
+  assert.equal(r.machineSpecific, false);
+  assert.deepEqual(
+    r.blocks.map((b) => b.source),
+    ["CLAUDE.md", "skip/CLAUDE.md"],
+  );
+  assert.ok(!r.notes.some((n) => n.includes("machine-specific")));
+});
+
+test("--user on: ~/.claude/CLAUDE.md loads first and settings.json merges below the repo", () => {
+  const r = resolveStack(
+    USER_ENTRY,
+    USER_REPO,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "claude",
+    USER_HOME,
+  );
+  assert.equal(r.machineSpecific, true);
+  // user memory is the root-most block, ahead of the repo's own root CLAUDE.md
+  assert.deepEqual(
+    r.blocks.map((b) => `${b.kind}:${b.source}`),
+    ["memory:~/.claude/CLAUDE.md", "memory:CLAUDE.md"],
+  );
+  // skip/CLAUDE.md is dropped by the user-level claudeMdExcludes, proving the
+  // user settings.json merged in below the repo-root settings.json
+  assert.ok(
+    r.notes.some((n) => n.includes("claudeMdExcludes: skip/CLAUDE.md")),
+  );
+  assert.ok(r.notes.some((n) => n.includes("machine-specific")));
+});
+
+test("loadSettings deep-merges ~/.claude/settings.json below the repo files", () => {
+  const s = loadSettings(USER_REPO, USER_HOME);
+  assert.deepEqual(s.claudeMdExcludes.slice().sort(), [
+    "nope/CLAUDE.md",
+    "skip/CLAUDE.md",
+  ]);
+  assert.equal(s.skillListingBudget, 40);
+  // without the user dir, only the repo-root exclude is present
+  assert.deepEqual(loadSettings(USER_REPO).claudeMdExcludes, ["nope/CLAUDE.md"]);
+});
+
+test("--user is ignored for non-claude agents, with a note", () => {
+  const r = resolveStack(
+    USER_ENTRY,
+    USER_REPO,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "codex",
+    USER_HOME,
+  );
+  assert.equal(r.machineSpecific, false);
+  assert.ok(!r.blocks.some((b) => b.source === "~/.claude/CLAUDE.md"));
+  assert.ok(r.notes.some((n) => n.includes("--user has no effect with --agent codex")));
+});
+
+test("--user with a config dir that has no CLAUDE.md still merges settings", () => {
+  const emptyish = fixture("user-config", "repo", ".claude"); // settings.json but no CLAUDE.md
+  const r = resolveStack(
+    USER_ENTRY,
+    USER_REPO,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "claude",
+    emptyish,
+  );
+  assert.equal(r.machineSpecific, true);
+  assert.ok(!r.blocks.some((b) => b.source === "~/.claude/CLAUDE.md"));
+  assert.ok(
+    r.notes.some((n) => n.includes("no ~/.claude/CLAUDE.md found")),
+  );
+});
+
 test("non-claude agents do not read settings.json or follow @-imports", () => {
   const root = fixture("monorepo");
   const r = resolveStack(fixture("monorepo", "services", "api"), root, DEFAULT_CONFIG, tok, [], "codex");

@@ -1,0 +1,62 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 4,
+      "lineStart": 1,
+      "source": "~/.claude/CLAUDE.md",
+      "tokens": 23,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b2",
+      "kind": "memory",
+      "lineEnd": 4,
+      "lineStart": 1,
+      "source": "CLAUDE.md",
+      "tokens": 24,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -10753,
+    "effective": 10800,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 47,
+    "total": 12000
+  },
+  "configSource": null,
+  "entry": "skip/deep",
+  "findings": [],
+  "machineSpecific": true,
+  "mode": "stack",
+  "modelVersion": "0.3",
+  "notes": [
+    "machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine",
+    "excluded by settings claudeMdExcludes: skip/CLAUDE.md"
+  ],
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
+  "result": {
+    "pass": true,
+    "reasons": []
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      "CLAUDE.md": 24,
+      "~/.claude/CLAUDE.md": 23
+    },
+    "skillIndexTokens": 0,
+    "stackTokens": 47
+  }
+}
