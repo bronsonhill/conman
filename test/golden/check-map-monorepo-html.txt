@@ -124,6 +124,16 @@
       <p>redundant tokens: 27 (3% of stack).</p>
   </section>
 
+  <section id="path-scoped-rules">
+    <h2>Path-scoped rules</h2>
+    <h3>Did not match every entry point</h3>
+      <ul class="notes">
+        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match 3 entry points</li>
+      </ul>
+    <h3>Matched no entry point (dead scope)</h3>
+      <p>none</p>
+  </section>
+
     <section class="entry" id="entry-0">
       <h2>.</h2>
       <dl class="kv">
@@ -171,7 +181,6 @@
 
       <h3>Notes</h3>
       <ul class="notes">
-        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .</li>
         <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
@@ -234,7 +243,6 @@
 
       <h3>Notes</h3>
       <ul class="notes">
-        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy</li>
         <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
@@ -296,7 +304,6 @@
       <h3>Notes</h3>
       <ul class="notes">
         <li>excluded by settings claudeMdExcludes: services/CLAUDE.md</li>
-        <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services</li>
         <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>

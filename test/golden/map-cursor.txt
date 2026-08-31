@@ -10,6 +10,9 @@ entry points discovered: 2
 discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):
   src/frontend
 
+path-scoped rules that did not match every entry point:
+  .cursor/rules/frontend.mdc is glob-scoped (src/frontend, src/frontend/**); did not match entry .
+
 repo rollup: 545 tokens across 2 entry points
 redundant tokens: 58 (11% of stack)
 

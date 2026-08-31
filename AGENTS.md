@@ -47,6 +47,11 @@ accurate is the token estimate?".
 best-effort non-Claude rulesets, and the `agent === "claude"` path is guaranteed
 byte-identical (early-return before any shared code). Every renderer is a pure formatter over `Analysis` / `MapResult`
   and must stay deterministic: no `Date`, no absolute paths, sort before emit.
+  `mapReport.ts`'s `summarizeMapNotes` hoists the resolver's repeated
+  "rule ... did not match entry <x>" notes out of every per-entry list into a
+  single counted map-level list (`conman map --json` keys `pathScopedRuleNotes`
+  and `deadPathScopedRules`; per-entry `notes` keeps only its unique lines), and
+  `mapHtmlReport.ts` renders the same via a "Path-scoped rules" section.
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
   expected CLI output. `test/run-golden-*.js` diff live output against golden (shared harness in
   `test/golden-lib.js`);

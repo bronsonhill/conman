@@ -9,6 +9,9 @@ entry points discovered: 4
   services      stack             171     -189   0 error, 0 warn       pass
   services/api  stack             268      -92   2 error, 0 warn       FAIL
 
+path-scoped rules that did not match every entry point:
+  rule .claude/rules/backend.md is path-scoped (services/**); did not match 3 entry points
+
 repo rollup: 812 tokens across 4 entry points
 redundant tokens: 27 (3% of stack)
 
