@@ -34,14 +34,13 @@
     {
       "repo": "ack-nestjs-boilerplate",
       "entryPoints": 2,
-      "stackTokens": 49600,
+      "stackTokens": 7000,
       "redundantTokens": 0,
-      "overBudgetEntryPoints": 2,
+      "overBudgetEntryPoints": 0,
       "valueConflictEntryPoints": 0,
       "findingsByType": {
-        "dead-reference": 2,
         "frontmatter": 4,
-        "vehicle-fit": 33
+        "vehicle-fit": 3
       }
     },
     {
