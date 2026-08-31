@@ -141,6 +141,29 @@ export function mergeConfig(base: Config, over: Record<string, unknown>): Config
 }
 
 /**
+ * Parse a conman.json body as JSON5, turning a syntax error into a message that
+ * names the file and quotes the parser's own complaint. Also rejects a top-level
+ * value that is not an object (a bare array, string, or number).
+ */
+function parseConfigText(raw: string, relLabel: string): Record<string, unknown> {
+  let parsed: unknown;
+  try {
+    parsed = JSON5.parse(raw);
+  } catch (err) {
+    const msg = (err as Error)?.message ?? String(err);
+    throw new Error(`${relLabel} is not valid JSON5: ${msg}`);
+  }
+  if (!isObject(parsed)) {
+    throw new Error(
+      `${relLabel} must contain a JSON object at the top level, got ${
+        Array.isArray(parsed) ? "an array" : typeof parsed
+      }`,
+    );
+  }
+  return parsed;
+}
+
+/**
  * Walk up from `startDir` to `repoRoot` looking for conman.json. The first hit
  * wins. `explicitPath`, when given, is used directly.
  */
@@ -152,7 +175,7 @@ export function loadConfig(
   if (explicitPath) {
     const abs = resolve(explicitPath);
     const raw = readFileSync(abs, "utf8");
-    const parsed = JSON5.parse(raw) as Record<string, unknown>;
+    const parsed = parseConfigText(raw, relPosix(repoRoot, abs));
     return {
       config: mergeConfig(DEFAULT_CONFIG, parsed),
       source: relPosix(repoRoot, abs),
@@ -163,10 +186,10 @@ export function loadConfig(
   for (;;) {
     const candidate = join(dir, "conman.json");
     if (existsSync(candidate)) {
-      const parsed = JSON5.parse(readFileSync(candidate, "utf8")) as Record<
-        string,
-        unknown
-      >;
+      const parsed = parseConfigText(
+        readFileSync(candidate, "utf8"),
+        relPosix(repoRoot, candidate),
+      );
       return {
         config: mergeConfig(DEFAULT_CONFIG, parsed),
         source: relPosix(repoRoot, candidate),
