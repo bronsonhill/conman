@@ -455,9 +455,12 @@ built.
 ### `--user`
 
 `--user` (alias `--include-user-config`) also resolves this machine's user-level
-Claude config: `~/.claude/CLAUDE.md` as the root-most memory block and
-`~/.claude/settings.json` merged below the repo settings, so a run at your desk
-matches how your own Claude Code harness assembles context. It honours
+Claude config: `~/.claude/CLAUDE.md` as the root-most memory block,
+`~/.claude/settings.json` merged below the repo settings, and `~/.claude/skills`
+and `~/.claude/rules` folded in root-most (user skills merge into the same
+startup index as the repo's and count toward `maxSkills` / `budget.skillIndex`).
+A run at your desk then matches how your own Claude Code harness assembles
+context. It honours
 `$CLAUDE_CONFIG_DIR`, applies to `--agent claude` only, and is off by default —
 when on, the report reads machine-local files and will not reproduce on another
 machine, so `conman` marks it `machine-specific` and it does not belong in CI. See

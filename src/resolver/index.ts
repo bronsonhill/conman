@@ -46,7 +46,12 @@ import { buildSkillIndex } from "./skills.js";
 import { classifyAgentsMd, type UnlinkedAgentsCopy } from "./agentsMd.js";
 
 // Re-export the stages' public surface so `./resolver.js` importers see one API.
-export { loadSettings, USER_MEMORY_LABEL } from "./settings.js";
+export {
+  loadSettings,
+  USER_MEMORY_LABEL,
+  USER_SKILLS_LABEL,
+  USER_RULES_LABEL,
+} from "./settings.js";
 export type { Settings } from "./settings.js";
 export type { UnlinkedAgentsCopy } from "./agentsMd.js";
 export type { FrontmatterSubject } from "./imports.js";
@@ -220,7 +225,16 @@ export function resolveStack(
     }
   }
 
-  const claudeDirs = findClaudeDirs(entryDir, repoRoot);
+  // `--user` folds `~/.claude` in as the root-most `.claude` dir, so its
+  // `skills/` and `rules/` feed the same startup index and rule collection as
+  // the repo's own — Claude Code loads user-level skills and rules too. It sits
+  // first (root-most) to match how `~/.claude/CLAUDE.md` loads ahead of the
+  // repo's root memory. The stage collectors emit a stable `~/.claude/...`
+  // label for anything found under it, so the report stays machine-independent.
+  const claudeDirs = [
+    ...(userConfigDir !== undefined ? [userConfigDir] : []),
+    ...findClaudeDirs(entryDir, repoRoot),
+  ];
   const entryTargetPosix = entryIsMemoryFile
     ? relPosix(repoRoot, entryDir)
     : entryPosix;
@@ -229,11 +243,12 @@ export function resolveStack(
     entryTargetPosix || ".",
     excludes,
     ctx,
+    userConfigDir,
   );
 
   const skillBudget =
     config.resolve.skillListingBudget ?? settings.skillListingBudget ?? null;
-  const skillIndex = buildSkillIndex(claudeDirs, skillBudget, ctx);
+  const skillIndex = buildSkillIndex(claudeDirs, skillBudget, ctx, userConfigDir);
 
   const blocks = [
     ...userBlocks,

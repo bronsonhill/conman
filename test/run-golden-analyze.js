@@ -169,4 +169,30 @@ registerGolden("golden/analyze", [
       "--json",
     ],
   },
+  {
+    // --user also folds in ~/.claude/skills and ~/.claude/rules: the user skills
+    // merge name-sorted with the project skill under a stable "~/.claude/skills"
+    // label (commit-style, rg-check, rg-helper), and a user rule loads always-on
+    // as "~/.claude/rules/always-note.md". The path-scoped user rule does not
+    // match the entry and only leaves a NOTE.
+    name: "analyze-user-skills",
+    args: [
+      "test/fixtures/user-skills/repo",
+      "--repo-root",
+      "test/fixtures/user-skills/repo",
+      "--user-config-dir",
+      "test/fixtures/user-skills/home",
+    ],
+  },
+  {
+    name: "analyze-user-skills-json",
+    args: [
+      "test/fixtures/user-skills/repo",
+      "--repo-root",
+      "test/fixtures/user-skills/repo",
+      "--user-config-dir",
+      "test/fixtures/user-skills/home",
+      "--json",
+    ],
+  },
 ]);

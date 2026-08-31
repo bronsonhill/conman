@@ -8,6 +8,7 @@ import type { Block } from "../types.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "../repo.js";
 import { parseFrontmatter } from "../frontmatter.js";
 import { RULE_SCOPE_KEY, toStringArray } from "../claudeContext.js";
+import { USER_RULES_LABEL } from "./settings.js";
 import { countLines, type ImportCtx } from "./imports.js";
 
 export function findClaudeDirs(entryDir: string, repoRoot: string): string[] {
@@ -30,10 +31,12 @@ export function collectRuleBlocks(
   entryTargetPosix: string,
   excludes: string[],
   ctx: ImportCtx,
+  userConfigDir?: string,
 ): { always: Omit<Block, "id" | "tokens">[]; scoped: Omit<Block, "id" | "tokens">[] } {
   const always: Omit<Block, "id" | "tokens">[] = [];
   const scoped: Omit<Block, "id" | "tokens">[] = [];
   for (const cdir of claudeDirs) {
+    const isUserDir = userConfigDir !== undefined && cdir === userConfigDir;
     const rdir = join(cdir, "rules");
     if (!isDir(rdir)) continue;
     const entries = readdirSync(rdir)
@@ -42,18 +45,23 @@ export function collectRuleBlocks(
     for (const f of entries) {
       const abs = join(rdir, f);
       if (!isFile(abs)) continue;
+      // User-level rules (`~/.claude/rules/`, only with `--user`) are labelled
+      // with the stable `~/.claude/rules/<file>` path so the report stays
+      // machine-independent; `claudeMdExcludes` globs are repo-relative and so
+      // never match them, which is correct — they are not in the repo.
+      const rel = isUserDir
+        ? `${USER_RULES_LABEL}/${f}`
+        : relPosix(ctx.repoRoot, abs);
       // `claudeMdExcludes` covers rules files too: the settings docs' own
       // example excludes a `.claude/rules/**` glob, and Claude Code's
       // changelog (v2.1.2xx) fixes exclusion of symlinked rules entries.
-      const relForExclude = relPosix(ctx.repoRoot, abs);
-      if (excludes.length > 0 && matchesAnyGlob(relForExclude, excludes)) {
-        ctx.notes.push(`excluded by settings claudeMdExcludes: ${relForExclude}`);
+      if (excludes.length > 0 && matchesAnyGlob(rel, excludes)) {
+        ctx.notes.push(`excluded by settings claudeMdExcludes: ${rel}`);
         continue;
       }
       const text = readFileSync(abs, "utf8");
       const fm = parseFrontmatter(text);
       const lineCount = countLines(text);
-      const rel = relPosix(ctx.repoRoot, abs);
       ctx.frontmatterSubjects.push({ file: rel, role: "rule", text });
 
       // Claude Code path-scopes a rule on one frontmatter key: `paths`. A rule

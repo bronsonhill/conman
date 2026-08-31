@@ -22,6 +22,13 @@ follow semantic versioning.
 - README "How accurate is the token estimate?" — a measured drift table
   (`local` vs `count_tokens`) over the pinned corpus, plus
   `scripts/measure-tokenizer.mjs` to regenerate it.
+- `--user` now also folds in `~/.claude/skills/` and `~/.claude/rules/`, not just
+  `~/.claude/CLAUDE.md` and `~/.claude/settings.json`. User skills merge
+  name-sorted into the same startup index as the repo's and count toward
+  `maxSkills` / `max-skills` and `budget.skillIndex` / `skill-index-budget`; user
+  rules join the repo's `.claude/rules/` root-most. Entries found under the user
+  dir carry stable `~/.claude/skills` / `~/.claude/rules/<file>` labels so the
+  report shape stays reproducible. See `MODEL.md`, "User-level config".
 
 ### Changed
 
