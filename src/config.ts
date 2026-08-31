@@ -82,8 +82,11 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-/** Shallow-ish merge: known nested objects merge key by key, scalars overwrite. */
-function mergeConfig(base: Config, over: Record<string, unknown>): Config {
+/**
+ * Shallow-ish merge: known nested objects merge key by key, scalars overwrite.
+ * Exported for unit tests; `loadConfig` is the normal entry point.
+ */
+export function mergeConfig(base: Config, over: Record<string, unknown>): Config {
   const out: Config = {
     budget: { ...base.budget },
     maxSkills: base.maxSkills,
