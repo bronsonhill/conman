@@ -105,6 +105,15 @@ conman finds in the wild" numbers in `README.md` /
 job per PR (small subset), `.github/workflows/corpus.yml` on corpus-tooling
 changes and weekly (all 11).
 
+`scripts/survey.mjs` (standalone, not built, not CI, not the fixture corpus) is
+a separate, heavier evidence path: it code-searches GitHub via `gh-axi`,
+shallow-clones a deterministic sample of public repos one at a time, runs the
+local `conman map` build over each, deletes the clone, and writes
+`docs/survey-<YYYY-MM>.md` plus the README "Broader sample" block (between the
+`<!-- survey:begin -->` / `<!-- survey:end -->` markers). Its header comment has
+`--help`, the flags, and the captain's full ~100-repo run command. Keep it off
+CI and out of `fixtures/`.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
