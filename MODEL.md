@@ -80,7 +80,7 @@ every block.
      `globs` but no `paths` loads always-on, with a NOTE.
    - Always-loaded rules load first (path-sorted), then path-scoped rules that
      matched (path-sorted). Rules load after all memory files.
-   - `@`-imports inside rule files are not followed in `0.1`.
+   - `@`-imports inside rule files are not followed.
    - conman's glob matcher (`src/repo.ts`) does not do brace expansion, so a
      `paths` pattern like `src/**/*.{ts,tsx}` matches literally rather than as
      the two patterns Claude Code expands it to.
