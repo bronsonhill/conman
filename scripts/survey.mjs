@@ -47,7 +47,7 @@
 // and fill the disk; run it in the durable checkout):
 //
 //   cd ~/Documents/Repositories/conman
-//   git checkout fm/conman-survey-100 && npm run build
+//   git pull && npm run build
 //   node scripts/survey.mjs --discover-only --pages 10
 //   node scripts/survey.mjs \
 //     --candidates docs/survey-candidates-$(date +%Y-%m).txt \
@@ -436,7 +436,8 @@ function resultsDoc({ month, args, candidateCount, discoverySource, sample, repo
   L.push("");
   L.push("```");
   L.push("cd ~/Documents/Repositories/conman");
-  L.push("git checkout fm/conman-survey-100 && npm run build");
+  L.push("git pull");
+  L.push("npm run build");
   L.push("node scripts/survey.mjs --discover-only --pages 10");
   L.push(`node scripts/survey.mjs --candidates docs/survey-candidates-${month}.txt --limit 100 --seed conman-survey-${month}`);
   L.push("```");
