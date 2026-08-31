@@ -116,6 +116,24 @@ model 0.2); `lila` (`9b49f37`), 16.7k files, collapses to one root entry point a
 1,814 tokens with no findings; `motrix` raises zero findings across all 38 of its
 entry points. Overgrowth in the wild is real and concentrated, not the median.
 
+<!-- survey:begin -->
+
+### Broader sample (small-sample validation run)
+
+A wider, non-deterministic sweep lives in [`docs/survey-2026-08.md`](docs/survey-2026-08.md). The run below is a
+**small-sample validation** of `scripts/survey.mjs` (9 repos mapped of
+10 sampled), not the full survey — treat the pinned-corpus table above as the
+load-bearing numbers until the ~100-repo run lands.
+
+| measure | sample result |
+|---------|---------------|
+| redundant tokens (% of resolved stack, per repo) | **median 0%, mean 0.01%** |
+| repos with a direct value conflict (error severity) | **1 of 9 — 11.1%** |
+| median resolved stack | **17,803 tokens** |
+| repos with an over-budget entry point | **5 of 9 — 55.6%** |
+
+<!-- survey:end -->
+
 ## Install
 
 ```
