@@ -13,14 +13,7 @@ import type { MapResult, MapEntryResult } from "./map.js";
 import { MODEL_VERSION, type Finding } from "./types.js";
 import { redundancy } from "./report.js";
 import { mapRedundancy, summarizeMapNotes } from "./mapReport.js";
-
-const KIND_LABEL: Record<string, string> = {
-  memory: "memory",
-  import: "import",
-  "rule-always": "rule-always",
-  "rule-scoped": "rule-scoped",
-  "skill-index": "skill-index",
-};
+import { KIND_LABEL, severityCounts } from "./reportUtil.js";
 
 // Entry-level keys this renderer lays out explicitly. Anything else on a
 // MapEntryResult (e.g. fields a later discovery pass adds) is dumped verbatim in
@@ -51,16 +44,6 @@ function formatDetailValue(v: unknown): string {
   if (Array.isArray(v)) return v.map((x) => String(x)).join(", ");
   if (v && typeof v === "object") return JSON.stringify(v);
   return String(v);
-}
-
-function severityCounts(findings: Finding[]): { error: number; warn: number } {
-  let error = 0;
-  let warn = 0;
-  for (const f of findings) {
-    if (f.severity === "error") error++;
-    else if (f.severity === "warn") warn++;
-  }
-  return { error, warn };
 }
 
 const STYLE = `
