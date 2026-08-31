@@ -4,7 +4,7 @@
 // per-block token counts, findings engine -> findings, report renderer -> text.
 
 /** conman analysis-model version; bump when resolution semantics change. */
-export const MODEL_VERSION = "0.3";
+export const MODEL_VERSION = "0.4";
 
 export type BlockKind =
   | "memory" // an ancestor CLAUDE.md / AGENTS.md
@@ -58,7 +58,9 @@ export type FindingType =
   | "lint-duplication"
   | "stale-boilerplate"
   | "dead-reference"
-  | "max-skills";
+  | "max-skills"
+  | "per-file-budget"
+  | "skill-index-budget";
 export type Severity = "error" | "warn" | "off";
 
 export interface Location {

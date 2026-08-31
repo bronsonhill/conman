@@ -115,6 +115,28 @@ export const FINDING_INFO: Record<FindingType, FindingInfo> = {
     remediation:
       "Consolidate overlapping skills, delete unused ones, or split a sprawling skill set so each entry point's index stays under the cap. The default 8 is transferred from tool-selection research, not measured on skill indexes; override `maxSkills` in conman.json if your skills are well separated.",
   },
+  "per-file-budget": {
+    title: "Single file over the per-file budget",
+    explanation:
+      "One resolved memory file's summed token contribution to the stack is over `budget.perFile`. The resolved stack has no override semantics — every block is loaded and paid for on every request — so a single file this large sets the floor for every session's base context regardless of the task. The default cap is chosen to flag outliers on the 2026-08 survey sample, not as a published limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default; raise `gate.per-file-budget` to error in conman.json to make it a gate failure.",
+    citations: [
+      "Evaluating AGENTS.md (Gloaguen et al., Feb 2026), https://arxiv.org/abs/2602.11988 — providing a context file raised inference cost by more than 20% on average; the authors recommend keeping human-written context minimal.",
+      "Probe-and-Refine Tuning of Repository Guidance (Shepard & Albrecht, June 2026), https://arxiv.org/abs/2606.20512 — a guidance file iteratively pruned against synthetic probes beat the unpruned baseline on SWE-bench Verified, 33.0% versus 25.5%.",
+    ],
+    remediation:
+      "Split the file, move the task-specific bulk into a skill or a linked document reached on demand, or scope part of it to the paths that need it with a `.claude/rules` entry. If the size is genuinely warranted for this repo, raise `budget.perFile` in conman.json.",
+  },
+  "skill-index-budget": {
+    title: "Skill index over the token budget",
+    explanation:
+      "The startup skill listing costs more than `budget.skillIndex` tokens. The listing is loaded into context on every request whether or not any skill is used, so it is pure per-session overhead. This is the cost line for the skill index; `max-skills` is the separate count line, since selection accuracy degrades with the number of candidates independently of how terse each entry is. The default cap is chosen to flag outliers on the 2026-08 survey sample and is pinned to MODEL_VERSION for re-review. Warn by default; raise `gate.skill-index-budget` to error to make it a gate failure.",
+    citations: [
+      "Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026), https://arxiv.org/abs/2606.15828 — general context bloat was found in 42% of files across a 100-repo scan.",
+      "Evaluating AGENTS.md (Gloaguen et al., Feb 2026), https://arxiv.org/abs/2602.11988 — any non-essential content loaded every session raises inference cost; keep it minimal.",
+    ],
+    remediation:
+      "Shorten skill descriptions, consolidate or remove skills, or set `skillListingBudget` in settings.json so Claude Code truncates the listing. If the index is genuinely this large for a reason, raise `budget.skillIndex` in conman.json.",
+  },
 };
 
 export const FINDING_IDS = Object.keys(FINDING_INFO).sort() as FindingType[];

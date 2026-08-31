@@ -37,7 +37,7 @@ export const DEFAULT_CONFIG: Config = {
   budget: {
     total: 12000,
     perFile: 4000,
-    skillIndex: 2000,
+    skillIndex: 1000,
   },
   maxSkills: 8,
   safetyMargin: 0.1,
@@ -63,6 +63,11 @@ export const DEFAULT_CONFIG: Config = {
     // 9-15 skills in one startup index, "error" for >15. "warn" caps the >15
     // case at warn; "off" disables the check. See src/findings/maxSkills.ts.
     "max-skills": "error",
+    // Budget caps enforced as findings (src/findings/budgetCaps.ts). "warn" by
+    // default: they flag outliers, they do not fail `conman check` on their own.
+    // Raise to "error" per repo to make either a gate failure; "off" disables.
+    "per-file-budget": "warn",
+    "skill-index-budget": "warn",
   },
   resolve: {
     repoBoundary: true,

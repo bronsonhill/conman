@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.2` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.4` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -380,6 +380,22 @@ finding — that check is Claude-specific.
   are transferred from tool-selection research, not measured on skill indexes;
   see the `maxSkills` row in "Default budget numbers" for provenance and the
   version pin. `--fix` does not touch skills.
+- **Per-file budget** — a single resolved memory file's summed token
+  contribution to the stack is over `budget.perFile`. The resolved stack has no
+  override semantics, so one file this large sets the floor for every session's
+  base context regardless of the task. One finding per file over the cap; it
+  names the file, its token contribution, and the cap. `config.gate`
+  `["per-file-budget"]` sets the severity: **warn** by default (flags an
+  outlier, does not fail `conman check`), **error** to make it a gate failure,
+  **off** to disable. The skill-index source file is excluded here — the
+  skill-index budget covers it. `--fix` does not touch it.
+- **Skill-index budget** — `Totals.skillIndexTokens`, the token cost of the
+  startup skill listing, is over `budget.skillIndex`. The listing loads every
+  session whether or not a skill is used, so this is the cost line for the skill
+  index; **Max skills** is the separate count line. One finding, pointing at the
+  skills root. `config.gate["skill-index-budget"]` sets the severity: **warn**
+  by default, **error** to fail the gate, **off** to disable. `--fix` does not
+  touch it.
 
 ## Default budget numbers, and why
 
@@ -391,9 +407,9 @@ visible, not a standard. Override them per repo in `conman.json`.
 | Key                    | Default | Reasoning |
 |------------------------|---------|-----------|
 | `budget.total`         | 12000   | A stack in the low thousands of tokens leaves the context window mostly for the session. 12k is a soft ceiling that a healthy small-to-mid repo stays well under. |
-| `budget.perFile`       | 4000    | Roughly a third of the total: no single memory file should dominate the stack. |
-| `budget.skillIndex`    | 2000    | **Cost line for the skill index.** The listing is pure overhead paid every session; it should stay small. |
-| `maxSkills`            | 8       | **Performance line for the skill index**, complementary to `budget.skillIndex` — a count cap, not a token cap. A repo can sit under 2000 tokens (15 terse entries at ~80 tokens is ~1200) and still list enough skills that selection accuracy drops. The number is **transferred from tool / function-selection research** — arXiv 2605.24660 ("How Many Tools Should an LLM Agent See?", knee around 7 to 8) and Anthropic's "advanced tool use" post (retrieve rather than list past ~10 tools, keep 3 to 5 always loaded) — and is **not measured on Claude Code skill indexes**. `gate["max-skills"]` is a ceiling: 9 to 15 skills warn, more than 15 error. Pinned to the `MODEL_VERSION` / "Accurate as of" anchor for re-review as models change: the tool-selection penalty shrinks across model releases (Opus 4: 49% to 74% with retrieval; Opus 4.5: 79.5% to 88.1%), so this knee moves. |
+| `budget.perFile`       | 4000    | Roughly a third of the total: no single memory file should dominate the stack. Enforced as the **per-file-budget** finding (**warn**). Calibrated on the 2026-08 survey sample (25 repos with a resolved stack): 5 of 25 have a file over 4000 tokens; lowering to 2000 would flag 14 of 25. Pinned to `MODEL_VERSION` for re-review. |
+| `budget.skillIndex`    | 1000    | **Cost line for the skill index.** The listing is pure overhead paid every session. Enforced as the **skill-index-budget** finding (**warn**). Calibrated on the same sample: every skill index but one is under 300 tokens, one repo is at ~1016; 1000 flags that outlier and clears a ~12-entry terse index. `max-skills` is the separate count line. Pinned to `MODEL_VERSION` for re-review. |
+| `maxSkills`            | 8       | **Performance line for the skill index**, complementary to `budget.skillIndex` — a count cap, not a token cap. A repo can sit under the token cap and still list enough skills that selection accuracy drops. The number is **transferred from tool / function-selection research** — arXiv 2605.24660 ("How Many Tools Should an LLM Agent See?", knee around 7 to 8) and Anthropic's "advanced tool use" post (retrieve rather than list past ~10 tools, keep 3 to 5 always loaded) — and is **not measured on Claude Code skill indexes**. `gate["max-skills"]` is a ceiling: 9 to 15 skills warn, more than 15 error. Pinned to the `MODEL_VERSION` / "Accurate as of" anchor for re-review as models change: the tool-selection penalty shrinks across model releases (Opus 4: 49% to 74% with retrieval; Opus 4.5: 79.5% to 88.1%), so this knee moves. |
 | `safetyMargin`         | 0.1     | The local tokenizer is an estimate (see below). The gate compares against `total * (1 - margin)` so a stack near the line fails before the real count would. |
 | `resolve.importDepthLimit` | 5   | Matches Claude Code's documented import hop limit. |
 
@@ -469,6 +485,20 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.4** — The two per-part budget caps are enforced.
+
+  `budget.perFile` and `budget.skillIndex` were parsed, documented, and
+  computed, but no finding read them. They now emit the **per-file-budget** and
+  **skill-index-budget** findings through the normal `config.gate` path, at
+  **warn** by default — they flag outliers, they do not fail `conman check` on
+  their own. A repo can raise either to `error` in conman.json, and the gate's
+  existing error-severity loop then catches it with no special-casing. Defaults
+  were calibrated on a 25-repo slice of the 2026-08 survey sample: `perFile`
+  stays at 4000 (5 of 25 over it; 2000 would flag 14 of 25), `skillIndex` drops
+  from 2000 to 1000 (flags the one repo with a ~1016-token skill listing;
+  every other index on the sample is under 300). Both are pinned to
+  `MODEL_VERSION` for re-review.
 
 - **0.3** — Two false-fail fixes.
 

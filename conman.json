@@ -1,7 +1,7 @@
 {
   "budget": {
     "total": 3000,
-    "perFile": 2000,
+    "perFile": 2400,
     "skillIndex": 800
   },
   "safetyMargin": 0.1,

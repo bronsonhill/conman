@@ -1,0 +1,28 @@
+# exit: 0
+conman VERSION - explain per-file-budget
+
+SINGLE FILE OVER THE PER-FILE BUDGET
+
+One resolved memory file's summed token contribution to the stack is over
+`budget.perFile`. The resolved stack has no override semantics — every block is
+loaded and paid for on every request — so a single file this large sets the
+floor for every session's base context regardless of the task. The default cap
+is chosen to flag outliers on the 2026-08 survey sample, not as a published
+limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default;
+raise `gate.per-file-budget` to error in conman.json to make it a gate failure.
+
+RESEARCH
+  - Evaluating AGENTS.md (Gloaguen et al., Feb 2026),
+    https://arxiv.org/abs/2602.11988 — providing a context file raised inference
+    cost by more than 20% on average; the authors recommend keeping
+    human-written context minimal.
+  - Probe-and-Refine Tuning of Repository Guidance (Shepard & Albrecht, June
+    2026), https://arxiv.org/abs/2606.20512 — a guidance file iteratively pruned
+    against synthetic probes beat the unpruned baseline on SWE-bench Verified,
+    33.0% versus 25.5%.
+
+REMEDIATION
+  Split the file, move the task-specific bulk into a skill or a linked document
+  reached on demand, or scope part of it to the paths that need it with a
+  `.claude/rules` entry. If the size is genuinely warranted for this repo, raise
+  `budget.perFile` in conman.json.

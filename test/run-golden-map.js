@@ -11,6 +11,20 @@ registerGolden("golden/map", [
     html: true,
   },
   {
+    name: "map-skill-index-budget",
+    args: ["map", "test/fixtures/skill-index-budget", "--repo-root", "test/fixtures/skill-index-budget"],
+  },
+  {
+    name: "map-skill-index-budget-json",
+    args: [
+      "map",
+      "test/fixtures/skill-index-budget",
+      "--repo-root",
+      "test/fixtures/skill-index-budget",
+      "--json",
+    ],
+  },
+  {
     name: "map-rule-entry",
     args: ["map", "test/fixtures/rule-entry", "--repo-root", "test/fixtures/rule-entry"],
   },

@@ -81,6 +81,34 @@
               }
             },
             {
+              "id": "per-file-budget",
+              "name": "per-file-budget",
+              "shortDescription": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`."
+              },
+              "fullDescription": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`. The resolved stack has no override semantics — every block is loaded and paid for on every request — so a single file this large sets the floor for every session's base context regardless of the task. The default cap is chosen to flag outliers on the 2026-08 survey sample, not as a published limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default; raise `gate.per-file-budget` to error in conman.json to make it a gate failure."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`. The resolved stack has no override semantics — every block is loaded and paid for on every request — so a single file this large sets the floor for every session's base context regardless of the task. The default cap is chosen to flag outliers on the 2026-08 survey sample, not as a published limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default; raise `gate.per-file-budget` to error in conman.json to make it a gate failure.\n\nRemediation: Split the file, move the task-specific bulk into a skill or a linked document reached on demand, or scope part of it to the paths that need it with a `.claude/rules` entry. If the size is genuinely warranted for this repo, raise `budget.perFile` in conman.json."
+              }
+            },
+            {
+              "id": "skill-index-budget",
+              "name": "skill-index-budget",
+              "shortDescription": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens."
+              },
+              "fullDescription": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens. The listing is loaded into context on every request whether or not any skill is used, so it is pure per-session overhead. This is the cost line for the skill index; `max-skills` is the separate count line, since selection accuracy degrades with the number of candidates independently of how terse each entry is. The default cap is chosen to flag outliers on the 2026-08 survey sample and is pinned to MODEL_VERSION for re-review. Warn by default; raise `gate.skill-index-budget` to error to make it a gate failure."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens. The listing is loaded into context on every request whether or not any skill is used, so it is pure per-session overhead. This is the cost line for the skill index; `max-skills` is the separate count line, since selection accuracy degrades with the number of candidates independently of how terse each entry is. The default cap is chosen to flag outliers on the 2026-08 survey sample and is pinned to MODEL_VERSION for re-review. Warn by default; raise `gate.skill-index-budget` to error to make it a gate failure.\n\nRemediation: Shorten skill descriptions, consolidate or remove skills, or set `skillListingBudget` in settings.json so Claude Code truncates the listing. If the index is genuinely this large for a reason, raise `budget.skillIndex` in conman.json."
+              }
+            },
+            {
               "id": "stale-boilerplate",
               "name": "stale-boilerplate",
               "shortDescription": {

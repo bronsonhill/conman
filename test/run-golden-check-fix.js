@@ -5,6 +5,8 @@ import { registerGolden, MONO } from "./golden-lib.js";
 registerGolden("golden/check-fix", [
   { name: "explain-list", args: ["explain"] },
   { name: "explain-duplication", args: ["explain", "duplication"] },
+  { name: "explain-per-file-budget", args: ["explain", "per-file-budget"] },
+  { name: "explain-skill-index-budget", args: ["explain", "skill-index-budget"] },
   { name: "check-monorepo", args: ["check", `${MONO}/services/api`, "--repo-root", MONO] },
   { name: "check-clean", args: ["check", "test/fixtures/clean", "--repo-root", "test/fixtures/clean"] },
   {

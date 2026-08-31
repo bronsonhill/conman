@@ -1,0 +1,85 @@
+# exit: 0
+{
+  "command": "map",
+  "configSource": "conman.json",
+  "deadPathScopedRules": [],
+  "entryPoints": [
+    {
+      "blocks": [
+        {
+          "depth": 0,
+          "id": "b1",
+          "kind": "memory",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": "CLAUDE.md",
+          "tokens": 51,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b2",
+          "kind": "skill-index",
+          "lineEnd": 4,
+          "lineStart": 1,
+          "source": ".claude/skills",
+          "tokens": 228,
+          "via": null
+        }
+      ],
+      "budget": {
+        "delta": -3321,
+        "effective": 3600,
+        "overBudget": false,
+        "safetyMargin": 0.1,
+        "stackTotal": 279,
+        "total": 4000
+      },
+      "discovery": [
+        "memory-file",
+        "root"
+      ],
+      "entry": ".",
+      "findings": [
+        {
+          "detail": {
+            "cap": 40,
+            "tokens": 228
+          },
+          "locations": [
+            {
+              "file": ".claude/skills",
+              "lineEnd": 1,
+              "lineStart": 1
+            }
+          ],
+          "message": "the startup skill index costs 228 tokens, over the 40-token skill-index budget; it is paid on every request",
+          "severity": "warn",
+          "tokens": 228,
+          "type": "skill-index-budget"
+        }
+      ],
+      "mode": "stack",
+      "notes": [],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
+      "result": {
+        "pass": true,
+        "reasons": []
+      },
+      "stackTokens": 279,
+      "tokenizer": "claude-local"
+    }
+  ],
+  "modelVersion": "0.4",
+  "pass": true,
+  "pathScopedRuleNotes": [],
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
+  "tool": "conman",
+  "toolVersion": "0.1.0"
+}

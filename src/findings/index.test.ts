@@ -28,6 +28,8 @@ test("no-regression: the pre-existing fixtures raise none of the three new findi
     "stale-boilerplate",
     "dead-reference",
     "max-skills",
+    "per-file-budget",
+    "skill-index-budget",
   ]);
   for (const [name, sub] of cases) {
     const root = fixture(name);
