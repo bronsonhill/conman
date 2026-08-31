@@ -6,7 +6,7 @@ import { MODEL_VERSION, type Analysis } from "./types.js";
 import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { getTokenizer, type Tokenizer } from "./tokenizer.js";
-import { resolveStack } from "./resolver.js";
+import { resolveStack } from "./resolver/index.js";
 import { costBlocks, computeTotals, computeBudget } from "./coster.js";
 import { runFindings } from "./findings/index.js";
 

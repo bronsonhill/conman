@@ -1,7 +1,7 @@
 import type { Block, Finding } from "../types.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
-import type { UnlinkedAgentsCopy, FrontmatterSubject } from "../resolver.js";
+import type { UnlinkedAgentsCopy, FrontmatterSubject } from "../resolver/index.js";
 import { findDuplication } from "./duplication.js";
 import { findFrontmatterIssues } from "./frontmatter.js";
 import { findUnlinkedCopies } from "./unlinkedCopy.js";
