@@ -178,7 +178,7 @@ FINDINGS  (2 error, 0 warn)
   error  duplication
          CLAUDE.md:7-8
          services/api/CLAUDE.md:7-8
-         identical 27-token block "Run `npm ci` then `npm test`..." appears in 2 files (27 redundant tokens)
+         identical 27-token block "Run `npm ci` then `npm test`. Do not skip the lint step.…" appears in 2 files (27 redundant tokens, relation: parent-child)
   error  value-conflict
          CLAUDE.md:3-3
          services/api/CLAUDE.md:3-3

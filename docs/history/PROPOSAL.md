@@ -1,3 +1,5 @@
+> Pre-build checkpoint. See VISION.md / MODEL.md for current behaviour.
+
 # conman MVP — stack + architecture proposal
 
 Checkpoint before building. Awaiting captain sign-off.

@@ -45,8 +45,10 @@ accurate is the token estimate?".
   README's "What the research says". `cli.ts` is arg-parse and dispatch only. `agent.ts` is the `--agent` enum;
 `resolver.ts`'s `resolveNonClaude` and `map.ts`'s agent-keyed discovery hold the
 best-effort non-Claude rulesets, and the `agent === "claude"` path is guaranteed
-byte-identical (early-return before any shared code). Every renderer is a pure formatter over `Analysis` / `MapResult`
-  and must stay deterministic: no `Date`, no absolute paths, sort before emit.
+byte-identical (early-return before any shared code). Most renderers are pure
+  formatters over `Analysis` / `MapResult`; `report.ts` additionally evaluates
+  the gate (see audit item 15). All of them must stay deterministic: no `Date`,
+  no absolute paths, sort before emit.
   `mapReport.ts`'s `summarizeMapNotes` hoists the resolver's repeated
   "rule ... did not match entry <x>" notes out of every per-entry list into a
   single counted map-level list (`conman map --json` keys `pathScopedRuleNotes`
