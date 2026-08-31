@@ -23,6 +23,21 @@ follow semantic versioning.
   (`local` vs `count_tokens`) over the pinned corpus, plus
   `scripts/measure-tokenizer.mjs` to regenerate it.
 
+### Changed
+
+- README restructured to follow the conventions of widely-used CLI tool READMEs
+  (ripgrep, uv, ruff, bat, fd): one-line pitch and badges above the fold, a
+  scannable feature list, then Quick Start / Install / How It Works / findings /
+  research / configuration / commands / CI. No factual claim changed; the
+  empirical-honesty content (Probe-and-Refine, "conservative starting points,
+  not a standard", no model in the analysis path) is intact and near the top.
+
+### Fixed
+
+- `scripts/survey.mjs` and `docs/survey-2026-08.md` no longer tell the reader to
+  `git checkout fm/conman-survey-100` — that branch is gone and the script is on
+  `main`; the reproduction steps are now `git pull` / build / run.
+
 ## 0.1.0 — 2026-08-30
 
 First published release.
