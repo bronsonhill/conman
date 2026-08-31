@@ -80,6 +80,8 @@ export interface ResolveResult {
    * the machine it ran on and will not reproduce elsewhere.
    */
   machineSpecific: boolean;
+  /** Skills listed in the resolved startup index (post budget-truncation). */
+  skillCount: number;
 }
 
 /**
@@ -427,7 +429,7 @@ function buildSkillIndex(
   claudeDirs: string[],
   budgetTokens: number | null,
   ctx: ImportCtx,
-): Omit<Block, "id" | "tokens"> | null {
+): { block: Omit<Block, "id" | "tokens">; skillCount: number } | null {
   const skills: { name: string; description: string; dirRel: string }[] = [];
   let skillsRootRel = ".claude/skills";
   for (const cdir of claudeDirs) {
@@ -482,12 +484,17 @@ function buildSkillIndex(
 
   const text = kept.map(lineFor).join("\n") + truncatedNote + "\n";
   return {
-    kind: "skill-index",
-    source: skillsRootRel,
-    lineStart: 1,
-    lineEnd: Math.max(1, kept.length),
-    text,
-    depth: 0,
+    block: {
+      kind: "skill-index",
+      source: skillsRootRel,
+      lineStart: 1,
+      lineEnd: Math.max(1, kept.length),
+      text,
+      depth: 0,
+    },
+    // The count that drives the max-skills finding is what the agent actually
+    // sees at startup: entries kept after any skill-listing-budget truncation.
+    skillCount: kept.length,
   };
 }
 
@@ -551,6 +558,7 @@ export function resolveStack(
       unlinkedAgentsCopies,
       frontmatterSubjects: ctx.frontmatterSubjects,
       machineSpecific,
+      skillCount: 0,
     };
   }
 
@@ -646,7 +654,7 @@ export function resolveStack(
     ...memoryBlocks,
     ...always,
     ...scoped,
-    ...(skillIndex ? [skillIndex] : []),
+    ...(skillIndex ? [skillIndex.block] : []),
   ];
   return {
     mode: "stack",
@@ -657,6 +665,7 @@ export function resolveStack(
     unlinkedAgentsCopies,
     frontmatterSubjects: ctx.frontmatterSubjects,
     machineSpecific,
+    skillCount: skillIndex?.skillCount ?? 0,
   };
 }
 
@@ -859,6 +868,7 @@ function resolveNonClaude(
       unlinkedAgentsCopies: [],
       frontmatterSubjects: ctx.frontmatterSubjects,
       machineSpecific: false,
+      skillCount: 0,
     };
   }
 
@@ -920,5 +930,6 @@ function resolveNonClaude(
     unlinkedAgentsCopies: [],
     frontmatterSubjects: ctx.frontmatterSubjects,
     machineSpecific: false,
+    skillCount: 0,
   };
 }

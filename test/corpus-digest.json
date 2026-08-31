@@ -19,6 +19,7 @@
       "overBudgetEntryPoints": 1,
       "valueConflictEntryPoints": 0,
       "findingsByType": {
+        "max-skills": 1,
         "vehicle-fit": 5
       }
     },
@@ -52,6 +53,7 @@
       "valueConflictEntryPoints": 0,
       "findingsByType": {
         "frontmatter": 9,
+        "max-skills": 9,
         "stale-boilerplate": 9
       }
     },
@@ -75,6 +77,7 @@
       "valueConflictEntryPoints": 0,
       "findingsByType": {
         "dead-reference": 5,
+        "max-skills": 52,
         "vehicle-fit": 394
       }
     },
@@ -88,6 +91,7 @@
       "findingsByType": {
         "dead-reference": 12,
         "duplication": 30,
+        "max-skills": 6,
         "stale-boilerplate": 1,
         "value-conflict": 10,
         "vehicle-fit": 8
@@ -110,6 +114,7 @@
       "overBudgetEntryPoints": 0,
       "valueConflictEntryPoints": 0,
       "findingsByType": {
+        "max-skills": 2,
         "vehicle-fit": 6
       }
     },
@@ -120,7 +125,9 @@
       "redundantTokens": 0,
       "overBudgetEntryPoints": 0,
       "valueConflictEntryPoints": 0,
-      "findingsByType": {}
+      "findingsByType": {
+        "max-skills": 2
+      }
     }
   ],
   "corpus": {

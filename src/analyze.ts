@@ -57,6 +57,7 @@ export function analyzeEntry(
     resolved.unlinkedAgentsCopies,
     resolved.frontmatterSubjects,
     opts.repoRoot,
+    resolved.skillCount,
   );
 
   const analysis: Analysis = {

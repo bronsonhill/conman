@@ -67,6 +67,20 @@
               }
             },
             {
+              "id": "max-skills",
+              "name": "max-skills",
+              "shortDescription": {
+                "text": "One entry point's startup skill index lists more skills than the count cap."
+              },
+              "fullDescription": {
+                "text": "One entry point's startup skill index lists more skills than the count cap. This is a selection-load signal, separate from the `budget.skillIndex` token cap: a repo can stay under the token budget and still list enough skills that the agent picks the wrong one more often. Every skill in the index sits in context every session as a candidate, and the tool-selection literature shows wrong-pick rates rising as the flat list grows. The default cap is 8 with a hard cap of 15; 9 to 15 skills is a warning, more than 15 is an error."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "One entry point's startup skill index lists more skills than the count cap. This is a selection-load signal, separate from the `budget.skillIndex` token cap: a repo can stay under the token budget and still list enough skills that the agent picks the wrong one more often. Every skill in the index sits in context every session as a candidate, and the tool-selection literature shows wrong-pick rates rising as the flat list grows. The default cap is 8 with a hard cap of 15; 9 to 15 skills is a warning, more than 15 is an error.\n\nRemediation: Consolidate overlapping skills, delete unused ones, or split a sprawling skill set so each entry point's index stays under the cap. The default 8 is transferred from tool-selection research, not measured on skill indexes; override `maxSkills` in conman.json if your skills are well separated."
+              }
+            },
+            {
               "id": "stale-boilerplate",
               "name": "stale-boilerplate",
               "shortDescription": {

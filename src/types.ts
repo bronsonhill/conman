@@ -57,7 +57,8 @@ export type FindingType =
   | "frontmatter"
   | "lint-duplication"
   | "stale-boilerplate"
-  | "dead-reference";
+  | "dead-reference"
+  | "max-skills";
 export type Severity = "error" | "warn" | "off";
 
 export interface Location {

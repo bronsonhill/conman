@@ -5,6 +5,7 @@ conman VERSION - finding types
   duplication        Duplicated block
   frontmatter        Malformed rule / skill frontmatter
   lint-duplication   Lint rule the tooling already enforces
+  max-skills         Too many skills in the startup index
   stale-boilerplate  Unmodified /init boilerplate
   unlinked-copy      Unlinked CLAUDE.md / AGENTS.md copy
   value-conflict     Direct value conflict

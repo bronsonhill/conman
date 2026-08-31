@@ -367,6 +367,19 @@ finding — that check is Claude-specific.
   `config.gate["dead-reference"]` is a **ceiling** like `gate.frontmatter`:
   `"warn"` caps the import case at warn, `"off"` disables the check. This is a
   read-only lint; `--fix` does not touch references.
+- **Max skills** — the resolved startup skill index for an entry point lists
+  more than `config.maxSkills` skills (default 8), counted *after* any
+  skill-listing-budget truncation, i.e. the entries the agent actually sees.
+  Complementary to `budget.skillIndex`, not a replacement: that caps the token
+  weight of the listing, this caps the count, because selection accuracy
+  degrades with the number of candidates independently of how terse each entry
+  is. Bands: 9 to 15 skills **warn**, more than 15 **error**.
+  `config.gate["max-skills"]` is a **ceiling** like `gate.frontmatter`:
+  `"warn"` caps the >15 case at warn, `"off"` disables the check. The finding
+  names the count and points at the skills root. The default 8 and hard cap 15
+  are transferred from tool-selection research, not measured on skill indexes;
+  see the `maxSkills` row in "Default budget numbers" for provenance and the
+  version pin. `--fix` does not touch skills.
 
 ## Default budget numbers, and why
 
@@ -379,7 +392,8 @@ visible, not a standard. Override them per repo in `conman.json`.
 |------------------------|---------|-----------|
 | `budget.total`         | 12000   | A stack in the low thousands of tokens leaves the context window mostly for the session. 12k is a soft ceiling that a healthy small-to-mid repo stays well under. |
 | `budget.perFile`       | 4000    | Roughly a third of the total: no single memory file should dominate the stack. |
-| `budget.skillIndex`    | 2000    | The skill listing is pure overhead paid every session; it should stay small. |
+| `budget.skillIndex`    | 2000    | **Cost line for the skill index.** The listing is pure overhead paid every session; it should stay small. |
+| `maxSkills`            | 8       | **Performance line for the skill index**, complementary to `budget.skillIndex` — a count cap, not a token cap. A repo can sit under 2000 tokens (15 terse entries at ~80 tokens is ~1200) and still list enough skills that selection accuracy drops. The number is **transferred from tool / function-selection research** — arXiv 2605.24660 ("How Many Tools Should an LLM Agent See?", knee around 7 to 8) and Anthropic's "advanced tool use" post (retrieve rather than list past ~10 tools, keep 3 to 5 always loaded) — and is **not measured on Claude Code skill indexes**. `gate["max-skills"]` is a ceiling: 9 to 15 skills warn, more than 15 error. Pinned to the `MODEL_VERSION` / "Accurate as of" anchor for re-review as models change: the tool-selection penalty shrinks across model releases (Opus 4: 49% to 74% with retrieval; Opus 4.5: 79.5% to 88.1%), so this knee moves. |
 | `safetyMargin`         | 0.1     | The local tokenizer is an estimate (see below). The gate compares against `total * (1 - margin)` so a stack near the line fails before the real count would. |
 | `resolve.importDepthLimit` | 5   | Matches Claude Code's documented import hop limit. |
 
