@@ -10,8 +10,8 @@
 
 import type { Segment } from "./types.js";
 import type { Tokenizer } from "./tokenizer.js";
+import { FENCE } from "./findings/_fence.js";
 
-const FENCE = /^(\s*)(`{3,}|~{3,})/;
 const ATX_HEADING = /^\s{0,3}#{1,6}\s/;
 
 export function splitSegments(

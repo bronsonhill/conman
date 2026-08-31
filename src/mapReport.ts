@@ -3,6 +3,7 @@
 import type { MapResult } from "./map.js";
 import { MODEL_VERSION } from "./types.js";
 import { redundancy } from "./report.js";
+import { pad, padStart, sortDeep } from "./reportUtil.js";
 
 /** Redundant tokens across every entry point, and that as a share of the rollup. */
 export function mapRedundancy(result: MapResult): { tokens: number; pctOfStack: number } {
@@ -85,13 +86,6 @@ export function summarizeMapNotes(result: MapResult): MapNoteSummary {
   return { collapsed, deadRules, perEntry };
 }
 
-function pad(s: string, w: number): string {
-  return s.length >= w ? s : s + " ".repeat(w - s.length);
-}
-function padStart(s: string, w: number): string {
-  return s.length >= w ? s : " ".repeat(w - s.length) + s;
-}
-
 export function renderMapHuman(
   result: MapResult,
   toolVersion: string,
@@ -168,18 +162,6 @@ export function renderMapHuman(
     for (const r of e.reasons) out.push(`    - ${r}`);
   }
   return out.join("\n") + "\n";
-}
-
-function sortDeep(v: unknown): unknown {
-  if (Array.isArray(v)) return v.map(sortDeep);
-  if (v && typeof v === "object") {
-    const o: Record<string, unknown> = {};
-    for (const k of Object.keys(v as Record<string, unknown>).sort()) {
-      o[k] = sortDeep((v as Record<string, unknown>)[k]);
-    }
-    return o;
-  }
-  return v;
 }
 
 export function renderMapJson(

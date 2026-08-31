@@ -28,27 +28,7 @@ import { dirname, join, resolve } from "node:path";
 import type { Block, Finding, Severity } from "../types.js";
 import type { Config } from "../config.js";
 import { isDir, isFile } from "../repo.js";
-
-const FENCE = /^(\s*)(`{3,}|~{3,})/;
-
-/** 0-based indices of lines inside a fenced code block. */
-function fencedLines(lines: string[]): Set<number> {
-  const set = new Set<number>();
-  let open = false;
-  let marker = "";
-  lines.forEach((line, i) => {
-    const m = line.match(FENCE);
-    if (open) {
-      set.add(i);
-      if (m && m[2]!.startsWith(marker)) open = false;
-    } else if (m) {
-      set.add(i);
-      open = true;
-      marker = m[2]![0]!.repeat(3);
-    }
-  });
-  return set;
-}
+import { fencedLineSet as fencedLines } from "./_fence.js";
 
 /** Blank out inline `code` spans so their contents are not scanned as prose. */
 function stripInlineCode(line: string): string {

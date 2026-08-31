@@ -2,24 +2,10 @@
 // and `json` (for CI and tooling). Both are deterministic byte-for-byte given
 // the same Analysis.
 
-import { MODEL_VERSION, type Analysis, type Finding } from "./types.js";
+import { MODEL_VERSION, type Analysis } from "./types.js";
 import { evaluateGate } from "./gate.js";
 import type { Config } from "./config.js";
-
-const KIND_LABEL: Record<string, string> = {
-  memory: "memory",
-  import: "import",
-  "rule-always": "rule-always",
-  "rule-scoped": "rule-scoped",
-  "skill-index": "skill-index",
-};
-
-function pad(s: string, w: number): string {
-  return s.length >= w ? s : s + " ".repeat(w - s.length);
-}
-function padStart(s: string, w: number): string {
-  return s.length >= w ? s : " ".repeat(w - s.length) + s;
-}
+import { KIND_LABEL, pad, padStart, severityCounts, sortDeep } from "./reportUtil.js";
 
 export interface RenderContext {
   analysis: Analysis;
@@ -102,7 +88,7 @@ export function renderHuman(ctx: RenderContext): string {
   out.push("");
 
   // findings
-  const counts = countBySeverity(a.findings);
+  const counts = severityCounts(a.findings);
   out.push(
     `FINDINGS  (${counts.error} error, ${counts.warn} warn)` +
       (a.findings.length === 0 ? "  none" : ""),
@@ -146,29 +132,6 @@ export function redundancy(a: Analysis): { tokens: number; pctOfStack: number } 
     .reduce((n, f) => n + (f.tokens ?? 0), 0);
   const stack = a.totals.stackTokens;
   return { tokens, pctOfStack: stack > 0 ? Math.round((tokens / stack) * 100) : 0 };
-}
-
-function countBySeverity(findings: Finding[]) {
-  let error = 0;
-  let warn = 0;
-  for (const f of findings) {
-    if (f.severity === "error") error++;
-    else if (f.severity === "warn") warn++;
-  }
-  return { error, warn };
-}
-
-/** Recursively sort object keys so JSON.stringify output is stable. */
-function sortDeep(v: unknown): unknown {
-  if (Array.isArray(v)) return v.map(sortDeep);
-  if (v && typeof v === "object") {
-    const out: Record<string, unknown> = {};
-    for (const k of Object.keys(v as Record<string, unknown>).sort()) {
-      out[k] = sortDeep((v as Record<string, unknown>)[k]);
-    }
-    return out;
-  }
-  return v;
 }
 
 export function renderJson(ctx: RenderContext): string {

@@ -23,8 +23,7 @@ import type { Tokenizer } from "./tokenizer.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 import { MEMORY_NAMES, RULE_SCOPE_KEY, toStringArray } from "./claudeContext.js";
-
-const FENCE = /^(\s*)(`{3,}|~{3,})/;
+import { fencedLineSet } from "./findings/_fence.js";
 
 /** Line count that does not overcount a trailing newline. */
 function countLines(text: string): number {
@@ -233,25 +232,6 @@ function normalizeForCompare(s: string): string {
     .join("\n")
     .replace(/^\n+/, "")
     .replace(/\n+$/, "");
-}
-
-/** Line indices (0-based) that sit inside a fenced code block. */
-function fencedLineSet(lines: string[]): Set<number> {
-  const set = new Set<number>();
-  let inFence = false;
-  let marker = "";
-  lines.forEach((line, i) => {
-    const m = line.match(FENCE);
-    if (inFence) {
-      set.add(i);
-      if (m && m[2]!.startsWith(marker)) inFence = false;
-    } else if (m) {
-      set.add(i);
-      inFence = true;
-      marker = m[2]![0]!.repeat(3);
-    }
-  });
-  return set;
 }
 
 function findImports(
