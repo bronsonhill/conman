@@ -1,0 +1,27 @@
+# exit: 0
+conman VERSION  model 0.3  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source          lines         tokens
+  b1   memory       CLAUDE.md       1-3               25
+  b2   skill-index  .claude/skills  1-10             160
+  ------------------------------------------------------
+  total                                              185
+
+BUDGET
+  budget          2000
+  safety margin   10%   ->  effective 1800
+  stack total     185
+  delta           -1615  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 1 warn)
+  warn   max-skills
+         .claude/skills:1-10
+         the startup skill index lists 10 skills (over the recommended 8); every unselected skill is a distractor at pick time, and selection accuracy drops measurably in this range
+
+RESULT  pass

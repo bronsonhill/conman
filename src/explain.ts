@@ -104,6 +104,17 @@ export const FINDING_INFO: Record<FindingType, FindingInfo> = {
     remediation:
       "Fix or remove the reference: correct the `@`-import path, update the prose path, or rename the script to match package.json. A dead `@`-import is a gate error because the drop is silent; a dead prose path or script is a warning.",
   },
+  "max-skills": {
+    title: "Too many skills in the startup index",
+    explanation:
+      "One entry point's startup skill index lists more skills than the count cap. This is a selection-load signal, separate from the `budget.skillIndex` token cap: a repo can stay under the token budget and still list enough skills that the agent picks the wrong one more often. Every skill in the index sits in context every session as a candidate, and the tool-selection literature shows wrong-pick rates rising as the flat list grows. The default cap is 8 with a hard cap of 15; 9 to 15 skills is a warning, more than 15 is an error.",
+    citations: [
+      "How Many Tools Should an LLM Agent See? A Chance-Corrected Answer (Prakash et al., 2026), https://arxiv.org/abs/2605.24660 — an adaptive agent matches fixed-50 coverage while showing ~7.4 candidate tools on average; selection accuracy on ambiguous queries is markedly worse with a long list than a short one, with the knee around 7 to 8.",
+      "Anthropic, Advanced tool use (engineering blog), https://www.anthropic.com/engineering/advanced-tool-use — recommends on-demand tool retrieval once ~10+ tools are available and keeping only 3 to 5 tools always loaded; on large tool libraries, retrieval lifted accuracy from 49% to 74% (Opus 4).",
+    ],
+    remediation:
+      "Consolidate overlapping skills, delete unused ones, or split a sprawling skill set so each entry point's index stays under the cap. The default 8 is transferred from tool-selection research, not measured on skill indexes; override `maxSkills` in conman.json if your skills are well separated.",
+  },
 };
 
 export const FINDING_IDS = Object.keys(FINDING_INFO).sort() as FindingType[];

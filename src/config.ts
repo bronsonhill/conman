@@ -15,6 +15,13 @@ export interface Config {
     perFile: number;
     skillIndex: number;
   };
+  /**
+   * Count cap on how many skills one entry point's startup index lists. A
+   * performance signal (does the agent still pick the right skill?), distinct
+   * from `budget.skillIndex`, which caps the token cost of the same listing.
+   * See MODEL.md "Default budget numbers".
+   */
+  maxSkills: number;
   safetyMargin: number;
   gate: Record<FindingType | "over-budget", Severity>;
   resolve: {
@@ -32,6 +39,7 @@ export const DEFAULT_CONFIG: Config = {
     perFile: 4000,
     skillIndex: 2000,
   },
+  maxSkills: 8,
   safetyMargin: 0.1,
   gate: {
     "over-budget": "error",
@@ -51,6 +59,10 @@ export const DEFAULT_CONFIG: Config = {
     // "warn" for a dead prose path or script name. "warn" caps the import case
     // at warn; "off" disables the check.
     "dead-reference": "error",
+    // Ceiling for the max-skills finding, which assigns per sub-case: "warn" for
+    // 9-15 skills in one startup index, "error" for >15. "warn" caps the >15
+    // case at warn; "off" disables the check. See src/findings/maxSkills.ts.
+    "max-skills": "error",
   },
   resolve: {
     repoBoundary: true,
@@ -74,6 +86,7 @@ function isObject(v: unknown): v is Record<string, unknown> {
 function mergeConfig(base: Config, over: Record<string, unknown>): Config {
   const out: Config = {
     budget: { ...base.budget },
+    maxSkills: base.maxSkills,
     safetyMargin: base.safetyMargin,
     gate: { ...base.gate },
     resolve: { ...base.resolve },
@@ -84,6 +97,13 @@ function mergeConfig(base: Config, over: Record<string, unknown>): Config {
       const v = over.budget[k];
       if (typeof v === "number" && Number.isFinite(v)) out.budget[k] = v;
     }
+  }
+  if (
+    typeof over.maxSkills === "number" &&
+    Number.isInteger(over.maxSkills) &&
+    over.maxSkills >= 0
+  ) {
+    out.maxSkills = over.maxSkills;
   }
   if (typeof over.safetyMargin === "number" && Number.isFinite(over.safetyMargin)) {
     out.safetyMargin = Math.max(0, Math.min(0.9, over.safetyMargin));

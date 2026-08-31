@@ -75,6 +75,16 @@ hygiene are not.
   which `VISION.md` rules out of conman's path; the paper supports "pruned beats
   static", not "mechanical dedupe beats static".
 
+On skill-index length specifically, no one has published a measurement for
+Claude Code skill indexes, but the adjacent tool/function-selection work is
+consistent: **[How Many Tools Should an LLM Agent
+See?](https://arxiv.org/abs/2605.24660)** (Prakash et al., 2026) puts the knee
+around 7 to 8 candidates, and Anthropic's **[advanced tool
+use](https://www.anthropic.com/engineering/advanced-tool-use)** post recommends
+retrieving rather than listing tools past ~10 and keeping only 3 to 5 always
+loaded. conman's `maxSkills` check (default 8, hard cap 15) borrows those
+numbers; see MODEL.md for the caveat and the version pin.
+
 conman targets the settled part: duplication, self-contradiction, and per-session
 token cost you can measure and budget before a session starts. Whether a leaner
 stack also improves task outcomes is a question for a future eval, not a claim

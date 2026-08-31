@@ -39,6 +39,18 @@ registerGolden("golden/analyze", [
     args: ["test/fixtures/stale-init", "--repo-root", "test/fixtures/stale-init"],
   },
   {
+    name: "analyze-max-skills",
+    args: ["test/fixtures/max-skills", "--repo-root", "test/fixtures/max-skills"],
+  },
+  {
+    name: "analyze-max-skills-over",
+    args: [
+      "test/fixtures/max-skills-over",
+      "--repo-root",
+      "test/fixtures/max-skills-over",
+    ],
+  },
+  {
     name: "analyze-dead-ref",
     args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref"],
   },

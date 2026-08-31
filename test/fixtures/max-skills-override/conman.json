@@ -1,0 +1,4 @@
+{
+  "budget": { "total": 2000, "perFile": 1000, "skillIndex": 2000 },
+  "maxSkills": 20
+}

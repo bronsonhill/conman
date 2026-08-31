@@ -10,6 +10,7 @@ import { findVehicleFit } from "./vehicleFit.js";
 import { findLintDuplication } from "./lintDuplication.js";
 import { findStaleBoilerplate } from "./staleBoilerplate.js";
 import { findDeadReferences } from "./deadReference.js";
+import { findMaxSkills } from "./maxSkills.js";
 
 const TYPE_ORDER: Record<Finding["type"], number> = {
   duplication: 0,
@@ -20,6 +21,7 @@ const TYPE_ORDER: Record<Finding["type"], number> = {
   "lint-duplication": 5,
   "stale-boilerplate": 6,
   "dead-reference": 7,
+  "max-skills": 8,
 };
 const SEV_ORDER: Record<string, number> = { error: 0, warn: 1, off: 2 };
 
@@ -30,7 +32,9 @@ export function runFindings(
   unlinkedAgentsCopies: UnlinkedAgentsCopy[] = [],
   frontmatterSubjects: FrontmatterSubject[] = [],
   repoRoot = "",
+  skillCount = 0,
 ): Finding[] {
+  const skillIndexSource = blocks.find((b) => b.kind === "skill-index")?.source;
   const all = [
     ...findDuplication(blocks, config, tok),
     ...findUnlinkedCopies(unlinkedAgentsCopies, config),
@@ -40,6 +44,7 @@ export function runFindings(
     ...findLintDuplication(blocks, config, repoRoot),
     ...findStaleBoilerplate(blocks, config),
     ...findDeadReferences(blocks, config, repoRoot),
+    ...findMaxSkills(skillCount, skillIndexSource, config),
   ];
   all.sort(
     (a, b) =>
