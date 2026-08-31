@@ -186,6 +186,7 @@
       "type": "frontmatter"
     }
   ],
+  "machineSpecific": false,
   "mode": "stack",
   "modelVersion": "0.3",
   "notes": [

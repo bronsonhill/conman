@@ -28,7 +28,10 @@ accurate is the token estimate?".
   discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
   glob into an entry-point directory. Its "Other agents (best-effort)" section
   documents the `--agent codex|cursor|copilot` rulesets, which are NOT
-  version-anchored and NOT guarded by `anchor.test.ts`.
+  version-anchored and NOT guarded by `anchor.test.ts`. Its "User-level config
+  (`--user`)" section covers the opt-in that folds `~/.claude/CLAUDE.md` and
+  `~/.claude/settings.json` into the stack and marks the report
+  machine-specific; it is off by default so default output stays reproducible.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
   / `mapReport` / `mapHtmlReport` (`conman map --html`, plus a gate-focused
   variant for `conman check --map --html`), with `gate`, `map`,

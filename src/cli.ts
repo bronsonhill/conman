@@ -7,12 +7,13 @@
 //
 // Flags: --json  --format <human|json|sarif>  --config <path>  --budget <n>  --tokenizer <name>
 //        --no-repo-boundary  --fix  --dry-run  --trim  --map (check only)
-//        --html <path> (map, or check --map)
+//        --html <path> (map, or check --map)  --user [--user-config-dir <path>]
 //
 // Exit codes: 0 ok / gate pass, 1 gate fail, 2 usage or runtime error.
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig, type Config } from "./config.js";
 import { AGENTS, isAgent, type Agent } from "./agent.js";
@@ -58,6 +59,10 @@ interface Args {
   map: boolean;
   html?: string;
   repoRoot?: string;
+  /** `--user` / `--include-user-config`: fold in `~/.claude` user config. */
+  user: boolean;
+  /** `--user-config-dir <path>`: override the user config dir; implies --user. */
+  userConfigDir?: string;
 }
 
 function applyFormat(a: Args, value: string | undefined): void {
@@ -106,6 +111,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
     dryRun: false,
     trim: false,
     map: false,
+    user: false,
   };
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -135,6 +141,14 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
       case "--map":
         a.map = true;
         break;
+      case "--user":
+      case "--include-user-config":
+        a.user = true;
+        break;
+      case "--user-config-dir":
+        a.userConfigDir = argv[++i];
+        a.user = true;
+        break;
       case "--no-repo-boundary":
         a.repoBoundary = false;
         break;
@@ -162,6 +176,10 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         else if (t.startsWith("--config=")) a.configPath = t.slice("--config=".length);
         else if (t.startsWith("--html=")) a.html = t.slice("--html=".length);
         else if (t.startsWith("--repo-root=")) a.repoRoot = t.slice("--repo-root=".length);
+        else if (t.startsWith("--user-config-dir=")) {
+          a.userConfigDir = t.slice("--user-config-dir=".length);
+          a.user = true;
+        }
         else if (t.startsWith("--tokenizer=")) a.tokenizer = t.slice("--tokenizer=".length);
         else if (t.startsWith("--agent=")) applyAgent(a, t.slice("--agent=".length));
         else if (t.startsWith("-")) {
@@ -204,6 +222,14 @@ FLAGS
   --agent <name>         claude (default) | codex | cursor | copilot; selects the
                          resolution ruleset. Non-claude rulesets are best-effort
                          (see MODEL.md)
+  --user                 also resolve this machine's user-level Claude config
+                         (--agent claude only): ~/.claude/CLAUDE.md as the
+                         root-most memory block and ~/.claude/settings.json below
+                         the repo settings. Off by default; when on, the report
+                         is machine-specific and will not reproduce elsewhere.
+                         Honours $CLAUDE_CONFIG_DIR
+  --include-user-config  alias for --user
+  --user-config-dir <p>  use <p> as the user config dir; implies --user
   --no-repo-boundary     walk ancestors above the repo root
   --repo-root <path>     treat <path> as the repo root (default: nearest .git)
   --fix                  apply mechanical fixes (dedupe, sort skill keys, whitespace);
@@ -220,6 +246,19 @@ FLAGS
 EXIT CODES
   0  ok / gate pass    1  gate fail    2  usage or runtime error
 `;
+
+/**
+ * Absolute path to the user-level Claude config dir when `--user` is in effect,
+ * else undefined. `--user-config-dir` wins; otherwise `$CLAUDE_CONFIG_DIR` (the
+ * same env var Claude Code honours), otherwise `~/.claude`. Undefined keeps the
+ * run fully reproducible — no machine-local state is read.
+ */
+function userConfigDir(args: Args, cwd: string): string | undefined {
+  if (!args.user) return undefined;
+  if (args.userConfigDir) return resolve(cwd, args.userConfigDir);
+  const env = process.env["CLAUDE_CONFIG_DIR"];
+  return env && env.trim() ? resolve(env) : join(homedir(), ".claude");
+}
 
 function applyOverrides(config: Config, args: Args): Config {
   const c: Config = {
@@ -355,6 +394,7 @@ function main(): void {
     args.configPath,
   );
   const config = applyOverrides(baseConfig, args);
+  const userDir = userConfigDir(args, cwd);
   const tv = toolVersion();
 
   if (args.sarif && (args.command === "map" || args.map)) {
@@ -368,7 +408,7 @@ function main(): void {
       runMapFix(root, config, args);
       return;
     }
-    const result = runMap(root, config, args.tokenizer, args.agent);
+    const result = runMap(root, config, args.tokenizer, args.agent, userDir);
     if (args.html) {
       const dest = resolve(cwd, args.html);
       writeFileSync(
@@ -391,11 +431,12 @@ function main(): void {
     process.exit(2);
   }
 
-  const { analysis, notes, mode } = analyzeEntry(rawTarget, {
+  const { analysis, notes, mode, machineSpecific } = analyzeEntry(rawTarget, {
     repoRoot,
     config,
     tokenizerName: args.tokenizer,
     agent: args.agent,
+    userConfigDir: userDir,
   });
 
   if (args.trim) {
@@ -442,6 +483,7 @@ function main(): void {
     notes,
     mode,
     toolVersion: tv,
+    machineSpecific,
   };
   process.stdout.write(
     args.sarif

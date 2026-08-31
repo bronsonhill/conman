@@ -97,4 +97,29 @@ registerGolden("golden/analyze", [
       "copilot",
     ],
   },
+  {
+    // --user: ~/.claude/CLAUDE.md loads first, ~/.claude/settings.json merges
+    // below the repo settings (its claudeMdExcludes drops skip/CLAUDE.md), and
+    // the report is flagged machine-specific. --user-config-dir keeps this
+    // deterministic by pointing at a fixture instead of the real home dir.
+    name: "analyze-user-config",
+    args: [
+      "test/fixtures/user-config/repo/skip/deep",
+      "--repo-root",
+      "test/fixtures/user-config/repo",
+      "--user-config-dir",
+      "test/fixtures/user-config/home",
+    ],
+  },
+  {
+    name: "analyze-user-config-json",
+    args: [
+      "test/fixtures/user-config/repo/skip/deep",
+      "--repo-root",
+      "test/fixtures/user-config/repo",
+      "--user-config-dir",
+      "test/fixtures/user-config/home",
+      "--json",
+    ],
+  },
 ]);

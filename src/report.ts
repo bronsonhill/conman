@@ -28,6 +28,8 @@ export interface RenderContext {
   notes: string[];
   mode: "stack" | "single-file";
   toolVersion: string;
+  /** `--user` was in effect: the stack includes machine-local `~/.claude` config. */
+  machineSpecific?: boolean;
 }
 
 export function renderHuman(ctx: RenderContext): string {
@@ -40,6 +42,11 @@ export function renderHuman(ctx: RenderContext): string {
   );
   out.push(`entry: ${a.entry || "."}   mode: ${ctx.mode}`);
   out.push(`config: ${ctx.configSource ?? "(built-in defaults)"}`);
+  if (ctx.machineSpecific) {
+    out.push(
+      "scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)",
+    );
+  }
   out.push("");
 
   // load order table
@@ -171,6 +178,7 @@ export function renderJson(ctx: RenderContext): string {
     toolVersion: ctx.toolVersion,
     modelVersion: MODEL_VERSION,
     mode: ctx.mode,
+    machineSpecific: ctx.machineSpecific === true,
     configSource: ctx.configSource,
     entry: ctx.analysis.entry,
     tokenizer: ctx.analysis.tokenizer,

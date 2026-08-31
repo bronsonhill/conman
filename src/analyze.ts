@@ -17,12 +17,20 @@ export interface AnalyzeOptions {
   tokenizer?: Tokenizer;
   /** Resolution ruleset. Defaults to "claude". */
   agent?: Agent;
+  /**
+   * Absolute path to the user-level Claude config dir (`~/.claude` or
+   * `$CLAUDE_CONFIG_DIR`). Set only when `--user` is passed. Makes the result
+   * machine-specific; `--agent claude` only.
+   */
+  userConfigDir?: string;
 }
 
 export interface AnalyzeResult {
   analysis: Analysis;
   notes: string[];
   mode: "stack" | "single-file";
+  /** True when `--user` folded machine-local `~/.claude` config into the stack. */
+  machineSpecific: boolean;
 }
 
 export function analyzeEntry(
@@ -37,6 +45,7 @@ export function analyzeEntry(
     tok,
     [],
     opts.agent ?? "claude",
+    opts.userConfigDir,
   );
   const blocks = costBlocks(resolved.blocks, tok);
   const totals = computeTotals(blocks);
@@ -59,5 +68,10 @@ export function analyzeEntry(
     budget,
     findings,
   };
-  return { analysis, notes: resolved.notes, mode: resolved.mode };
+  return {
+    analysis,
+    notes: resolved.notes,
+    mode: resolved.mode,
+    machineSpecific: resolved.machineSpecific,
+  };
 }

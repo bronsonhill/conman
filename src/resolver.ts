@@ -74,16 +74,25 @@ export interface ResolveResult {
   notes: string[];
   unlinkedAgentsCopies: UnlinkedAgentsCopy[];
   frontmatterSubjects: FrontmatterSubject[];
+  /**
+   * True when `--user` pulled machine-local config (`~/.claude/CLAUDE.md` and/or
+   * `~/.claude/settings.json`) into this result. The output is then specific to
+   * the machine it ran on and will not reproduce elsewhere.
+   */
+  machineSpecific: boolean;
 }
 
 /**
- * Settings sources, lowest precedence first. Claude Code layers
+ * Repo-root settings sources, lowest precedence first. Claude Code layers
  * `~/.claude/settings.json` (user) < `.claude/settings.json` (project) <
- * `.claude/settings.local.json` (local) < managed/policy. conman models the two
- * repo-root files today; a later layer (user `~/.claude`) prepends to this list
- * and the merge below already handles it — add the source, keep the order.
+ * `.claude/settings.local.json` (local) < managed/policy. The user file is
+ * opt-in (`--user`): when `loadSettings` is given a `userConfigDir` it merges
+ * `<dir>/settings.json` in first, below every repo-root file.
  */
 const SETTINGS_SOURCES = ["settings.json", "settings.local.json"] as const;
+
+/** Stable label emitted for user-level files so output stays machine-independent. */
+export const USER_MEMORY_LABEL = "~/.claude/CLAUDE.md";
 
 /**
  * Deep-merge two settings objects the way Claude Code's `i5` customizer does:
@@ -120,10 +129,12 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-export function loadSettings(repoRoot: string): Settings {
+export function loadSettings(repoRoot: string, userConfigDir?: string): Settings {
   let merged: Record<string, unknown> = {};
-  for (const name of SETTINGS_SOURCES) {
-    const p = join(repoRoot, ".claude", name);
+  const paths: string[] = [];
+  if (userConfigDir) paths.push(join(userConfigDir, "settings.json"));
+  for (const name of SETTINGS_SOURCES) paths.push(join(repoRoot, ".claude", name));
+  for (const p of paths) {
     if (!isFile(p)) continue;
     try {
       const parsed = JSON.parse(readFileSync(p, "utf8"));
@@ -487,11 +498,20 @@ export function resolveStack(
   tok: Tokenizer,
   notes: string[] = [],
   agent: Agent = "claude",
+  userConfigDir?: string,
 ): ResolveResult {
   if (agent !== "claude") {
+    // User-level config is Claude Code's own memory model; other agents have
+    // their own home-directory files, which conman does not read.
+    if (userConfigDir) {
+      notes.push(
+        `--user has no effect with --agent ${agent}: user-level config is modelled for Claude Code only`,
+      );
+    }
     return resolveNonClaude(entryPathAbs, repoRoot, config, tok, notes, agent);
   }
-  const settings = loadSettings(repoRoot);
+  const settings = loadSettings(repoRoot, userConfigDir);
+  const machineSpecific = userConfigDir !== undefined;
   const ctx: ImportCtx = {
     repoRoot,
     tok,
@@ -530,10 +550,49 @@ export function resolveStack(
       notes,
       unlinkedAgentsCopies,
       frontmatterSubjects: ctx.frontmatterSubjects,
+      machineSpecific,
     };
   }
 
   const excludes = settings.claudeMdExcludes;
+
+  // User-level memory (`~/.claude/CLAUDE.md`), opt-in via `--user`. It is the
+  // most global instruction file — it applies to every repo on the machine — so
+  // it loads first, ahead of the repo's own root memory. Loaded as one block:
+  // conman does not follow `@`-imports out of the user file (that would drag in
+  // more machine-local paths), and emits a stable `~/.claude/CLAUDE.md` label
+  // rather than a machine-specific path so the load-order table stays portable.
+  const userBlocks: Omit<Block, "id" | "tokens">[] = [];
+  if (userConfigDir !== undefined) {
+    notes.push(
+      "machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine",
+    );
+    const userMd = join(userConfigDir, "CLAUDE.md");
+    if (isFile(userMd)) {
+      const text = readFileSync(userMd, "utf8");
+      const lc = countLines(text);
+      userBlocks.push({
+        kind: "memory",
+        source: USER_MEMORY_LABEL,
+        lineStart: 1,
+        lineEnd: Math.max(1, lc),
+        text,
+        depth: 0,
+      });
+      ctx.seen.add(USER_MEMORY_LABEL);
+      const imps = findImports(text, userMd);
+      if (imps.length > 0) {
+        notes.push(
+          `${USER_MEMORY_LABEL}: ${imps.length} @-import(s) not followed (user memory loads as a single block)`,
+        );
+      }
+    } else {
+      notes.push(
+        "--user: no ~/.claude/CLAUDE.md found; only ~/.claude/settings.json (if present) was merged",
+      );
+    }
+  }
+
   const dirs = ancestorDirs(entryDir, repoRoot, config.resolve.repoBoundary);
   const memoryBlocks: Omit<Block, "id" | "tokens">[] = [];
   for (const dir of dirs) {
@@ -583,6 +642,7 @@ export function resolveStack(
   const skillIndex = buildSkillIndex(claudeDirs, skillBudget, ctx);
 
   const blocks = [
+    ...userBlocks,
     ...memoryBlocks,
     ...always,
     ...scoped,
@@ -596,6 +656,7 @@ export function resolveStack(
     notes,
     unlinkedAgentsCopies,
     frontmatterSubjects: ctx.frontmatterSubjects,
+    machineSpecific,
   };
 }
 
@@ -797,6 +858,7 @@ function resolveNonClaude(
       notes,
       unlinkedAgentsCopies: [],
       frontmatterSubjects: ctx.frontmatterSubjects,
+      machineSpecific: false,
     };
   }
 
@@ -857,5 +919,6 @@ function resolveNonClaude(
     notes,
     unlinkedAgentsCopies: [],
     frontmatterSubjects: ctx.frontmatterSubjects,
+    machineSpecific: false,
   };
 }

@@ -1,0 +1,29 @@
+# exit: 0
+conman VERSION  model 0.3  tokenizer claude-local
+entry: skip/deep   mode: stack
+config: (built-in defaults)
+scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)
+
+LOAD ORDER
+  #    kind         source               lines         tokens
+  b1   memory       ~/.claude/CLAUDE.md  1-4               23
+  b2   memory       CLAUDE.md            1-4               24
+  -----------------------------------------------------------
+  total                                                    47
+
+BUDGET
+  budget          12000
+  safety margin   10%   ->  effective 10800
+  stack total     47
+  delta           -10753  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 0 warn)  none
+
+NOTES
+  - machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine
+  - excluded by settings claudeMdExcludes: skip/CLAUDE.md
+
+RESULT  pass
