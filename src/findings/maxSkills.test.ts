@@ -26,6 +26,24 @@ test("max-skills: 18 skills is an error finding that fails the gate", () => {
   assert.equal(evaluateGate(analysis, DEFAULT_CONFIG).pass, false);
 });
 
+test("max-skills: user-level skills under --user count toward the cap and fire the finding", () => {
+  const home = fixture("user-skills-many", "home");
+  const repo = fixture("user-skills-many", "repo");
+  // repo has no skills of its own; without --user there is no skill index at all
+  const plain = analyzeEntry(repo, { repoRoot: repo, config: DEFAULT_CONFIG }).analysis;
+  assert.deepEqual(plain.findings.filter((f) => f.type === "max-skills"), []);
+  // --user folds in 9 skills from ~/.claude/skills, over the default cap of 8
+  const withUser = analyzeEntry(repo, {
+    repoRoot: repo,
+    config: DEFAULT_CONFIG,
+    userConfigDir: home,
+  }).analysis;
+  const ms = withUser.findings.filter((f) => f.type === "max-skills");
+  assert.equal(ms.length, 1);
+  assert.equal(ms[0]!.detail?.["count"], 9);
+  assert.equal(ms[0]!.locations[0]!.file, "~/.claude/skills");
+});
+
 test("max-skills: <= 8 skills raises nothing (monorepo has 3)", () => {
   const root = fixture("monorepo");
   const { analysis } = analyzeEntry(fixture("monorepo", "services", "api"), {

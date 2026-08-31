@@ -351,3 +351,68 @@ test("non-claude agents do not read settings.json or follow @-imports", () => {
   assert.ok(!r.blocks.some((b) => b.kind === "import"));
   assert.deepEqual(r.settings.claudeMdExcludes, []);
 });
+
+// --- user-level skills and rules (`--user`) -------------------------------
+
+const USKILLS_HOME = fixture("user-skills", "home");
+const USKILLS_REPO = fixture("user-skills", "repo");
+
+test("--user on: ~/.claude/skills merges name-sorted with the project skill under a stable label", () => {
+  const r = resolveStack(
+    USKILLS_REPO,
+    USKILLS_REPO,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "claude",
+    USKILLS_HOME,
+  );
+  const idx = r.blocks.find((b) => b.kind === "skill-index");
+  assert.ok(idx, "a skill index is produced from user + project skills");
+  // stable, machine-independent label, not a `../../` relative path
+  assert.equal(idx!.source, "~/.claude/skills");
+  // commit-style + rg-helper (user) merge-sorted with rg-check (project)
+  assert.deepEqual(
+    idx!.text.trimEnd().split("\n").map((l) => l.replace(/:.*/, "")),
+    ["- commit-style", "- rg-check", "- rg-helper"],
+  );
+  assert.equal(r.skillCount, 3);
+  // frontmatter subjects for user skills carry the stable path too
+  assert.ok(
+    r.frontmatterSubjects.some(
+      (s) => s.file === "~/.claude/skills/commit-style/SKILL.md",
+    ),
+  );
+});
+
+test("--user on: ~/.claude/rules load with a stable label; path-scoped user rules still scope", () => {
+  const r = resolveStack(
+    USKILLS_REPO,
+    USKILLS_REPO,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "claude",
+    USKILLS_HOME,
+  );
+  const always = r.blocks.find((b) => b.kind === "rule-always");
+  assert.ok(always);
+  assert.equal(always!.source, "~/.claude/rules/always-note.md");
+  // the `paths: ["**/*.ts"]` user rule does not match the repo-dir entry
+  assert.ok(!r.blocks.some((b) => b.source === "~/.claude/rules/ts-only.md"));
+  assert.ok(
+    r.notes.some(
+      (n) =>
+        n.includes("~/.claude/rules/ts-only.md") && n.includes("path-scoped"),
+    ),
+  );
+});
+
+test("--user off: user skills and rules contribute nothing", () => {
+  const r = resolveStack(USKILLS_REPO, USKILLS_REPO, DEFAULT_CONFIG, tok, []);
+  const idx = r.blocks.find((b) => b.kind === "skill-index");
+  // only the project skill remains
+  assert.equal(idx!.text.trimEnd(), "- rg-check: Project-level skill that conman already counts.");
+  assert.equal(r.skillCount, 1);
+  assert.ok(!r.blocks.some((b) => b.source.startsWith("~/.claude/rules")));
+});

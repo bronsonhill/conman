@@ -22,8 +22,10 @@ export interface Settings {
  */
 const SETTINGS_SOURCES = ["settings.json", "settings.local.json"] as const;
 
-/** Stable label emitted for user-level files so output stays machine-independent. */
+/** Stable labels emitted for user-level files so output stays machine-independent. */
 export const USER_MEMORY_LABEL = "~/.claude/CLAUDE.md";
+export const USER_SKILLS_LABEL = "~/.claude/skills";
+export const USER_RULES_LABEL = "~/.claude/rules";
 
 /**
  * Deep-merge two settings objects the way Claude Code's `i5` customizer does:

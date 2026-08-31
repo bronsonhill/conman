@@ -1,31 +1,47 @@
 // The skill startup index: one `- name: description` line per `SKILL.md` found
 // under `.claude/skills`, name-sorted, truncated to the skill-listing budget.
+//
+// With `--user`, `~/.claude/skills` is walked as well (it is passed in as the
+// root-most entry of `claudeDirs`); skills found under it are labelled with the
+// stable `~/.claude/skills` path rather than a machine-specific relative one, so
+// the report stays reproducible in shape.
 
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Block } from "../types.js";
 import { isDir, isFile, relPosix } from "../repo.js";
 import { parseFrontmatter } from "../frontmatter.js";
+import { USER_SKILLS_LABEL } from "./settings.js";
 import type { ImportCtx } from "./imports.js";
 
 export function buildSkillIndex(
   claudeDirs: string[],
   budgetTokens: number | null,
   ctx: ImportCtx,
+  userConfigDir?: string,
 ): { block: Omit<Block, "id" | "tokens">; skillCount: number } | null {
   const skills: { name: string; description: string; dirRel: string }[] = [];
   let skillsRootRel = ".claude/skills";
+  let sawUserSkills = false;
   for (const cdir of claudeDirs) {
+    const isUserDir = userConfigDir !== undefined && cdir === userConfigDir;
     const sdir = join(cdir, "skills");
     if (!isDir(sdir)) continue;
-    skillsRootRel = relPosix(ctx.repoRoot, sdir);
+    const rootRel = isUserDir ? USER_SKILLS_LABEL : relPosix(ctx.repoRoot, sdir);
+    // A user-level skills root, once seen, owns the block label: the index is
+    // one merged list and `~/.claude/skills` is the stable, machine-independent
+    // name for its most global source.
+    if (isUserDir) sawUserSkills = true;
+    if (!sawUserSkills || isUserDir) skillsRootRel = rootRel;
     const subs = readdirSync(sdir).sort();
     for (const sub of subs) {
       const skillMd = join(sdir, sub, "SKILL.md");
       if (!isFile(skillMd)) continue;
       const skillText = readFileSync(skillMd, "utf8");
       ctx.frontmatterSubjects.push({
-        file: relPosix(ctx.repoRoot, skillMd),
+        file: isUserDir
+          ? `${USER_SKILLS_LABEL}/${sub}/SKILL.md`
+          : relPosix(ctx.repoRoot, skillMd),
         role: "skill",
         text: skillText,
       });
@@ -36,7 +52,10 @@ export function buildSkillIndex(
         typeof fm.data["description"] === "string"
           ? (fm.data["description"] as string).replace(/\s+/g, " ").trim()
           : "";
-      skills.push({ name, description, dirRel: relPosix(ctx.repoRoot, join(sdir, sub)) });
+      const dirRel = isUserDir
+        ? `${USER_SKILLS_LABEL}/${sub}`
+        : relPosix(ctx.repoRoot, join(sdir, sub));
+      skills.push({ name, description, dirRel });
     }
   }
   if (skills.length === 0) return null;

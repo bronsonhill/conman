@@ -67,7 +67,8 @@ every block.
      import wins, `AGENTS.md` is not counted twice.
 
 3. **`.claude/rules/` entries.** Every `*.md` under a `.claude/rules/` directory
-   at or above the entry directory (within the repo).
+   at or above the entry directory (within the repo). With `--user`,
+   `~/.claude/rules/` is included too, root-most; see "User-level config".
    - Frontmatter `paths` (a string or list of globs) makes a rule
      **path-scoped**: it loads only when one of its globs matches the entry
      path. A rule with no `paths` — or a `paths` of just `**` — is
@@ -89,7 +90,8 @@ every block.
 
 4. **The skill startup index.** One line per skill found under a `.claude/skills/`
    directory at or above the entry: `- <name>: <description>`, taken from each
-   `SKILL.md` frontmatter, sorted by skill name.
+   `SKILL.md` frontmatter, sorted by skill name. With `--user`,
+   `~/.claude/skills/` is folded into the same list; see "User-level config".
    - A skill-listing budget (tokens) truncates the list from the end and adds a
      `- (N more skills not listed...)` marker. The budget is
      `resolve.skillListingBudget` if set, else the `skillListingBudget` key from
@@ -162,9 +164,10 @@ as it formalizes the settings surface; a change here is a model-version change.
 ## User-level config (`--user`)
 
 By default conman reads only the repository. `--user` (alias
-`--include-user-config`) additionally resolves Claude Code's **User** memory and
-user-level settings from this machine, so a `conman check` / `conman map` run at
-a developer's desk matches how their own harness assembles context.
+`--include-user-config`) additionally resolves Claude Code's **User** memory,
+user-level settings, user-level skills, and user-level rules from this machine,
+so a `conman check` / `conman map` run at a developer's desk matches how their
+own harness assembles context.
 
 Modelled for `--agent claude` only — user-level files are Claude Code's own
 memory model, and every other agent has its own home-directory files, which
@@ -184,6 +187,19 @@ conman does not read. `--user` with any other `--agent` is ignored, with a NOTE.
   repo-root file: `~/.claude/settings.json` < project `settings.json` < local
   `settings.local.json`. Same deep-merge as the repo files, so a user-level
   `claudeMdExcludes` *adds to* the project list.
+- **`<dir>/skills/*/SKILL.md`** — folded into the same startup skill index as the
+  repo's own skills, as if `~/.claude` were the root-most `.claude/` directory.
+  User and project skills merge into one name-sorted list, and user skills count
+  toward `maxSkills` / `max-skills` and `budget.skillIndex` /
+  `skill-index-budget` exactly like project skills. Entries found under the user
+  dir are labelled `~/.claude/skills` (and `~/.claude/skills/<name>/SKILL.md` in
+  findings) rather than a machine-specific relative path; when any user skill is
+  present it owns the index block's `source` label.
+- **`<dir>/rules/*.md`** — collected with the repo's `.claude/rules/`, root-most
+  (so user rules sort ahead of repo rules). Same always-on vs `paths`-scoped
+  split. Labelled `~/.claude/rules/<file>`. `claudeMdExcludes` globs are
+  repo-relative and so never match a user rule, which is intended — it is not in
+  the repo.
 
 **Reproducibility caveat.** This breaks conman's default guarantee that the same
 input produces the same bytes: the output now depends on whose machine it ran

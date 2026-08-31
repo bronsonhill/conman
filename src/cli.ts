@@ -264,8 +264,9 @@ FLAGS
                          (see MODEL.md)
   --user                 also resolve this machine's user-level Claude config
                          (--agent claude only): ~/.claude/CLAUDE.md as the
-                         root-most memory block and ~/.claude/settings.json below
-                         the repo settings. Off by default; when on, the report
+                         root-most memory block, ~/.claude/settings.json below
+                         the repo settings, and ~/.claude/skills + ~/.claude/rules
+                         folded in root-most. Off by default; when on, the report
                          is machine-specific and will not reproduce elsewhere.
                          Honours $CLAUDE_CONFIG_DIR
   --include-user-config  alias for --user

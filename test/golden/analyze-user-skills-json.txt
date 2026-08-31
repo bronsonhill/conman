@@ -1,0 +1,84 @@
+# exit: 0
+{
+  "blocks": [
+    {
+      "depth": 0,
+      "id": "b1",
+      "kind": "memory",
+      "lineEnd": 3,
+      "lineStart": 1,
+      "source": "~/.claude/CLAUDE.md",
+      "tokens": 13,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b2",
+      "kind": "memory",
+      "lineEnd": 3,
+      "lineStart": 1,
+      "source": "CLAUDE.md",
+      "tokens": 13,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b3",
+      "kind": "rule-always",
+      "lineEnd": 4,
+      "lineStart": 1,
+      "source": "~/.claude/rules/always-note.md",
+      "tokens": 25,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b4",
+      "kind": "skill-index",
+      "lineEnd": 3,
+      "lineStart": 1,
+      "source": "~/.claude/skills",
+      "tokens": 51,
+      "via": null
+    }
+  ],
+  "budget": {
+    "delta": -10698,
+    "effective": 10800,
+    "overBudget": false,
+    "safetyMargin": 0.1,
+    "stackTotal": 102,
+    "total": 12000
+  },
+  "configSource": null,
+  "entry": ".",
+  "findings": [],
+  "machineSpecific": true,
+  "mode": "stack",
+  "modelVersion": "0.4",
+  "notes": [
+    "machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine",
+    "rule ~/.claude/rules/ts-only.md is path-scoped (**/*.ts); did not match entry ."
+  ],
+  "redundant": {
+    "pctOfStack": 0,
+    "tokens": 0
+  },
+  "result": {
+    "pass": true,
+    "reasons": []
+  },
+  "tokenizer": "claude-local",
+  "tool": "conman",
+  "toolVersion": "0.1.0",
+  "totals": {
+    "perFile": {
+      "CLAUDE.md": 13,
+      "~/.claude/CLAUDE.md": 13,
+      "~/.claude/rules/always-note.md": 25,
+      "~/.claude/skills": 51
+    },
+    "skillIndexTokens": 51,
+    "stackTokens": 102
+  }
+}
