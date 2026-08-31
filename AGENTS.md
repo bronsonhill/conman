@@ -15,7 +15,10 @@ No model in the analysis path. The only code that ever makes a network call is
 that way — never add a network call on any other path, and never wire `exact`
 into a golden or CI job. `scripts/measure-tokenizer.mjs` (not built, not
 shipped) regenerates the local-vs-`count_tokens` drift table in README's "How
-accurate is the token estimate?".
+accurate is the token estimate?". `eval/budget-calibration/` (also not built,
+not shipped, not in CI) is a manual size-sweep harness for putting a measured
+number behind the `budget.total` default; `docs/budget-calibration.md` is the
+run procedure.
 
 ## Where things are
 
