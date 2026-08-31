@@ -1,0 +1,12 @@
+# exit: 0
+conman VERSION map  model 0.4
+config: conman.json
+entry points discovered: 1
+
+  entry         mode           tokens    delta   findings              result
+  .             stack             279    -3321   0 error, 1 warn       pass
+
+repo rollup: 279 tokens across 1 entry points
+redundant tokens: 0 (0% of stack)
+
+RESULT  pass

@@ -5,6 +5,13 @@
 //   - stack over the effective budget, when gate.over-budget = error
 //   - any finding whose type maps to a gate severity of error
 // warn-level items never fail the gate.
+//
+// The two per-part budget caps (`budget.perFile`, `budget.skillIndex`) ride in
+// through this same finding path: `src/findings/budgetCaps.ts` emits a
+// `per-file-budget` / `skill-index-budget` finding whose severity is read from
+// `config.gate`. They default to `warn`, so they surface in every report but
+// do not fail the gate; a repo that sets either to `error` in conman.json is
+// then caught by the error-severity loop below with no special-casing here.
 
 import type { Analysis, GateResult } from "./types.js";
 import type { Config } from "./config.js";

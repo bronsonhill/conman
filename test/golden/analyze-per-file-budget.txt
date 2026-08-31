@@ -1,0 +1,26 @@
+# exit: 0
+conman VERSION  model 0.4  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+
+LOAD ORDER
+  #    kind         source      lines         tokens
+  b1   memory       CLAUDE.md   1-19             242
+  --------------------------------------------------
+  total                                          242
+
+BUDGET
+  budget          4000
+  safety margin   10%   ->  effective 3600
+  stack total     242
+  delta           -3358  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 1 warn)
+  warn   per-file-budget
+         CLAUDE.md:1-1
+         CLAUDE.md contributes 242 tokens to the resolved stack, over the 150-token per-file budget
+
+RESULT  pass

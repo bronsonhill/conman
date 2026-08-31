@@ -58,6 +58,7 @@ export function analyzeEntry(
     resolved.frontmatterSubjects,
     opts.repoRoot,
     resolved.skillCount,
+    totals,
   );
 
   const analysis: Analysis = {

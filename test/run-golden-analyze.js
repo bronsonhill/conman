@@ -59,6 +59,41 @@ registerGolden("golden/analyze", [
     args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref", "--json"],
   },
   {
+    name: "analyze-per-file-budget",
+    args: ["test/fixtures/per-file-budget", "--repo-root", "test/fixtures/per-file-budget"],
+  },
+  {
+    name: "analyze-per-file-budget-json",
+    args: [
+      "test/fixtures/per-file-budget",
+      "--repo-root",
+      "test/fixtures/per-file-budget",
+      "--json",
+    ],
+  },
+  {
+    name: "analyze-budget-cap-override",
+    args: [
+      "test/fixtures/budget-cap-override",
+      "--repo-root",
+      "test/fixtures/budget-cap-override",
+    ],
+  },
+  {
+    name: "analyze-skill-index-budget",
+    args: ["test/fixtures/skill-index-budget", "--repo-root", "test/fixtures/skill-index-budget"],
+  },
+  {
+    name: "analyze-skill-index-budget-sarif",
+    args: [
+      "test/fixtures/skill-index-budget",
+      "--repo-root",
+      "test/fixtures/skill-index-budget",
+      "--format",
+      "sarif",
+    ],
+  },
+  {
     name: "analyze-codex",
     args: [
       "test/fixtures/agents-only",

@@ -1,5 +1,5 @@
 # exit: 0
-conman VERSION map  model 0.3
+conman VERSION map  model 0.4
 config: conman.json
 entry points discovered: 4
 

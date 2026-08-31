@@ -1,4 +1,4 @@
-import type { Block, Finding } from "../types.js";
+import type { Block, Finding, Totals } from "../types.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
 import type { UnlinkedAgentsCopy, FrontmatterSubject } from "../resolver/index.js";
@@ -11,6 +11,7 @@ import { findLintDuplication } from "./lintDuplication.js";
 import { findStaleBoilerplate } from "./staleBoilerplate.js";
 import { findDeadReferences } from "./deadReference.js";
 import { findMaxSkills } from "./maxSkills.js";
+import { findBudgetCaps } from "./budgetCaps.js";
 
 const TYPE_ORDER: Record<Finding["type"], number> = {
   duplication: 0,
@@ -22,6 +23,8 @@ const TYPE_ORDER: Record<Finding["type"], number> = {
   "stale-boilerplate": 6,
   "dead-reference": 7,
   "max-skills": 8,
+  "per-file-budget": 9,
+  "skill-index-budget": 10,
 };
 const SEV_ORDER: Record<string, number> = { error: 0, warn: 1, off: 2 };
 
@@ -33,6 +36,7 @@ export function runFindings(
   frontmatterSubjects: FrontmatterSubject[] = [],
   repoRoot = "",
   skillCount = 0,
+  totals: Totals = { stackTokens: 0, perFile: {}, skillIndexTokens: 0 },
 ): Finding[] {
   const skillIndexSource = blocks.find((b) => b.kind === "skill-index")?.source;
   const all = [
@@ -45,6 +49,7 @@ export function runFindings(
     ...findStaleBoilerplate(blocks, config),
     ...findDeadReferences(blocks, config, repoRoot),
     ...findMaxSkills(skillCount, skillIndexSource, config),
+    ...findBudgetCaps(totals, blocks, config),
   ];
   all.sort(
     (a, b) =>

@@ -1,0 +1,27 @@
+# exit: 0
+conman VERSION - explain skill-index-budget
+
+SKILL INDEX OVER THE TOKEN BUDGET
+
+The startup skill listing costs more than `budget.skillIndex` tokens. The
+listing is loaded into context on every request whether or not any skill is
+used, so it is pure per-session overhead. This is the cost line for the skill
+index; `max-skills` is the separate count line, since selection accuracy
+degrades with the number of candidates independently of how terse each entry is.
+The default cap is chosen to flag outliers on the 2026-08 survey sample and is
+pinned to MODEL_VERSION for re-review. Warn by default; raise
+`gate.skill-index-budget` to error to make it a gate failure.
+
+RESEARCH
+  - Configuration Smells in AGENTS.md Files (dos Santos et al., June 2026),
+    https://arxiv.org/abs/2606.15828 — general context bloat was found in 42% of
+    files across a 100-repo scan.
+  - Evaluating AGENTS.md (Gloaguen et al., Feb 2026),
+    https://arxiv.org/abs/2602.11988 — any non-essential content loaded every
+    session raises inference cost; keep it minimal.
+
+REMEDIATION
+  Shorten skill descriptions, consolidate or remove skills, or set
+  `skillListingBudget` in settings.json so Claude Code truncates the listing. If
+  the index is genuinely this large for a reason, raise `budget.skillIndex` in
+  conman.json.
