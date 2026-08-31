@@ -348,7 +348,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.2",
+  "modelVersion": "0.3",
   "pass": true,
   "redundant": {
     "pctOfStack": 0,

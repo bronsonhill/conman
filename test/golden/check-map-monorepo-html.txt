@@ -77,7 +77,7 @@
     <h1>conman check --map report</h1>
     <dl class="kv">
       <dt>tool</dt><dd>conman VERSION</dd>
-      <dt>model</dt><dd>0.2</dd>
+      <dt>model</dt><dd>0.3</dd>
       <dt>config</dt><dd>conman.json</dd>
       <dt>entry points discovered</dt><dd>4</dd>
       <dt>result</dt><dd class="fail">fail</dd>
@@ -172,6 +172,7 @@
       <h3>Notes</h3>
       <ul class="notes">
         <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .</li>
+        <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
 
@@ -234,6 +235,7 @@
       <h3>Notes</h3>
       <ul class="notes">
         <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy</li>
+        <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
 
@@ -295,6 +297,7 @@
       <ul class="notes">
         <li>excluded by settings claudeMdExcludes: services/CLAUDE.md</li>
         <li>rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services</li>
+        <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
 
@@ -385,6 +388,7 @@
       <h3>Notes</h3>
       <ul class="notes">
         <li>excluded by settings claudeMdExcludes: services/CLAUDE.md</li>
+        <li>excluded by settings claudeMdExcludes: .claude/rules/excluded.md</li>
         <li>skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45</li>
       </ul>
 

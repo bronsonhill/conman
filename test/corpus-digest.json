@@ -1,6 +1,6 @@
 {
   "tool": "conman",
-  "modelVersion": "0.2",
+  "modelVersion": "0.3",
   "repos": [
     {
       "repo": "llm",
@@ -34,14 +34,13 @@
     {
       "repo": "ack-nestjs-boilerplate",
       "entryPoints": 2,
-      "stackTokens": 49600,
+      "stackTokens": 7000,
       "redundantTokens": 0,
-      "overBudgetEntryPoints": 2,
+      "overBudgetEntryPoints": 0,
       "valueConflictEntryPoints": 0,
       "findingsByType": {
-        "dead-reference": 2,
         "frontmatter": 4,
-        "vehicle-fit": 33
+        "vehicle-fit": 3
       }
     },
     {
@@ -87,7 +86,7 @@
       "overBudgetEntryPoints": 6,
       "valueConflictEntryPoints": 2,
       "findingsByType": {
-        "dead-reference": 20,
+        "dead-reference": 12,
         "duplication": 30,
         "stale-boilerplate": 1,
         "value-conflict": 10,
@@ -129,11 +128,11 @@
     "totalEntryPoints": 123,
     "redundantTokenPct": 0.1,
     "redundantTokens": 1688,
-    "stackTokens": 1712585,
+    "stackTokens": 1669985,
     "valueConflictEntryPoints": 2,
     "valueConflictRatePct": 1.63,
-    "medianResolvedStackTokens": 5472,
-    "overBudgetEntryPoints": 61,
-    "overBudgetRatePct": 49.59
+    "medianResolvedStackTokens": 4270,
+    "overBudgetEntryPoints": 59,
+    "overBudgetRatePct": 47.97
   }
 }

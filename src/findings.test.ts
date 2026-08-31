@@ -259,10 +259,25 @@ test("dead-ref: a missing @-import is error, a missing prose path and script are
     dr.map((f) => [f.detail?.["subcase"], f.severity]).sort(),
     [
       ["dead-import", "error"],
+      ["dead-import", "error"],
       ["dead-path", "warn"],
       ["dead-script", "warn"],
     ],
   );
+});
+
+test("dead-ref: npm scoped package names in prose are not dead imports", () => {
+  const root = fixture("dead-ref");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const refs = analysis.findings
+    .filter((f) => f.type === "dead-reference" && f.detail?.["subcase"] === "dead-import")
+    .map((f) => f.detail?.["ref"])
+    .sort();
+  // `@superset-ui/core` and `@xyflow/react` are package names in prose:
+  // suppressed. `@docs/style-notes` is npm-shaped but `docs/` is a real
+  // directory next to the file, so the missing target still flags (with the
+  // trailing period the line-scan captured).
+  assert.deepEqual(refs, ["./missing-setup.md", "docs/style-notes."]);
 });
 
 test("dead-reference: gate.dead-reference = 'warn' caps the import case at warn", () => {
@@ -273,7 +288,7 @@ test("dead-reference: gate.dead-reference = 'warn' caps the import case at warn"
   };
   const { analysis } = analyzeEntry(root, { repoRoot: root, config });
   const dr = analysis.findings.filter((f) => f.type === "dead-reference");
-  assert.equal(dr.length, 3);
+  assert.equal(dr.length, 4);
   assert.ok(dr.every((f) => f.severity === "warn"));
 });
 

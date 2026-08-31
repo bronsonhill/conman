@@ -6,6 +6,11 @@
 //   - dead-import  — an `@`-import whose target file is missing. Claude Code
 //                    drops it from the resolved stack with no error, so content
 //                    the author expected silently never loads. Severity: error.
+//                    An unresolved ref shaped like an npm scoped package name
+//                    in prose (`@superset-ui/core`, `@xyflow/react`) is NOT
+//                    flagged: Claude Code parses it as an import and silently
+//                    drops it too, but the author never meant it to load, so
+//                    nothing is lost. See looksLikeNpmPackage below.
 //   - dead-path    — a repo-relative path named in prose (inside backticks) that
 //                    does not exist. Only flagged when the path's parent
 //                    directory exists and already holds a real file, so a
@@ -51,6 +56,37 @@ function stripInlineCode(line: string): string {
 }
 
 const IMPORT_RE = /(?:^|\s)@([^\s`]+)/g;
+
+/** One npm scope or name segment: lowercase, digits, `-` `_` `~`, no dots. */
+const NPM_SEGMENT = /^[a-z0-9~][a-z0-9_~-]*$/;
+
+/**
+ * True when an unresolved `@`-ref reads as an npm scoped package name in prose
+ * (`@superset-ui/core`, `@xyflow/react`, optionally with a subpath like
+ * `@superset-ui/core/components`) rather than a file the author expected to
+ * load. Claude Code's import parser (v2.1.251) makes no such distinction — it
+ * treats the token as an import and silently skips the missing target — so the
+ * resolved stack is identical either way; the only question is author intent,
+ * and a scoped package name endemic to JS-repo prose is not a dead import.
+ * Conservative on purpose: any dot anywhere in the ref (an extension or dotted
+ * name), an uppercase letter, a relative/absolute path prefix, or a real
+ * directory matching the scope segment keeps the ref flagged as a genuine
+ * missing import.
+ */
+function looksLikeNpmPackage(ref: string, fileDir: string): boolean {
+  // A sentence-ending "@xyflow/react." captures the punctuation, and a bold
+  // "**Use @superset-ui/core**" captures the closing emphasis markers (Claude
+  // Code scans marked inline tokens, so it sees neither); shed both before the
+  // shape check (a real file extension still has a dot mid-token).
+  const bare = ref.replace(/[.,;:!?)\]*_]+$/, "");
+  if (bare.startsWith("./") || bare.startsWith("../") || bare.startsWith("/")) return false;
+  if (bare.includes(".")) return false;
+  const segs = bare.split("/");
+  if (segs.length < 2 || segs.some((s) => s === "")) return false;
+  if (!NPM_SEGMENT.test(segs[0]!) || !NPM_SEGMENT.test(segs[1]!)) return false;
+  if (isDir(resolve(fileDir, segs[0]!))) return false;
+  return true;
+}
 const SCRIPT_RE = /\b(npm|pnpm|yarn)\s+run\s+([A-Za-z0-9:_.\-]+)/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
 /** A clean repo-relative path: segments of word/dot/dash, at least one `/`, an
@@ -133,6 +169,7 @@ export function findDeadReferences(
         if (ref.startsWith("~")) continue;
         // Only treat path-shaped tokens as imports; a bare `@handle` is prose.
         if (!ref.includes("/") && !ref.includes(".")) continue;
+        if (looksLikeNpmPackage(ref, fileDir)) continue;
         if (!isFile(resolve(fileDir, ref))) {
           push(
             "error",

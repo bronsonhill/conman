@@ -134,9 +134,13 @@ rule.
 conman reads `.claude/settings.json` and `.claude/settings.local.json` at the
 repo root and merges them (local wins). It acts on:
 
-- **`claudeMdExcludes`** — a list of globs. Any memory or imported file whose
-  repo-relative path matches is dropped from the stack, with a NOTE. Also
-  accepted: `claudeMd.excludes`.
+- **`claudeMdExcludes`** — a list of globs. Any memory, imported, or
+  `.claude/rules/` file whose repo-relative path matches is dropped from the
+  stack, with a NOTE. Also accepted: `claudeMd.excludes`. Claude Code matches
+  these against *absolute* paths with picomatch; conman matches repo-relative
+  paths, so relative and `**/`-prefixed globs behave identically while a
+  machine-specific absolute glob (the docs' `/home/user/...` example) never
+  matches in conman.
 - **`skillListingBudget`** — token budget for the skill startup index (see above).
   Also accepted: `skillsListingBudget`, `skills.listingBudget`.
 
@@ -298,7 +302,15 @@ finding — that check is Claude-specific.
   - `dead-import` (**error**) — an `@`-import whose target file is missing.
     Claude Code drops it from the resolved stack silently, so content the author
     expected never loads. Only path-shaped tokens (`@x/y`, `@x.md`) count; a
-    bare `@handle` is treated as prose.
+    bare `@handle` is treated as prose. An unresolved token shaped like an npm
+    scoped package name in prose (`@superset-ui/core`, `@xyflow/react`: all
+    lowercase, no dot anywhere, at least two segments, and the scope segment is
+    not a real directory next to the file) is also treated as prose, not a dead
+    import. Claude Code (v2.1.251) makes no such distinction — its parser
+    accepts any candidate whose first character is `[a-zA-Z0-9._-]`, `./`,
+    `~/`, or `/`, and silently skips a missing target — so the resolved stack
+    is identical either way; the exemption is about author intent, not load
+    behavior.
   - `dead-path` (**warn**) — a repo-relative path named inside backticks
     (`` `docs/architecture.md` ``) that does not exist. Flagged only when the
     path has a file extension, no globs or `..`, and its parent directory
@@ -399,6 +411,28 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.3** — Two false-fail fixes.
+
+  *`claudeMdExcludes` covers rules.* The setting now also drops matching
+  `.claude/rules/` entries, not just memory and imported files. Claude Code
+  applies it to rules files (its settings schema documents a
+  `.claude/rules/**` exclude, and a changelog entry fixes exclusion of
+  symlinked rules entries), so a repo that deliberately keeps its rules out of
+  the base context and reaches them via agent `@`-imports was being charged
+  tokens it never loads, and failed `conman check --map` on a stack Claude
+  Code never assembles.
+
+  *`dead-import` ignores npm package names in prose.*
+  `@superset-ui/core` or `@xyflow/react` mid-sentence is parsed as an
+  import by Claude Code and silently skipped when missing, exactly like a
+  genuinely dead `@docs/setup.md` — but the author never meant it to load, so
+  reporting it as a gate `error` was a false positive endemic to JS repos
+  (for several large repos it was the only reason `conman check --map` failed).
+  The exemption is shape-based and offline: all-lowercase, dot-free, two or
+  more segments, and the scope segment is not an existing directory beside the
+  importing file. Resolution is unchanged — the token is still attempted and
+  dropped, and the report still carries the `unresolved @-import` NOTE.
 
 - **0.2** — Two changes to how repeated context is scored.
 
