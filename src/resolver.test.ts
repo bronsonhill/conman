@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveStack } from "./resolver.js";
+import { resolveStack, loadSettings } from "./resolver.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { getTokenizer } from "./tokenizer.js";
 import { fixture } from "./testutil.js";
@@ -30,6 +30,25 @@ test("monorepo: ancestor chain, import, rules, skill index, exclude", () => {
   );
   // path-scoped rule matched services/**
   assert.ok(r.blocks.some((b) => b.kind === "rule-scoped"));
+});
+
+test("settings.local.json claudeMdExcludes adds to, not replaces, settings.json", () => {
+  const root = fixture("settings-local");
+
+  // Deep merge: both files' claudeMdExcludes entries survive, de-duplicated.
+  const s = loadSettings(root);
+  assert.deepEqual(s.claudeMdExcludes.slice().sort(), [
+    "a/CLAUDE.md",
+    "a/b/CLAUDE.md",
+  ]);
+
+  const r = resolveStack(fixture("settings-local", "a", "b", "c"), root, DEFAULT_CONFIG, tok, []);
+  const sources = r.blocks.map((b) => b.source);
+  // Both ancestor memory files are dropped. A shallow merge would let the
+  // settings.local.json array replace the project one, so a/CLAUDE.md would load.
+  assert.deepEqual(sources, ["CLAUDE.md", "a/b/c/CLAUDE.md"]);
+  assert.ok(r.notes.some((n) => n.includes("claudeMdExcludes: a/CLAUDE.md")));
+  assert.ok(r.notes.some((n) => n.includes("claudeMdExcludes: a/b/CLAUDE.md")));
 });
 
 test("import depth limit stops the chain and leaves a note", () => {
