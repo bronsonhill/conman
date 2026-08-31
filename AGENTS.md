@@ -45,10 +45,15 @@ run procedure.
   (`conman <entry> --format sarif`, single entry only); `explain` holds the
   static per-finding-type reference table (`conman explain [<id>]`) that also
   supplies the SARIF rule descriptions — keep its citations in sync with
-  README's "What the research says". `cli.ts` is arg-parse and dispatch only. `agent.ts` is the `--agent` enum;
-`resolver.ts`'s `resolveNonClaude` and `map.ts`'s agent-keyed discovery hold the
-best-effort non-Claude rulesets, and the `agent === "claude"` path is guaranteed
-byte-identical (early-return before any shared code). Most renderers are pure
+  README's "What the research says". `cli.ts` is arg-parse and dispatch only; `validateArgs()` there rejects
+flag/command mismatches and a non-numeric `--budget` before any work runs.
+`agent.ts` is the `--agent` enum;
+`resolver/index.ts`'s `resolveNonClaude` and `map.ts`'s agent-keyed discovery
+hold the best-effort non-Claude rulesets, and the `agent === "claude"` path is
+guaranteed byte-identical (early-return before any shared code). `resolver/` is
+one file per stage (`settings`, `imports`, `rules`, `skills`, `agentsMd`) behind
+`index.ts`, which re-exports the public API (`resolveStack`, `loadSettings`, the
+result types). Most renderers are pure
   formatters over `Analysis` / `MapResult`; `report.ts` additionally evaluates
   the gate (see audit item 15). All of them must stay deterministic: no `Date`,
   no absolute paths, sort before emit.
@@ -60,12 +65,17 @@ byte-identical (early-return before any shared code). Most renderers are pure
 - `test/fixtures/` — small hand-built synthetic mini-repos. `test/golden/` —
   expected CLI output. `test/run-golden-*.js` diff live output against golden (shared harness in
   `test/golden-lib.js`);
-  `npm run test:update-golden` regenerates.
+  `npm run test:update-golden` regenerates. Unit tests sit next to their module,
+  including nested (`src/findings/*.test.ts`); `npm test`'s runner globs each
+  test directory explicitly (`dist/*.test.js dist/findings/*.test.js`), so a new
+  nested test dir needs adding there.
 
 ## Build and test
 
-- `npm run build` — clean `tsc` to `dist/` (`rootDir: src`, so `bin` is
-  `dist/cli.js`).
+- `npm run build` — `tsc` to `dist/` (`rootDir: src`, so `bin` is `dist/cli.js`).
+  It does not prune `dist/`: after deleting or moving a source file, `rm -rf
+  dist` before rebuilding or a stale `dist/*.test.js` keeps running under `npm
+  test`. CI starts from a clean checkout, so it never sees this.
 - `npm test` — `scripts/build-if-stale.sh` (skips `tsc` when `dist/` is newer
   than every build input), then `node --test` over compiled unit tests and the
   golden runner. CI runs `npm run build` first, so CI always gets a full compile.

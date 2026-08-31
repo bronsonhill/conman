@@ -23,7 +23,7 @@
 
 import type { Finding, Location, Severity } from "../types.js";
 import type { Config } from "../config.js";
-import type { FrontmatterSubject } from "../resolver.js";
+import type { FrontmatterSubject } from "../resolver/index.js";
 import { parseFrontmatter } from "../frontmatter.js";
 
 /** Matches a `paths:` or `globs:` key at the start of a line — scoping intent. */

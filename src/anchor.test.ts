@@ -20,7 +20,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveStack } from "./resolver.js";
+import { resolveStack } from "./resolver/index.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { getTokenizer } from "./tokenizer.js";
 import { fixture } from "./testutil.js";

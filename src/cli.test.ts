@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { preferredKeeper } from "./fix.js";
@@ -18,6 +18,83 @@ function stage(name: string): string {
 function run(args: string[]): string {
   return execFileSync(process.execPath, [CLI, ...args], { encoding: "utf8" });
 }
+
+/** Run the CLI expecting a non-zero exit; return { status, stderr }. */
+function runFail(args: string[]): { status: number; stderr: string } {
+  try {
+    execFileSync(process.execPath, [CLI, ...args], { encoding: "utf8", stdio: "pipe" });
+  } catch (err) {
+    const e = err as { status?: number; stderr?: string };
+    return { status: e.status ?? -1, stderr: e.stderr ?? "" };
+  }
+  throw new Error("expected a non-zero exit");
+}
+
+test("validateArgs: --map outside `check` is rejected", () => {
+  const { status, stderr } = runFail(["some/dir", "--map"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--map is only valid with `conman check`/);
+});
+
+test("validateArgs: --trim on `map` is rejected", () => {
+  const { status, stderr } = runFail(["map", "--trim"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--trim is an analyze-only flag/);
+});
+
+test("validateArgs: --dry-run without --fix is rejected", () => {
+  const { status, stderr } = runFail(["some/dir", "--dry-run"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--dry-run has no effect without --fix/);
+});
+
+test("validateArgs: --fix with `check` is rejected", () => {
+  const { status, stderr } = runFail(["check", "--fix"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--fix is not valid with `conman check`/);
+});
+
+test("validateArgs: --html without map is rejected", () => {
+  const { status, stderr } = runFail(["some/dir", "--html", "out.html"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--html is only valid with/);
+});
+
+test("validateArgs: explain rejects analysis flags", () => {
+  const { status, stderr } = runFail(["explain", "duplication", "--fix"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /explain takes no analysis flags/);
+});
+
+test("validateArgs: non-numeric --budget is rejected", () => {
+  const { status, stderr } = runFail(["some/dir", "--budget", "lots"]);
+  assert.equal(status, 2);
+  assert.match(stderr, /--budget expects a number/);
+});
+
+test("conman.json syntax errors name the file and quote the parser", () => {
+  const root = mkdtempSync(join(tmpdir(), "conman-badcfg-"));
+  try {
+    writeFileSync(join(root, "conman.json"), "{ budget: { total: }, ");
+    const { status, stderr } = runFail([root, "--repo-root", root]);
+    assert.equal(status, 2);
+    assert.match(stderr, /conman\.json is not valid JSON5:/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("conman.json with a non-object top level is rejected", () => {
+  const root = mkdtempSync(join(tmpdir(), "conman-arrcfg-"));
+  try {
+    writeFileSync(join(root, "conman.json"), "[1, 2, 3]");
+    const { status, stderr } = runFail([root, "--repo-root", root]);
+    assert.equal(status, 2);
+    assert.match(stderr, /must contain a JSON object at the top level, got an array/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("map --fix applies fixes across every discovered entry point", () => {
   const root = stage("monorepo");

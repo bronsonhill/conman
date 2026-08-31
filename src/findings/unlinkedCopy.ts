@@ -12,7 +12,7 @@
 
 import type { Finding, Location } from "../types.js";
 import type { Config } from "../config.js";
-import type { UnlinkedAgentsCopy } from "../resolver.js";
+import type { UnlinkedAgentsCopy } from "../resolver/index.js";
 
 const MESSAGE =
   "CLAUDE.md and AGENTS.md are separate byte-identical copies. Claude Code " +

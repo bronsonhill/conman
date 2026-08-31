@@ -203,6 +203,46 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
   return a;
 }
 
+/**
+ * Reject flag/command combinations the dispatcher would otherwise ignore
+ * silently, plus a `--budget` that did not parse to a finite number. Returns a
+ * one-line message (no `conman:` prefix, no trailing newline) or null when the
+ * args are coherent.
+ */
+export function validateArgs(a: Args): string | null {
+  if (a.budget !== undefined && !Number.isFinite(a.budget)) {
+    return "--budget expects a number";
+  }
+  if (a.command === "explain") {
+    if (a.fix || a.dryRun || a.trim || a.map || a.html !== undefined) {
+      return "explain takes no analysis flags (--fix, --dry-run, --trim, --map, --html)";
+    }
+    return null;
+  }
+  if (a.trim && a.command !== "analyze") {
+    return "--trim is an analyze-only flag";
+  }
+  if (a.trim && a.fix) {
+    return "--trim and --fix cannot be combined";
+  }
+  if (a.trim && a.map) {
+    return "--trim cannot be combined with --map";
+  }
+  if (a.map && a.command !== "check") {
+    return "--map is only valid with `conman check`";
+  }
+  if (a.fix && a.command === "check") {
+    return "--fix is not valid with `conman check`; run `conman <entry> --fix` or `conman map --fix`";
+  }
+  if (a.dryRun && !a.fix) {
+    return "--dry-run has no effect without --fix";
+  }
+  if (a.html !== undefined && !(a.command === "map" || (a.command === "check" && a.map))) {
+    return "--html is only valid with `conman map` or `conman check --map`";
+  }
+  return null;
+}
+
 const HELP = `conman ${toolVersion()} - deterministic linter for a repo's Claude Code context stack
 
 USAGE
@@ -354,6 +394,12 @@ function main(): void {
     return;
   }
   const args = parsed;
+
+  const argError = validateArgs(args);
+  if (argError) {
+    process.stderr.write(`conman: ${argError}\n`);
+    process.exit(2);
+  }
 
   if (args.tokenizer === "exact" && !process.env[EXACT_API_KEY_ENV]) {
     process.stderr.write(
