@@ -132,7 +132,17 @@ rule.
 ## `settings.json` keys that change resolution
 
 conman reads `.claude/settings.json` and `.claude/settings.local.json` at the
-repo root and merges them (local wins). It acts on:
+repo root and deep-merges them, `settings.local.json` layered on top. The merge
+matches Claude Code's `i5` customizer (`claude 2.1.251`): arrays are
+**concatenated and de-duplicated**, plain objects merge key-by-key, and a scalar
+in `settings.local.json` replaces the one in `settings.json`. So a
+`claudeMdExcludes` entry in `settings.local.json` *adds to* the project list —
+it does not replace it. (conman previously did a shallow `Object.assign`, which
+let a local `claudeMdExcludes` drop every project-level exclude.) Precedence,
+lowest first: `~/.claude/settings.json` (not yet modelled) < project
+`settings.json` < local `settings.local.json` < managed policy.
+
+It acts on:
 
 - **`claudeMdExcludes`** — a list of globs. Any memory, imported, or
   `.claude/rules/` file whose repo-relative path matches is dropped from the

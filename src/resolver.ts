@@ -76,14 +76,60 @@ export interface ResolveResult {
   frontmatterSubjects: FrontmatterSubject[];
 }
 
+/**
+ * Settings sources, lowest precedence first. Claude Code layers
+ * `~/.claude/settings.json` (user) < `.claude/settings.json` (project) <
+ * `.claude/settings.local.json` (local) < managed/policy. conman models the two
+ * repo-root files today; a later layer (user `~/.claude`) prepends to this list
+ * and the merge below already handles it — add the source, keep the order.
+ */
+const SETTINGS_SOURCES = ["settings.json", "settings.local.json"] as const;
+
+/**
+ * Deep-merge two settings objects the way Claude Code's `i5` customizer does:
+ * arrays are concatenated then de-duplicated (by JSON identity), plain objects
+ * merge key-by-key, everything else takes the override when it is present.
+ * Evidence: `claude 2.1.251`, merge customizer
+ * `function i5(e,t,r){ ... if(Array.isArray(e)&&Array.isArray(t)){ ... return te([...e,...t]) } ... }`
+ * where `te` de-dupes. `claudeMdExcludes` is a plain string array, so a
+ * `settings.local.json` entry *adds to* the project list rather than replacing it.
+ */
+function mergeSettingsValue(base: unknown, override: unknown): unknown {
+  if (Array.isArray(base) && Array.isArray(override)) {
+    const seen = new Set<string>();
+    const out: unknown[] = [];
+    for (const item of [...base, ...override]) {
+      const key = JSON.stringify(item) ?? String(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  }
+  if (isPlainObject(base) && isPlainObject(override)) {
+    const out: Record<string, unknown> = { ...base };
+    for (const [k, v] of Object.entries(override)) {
+      out[k] = k in out ? mergeSettingsValue(out[k], v) : v;
+    }
+    return out;
+  }
+  return override === undefined ? base : override;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
 export function loadSettings(repoRoot: string): Settings {
-  const merged: Record<string, unknown> = {};
-  for (const name of ["settings.json", "settings.local.json"]) {
+  let merged: Record<string, unknown> = {};
+  for (const name of SETTINGS_SOURCES) {
     const p = join(repoRoot, ".claude", name);
     if (!isFile(p)) continue;
     try {
       const parsed = JSON.parse(readFileSync(p, "utf8"));
-      if (parsed && typeof parsed === "object") Object.assign(merged, parsed);
+      if (isPlainObject(parsed)) {
+        merged = mergeSettingsValue(merged, parsed) as Record<string, unknown>;
+      }
     } catch {
       // ignore malformed settings; resolution proceeds without them
     }

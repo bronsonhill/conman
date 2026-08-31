@@ -1,0 +1,2 @@
+# Fixture commits settings.local.json on purpose; undo the repo-wide ignore.
+!/.claude/settings.local.json
