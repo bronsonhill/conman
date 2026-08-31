@@ -14,9 +14,8 @@ import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Analysis, Finding } from "./types.js";
 import { parseFrontmatter } from "./frontmatter.js";
-import { isDir, isFile, relPosix } from "./repo.js";
-
-const FENCE = /^(\s*)(`{3,}|~{3,})/;
+import { isAncestorPath, isDir, isFile, relPosix } from "./repo.js";
+import { fencedFlags } from "./findings/_fence.js";
 
 export interface FileChange {
   file: string;
@@ -27,24 +26,6 @@ export interface FileChange {
 export interface FixResult {
   changes: FileChange[];
   notes: string[];
-}
-
-function fencedFlags(lines: string[]): boolean[] {
-  const flags = new Array<boolean>(lines.length).fill(false);
-  let inFence = false;
-  let marker = "";
-  lines.forEach((line, i) => {
-    const m = line.match(FENCE);
-    if (inFence) {
-      flags[i] = true;
-      if (m && m[2]!.startsWith(marker)) inFence = false;
-    } else if (m) {
-      flags[i] = true;
-      inFence = true;
-      marker = m[2]![0]!.repeat(3);
-    }
-  });
-  return flags;
 }
 
 function normalizeWhitespace(text: string): string {
@@ -69,17 +50,6 @@ function normalizeWhitespace(text: string): string {
   }
   t = out.join("\n").replace(/\n+$/, "") + "\n";
   return t;
-}
-
-function dirSegs(p: string): string[] {
-  const dir = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : ".";
-  return dir === "." || dir === "" ? [] : dir.split("/");
-}
-function isAncestorPath(a: string, b: string): boolean {
-  const as = dirSegs(a);
-  const bs = dirSegs(b);
-  if (as.length >= bs.length) return false;
-  return as.every((s, i) => s === bs[i]);
 }
 
 /**

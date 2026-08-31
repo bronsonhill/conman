@@ -74,6 +74,26 @@ export function globToRegExp(glob: string): RegExp {
   return new RegExp("^" + re + "$");
 }
 
+/**
+ * The directory segments of a repo-relative POSIX path. A path with no slash
+ * (or a directory of "." / "") yields `[]`. `src/a/CLAUDE.md` -> `["src", "a"]`.
+ */
+export function dirSegs(pathPosix: string): string[] {
+  const dir = pathPosix.includes("/")
+    ? pathPosix.slice(0, pathPosix.lastIndexOf("/"))
+    : ".";
+  return dir === "." || dir === "" ? [] : dir.split("/");
+}
+
+/** True when `a`'s directory is a strict ancestor of `b`'s directory. */
+export function isAncestorPath(a: string, b: string): boolean {
+  if (a === b) return false;
+  const as = dirSegs(a);
+  const bs = dirSegs(b);
+  if (as.length >= bs.length) return false;
+  return as.every((s, i) => s === bs[i]);
+}
+
 export function matchesAnyGlob(pathPosix: string, globs: string[]): boolean {
   return globs.some((g) => {
     const norm = g.replace(/^\.\//, "");

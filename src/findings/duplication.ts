@@ -21,6 +21,7 @@ import type { Block, Finding, Location } from "../types.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
 import { splitSegments } from "../segments.js";
+import { isAncestorPath } from "../repo.js";
 
 const MIN_DUP_TOKENS = 8;
 
@@ -34,19 +35,25 @@ const RELATION_RANK: Record<DuplicationRelation, number> = {
   "same-stack": 2,
 };
 
-function dirSegs(pathPosix: string): string[] {
-  const dir = pathPosix.includes("/")
-    ? pathPosix.slice(0, pathPosix.lastIndexOf("/"))
-    : ".";
-  return dir === "." || dir === "" ? [] : dir.split("/");
-}
-
-function isAncestorPath(a: string, b: string): boolean {
-  if (a === b) return false;
-  const as = dirSegs(a);
-  const bs = dirSegs(b);
-  if (as.length >= bs.length) return false;
-  return as.every((s, i) => s === bs[i]);
+/**
+ * Disjoint-set over string keys with path-halving `find`. Seeded with `items`,
+ * each its own singleton set. `union(a, b)` points a's root at b's root.
+ */
+function makeUnionFind(items: Iterable<string>) {
+  const parent = new Map<string, string>();
+  for (const it of items) parent.set(it, it);
+  const find = (x: string): string => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    while (parent.get(x) !== r) {
+      const n = parent.get(x)!;
+      parent.set(x, r);
+      x = n;
+    }
+    return r;
+  };
+  const union = (a: string, b: string) => parent.set(find(a), find(b));
+  return { find, union };
 }
 
 /** Map child source -> parent source, from @-import `via` markers. */
@@ -168,19 +175,7 @@ export function findDuplication(
   //     cluster; the non-kept members are marked so their segments do not also
   //     produce per-segment findings below.
   const files = [...fileSegs.keys()].sort();
-  const uf = new Map<string, string>();
-  const find = (x: string): string => {
-    let r = x;
-    while (uf.get(r) !== r) r = uf.get(r)!;
-    while (uf.get(x) !== r) {
-      const n = uf.get(x)!;
-      uf.set(x, r);
-      x = n;
-    }
-    return r;
-  };
-  const union = (a: string, b: string) => uf.set(find(a), find(b));
-  for (const f of files) uf.set(f, f);
+  const { find, union } = makeUnionFind(files);
 
   const subsetOf = (small: Set<string>, big: Set<string>): boolean => {
     if (small.size === 0 || small.size > big.size) return false;
