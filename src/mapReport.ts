@@ -11,6 +11,80 @@ export function mapRedundancy(result: MapResult): { tokens: number; pctOfStack: 
   return { tokens, pctOfStack: stack > 0 ? Math.round((tokens / stack) * 100) : 0 };
 }
 
+// A resolver note of the form "<prefix>; did not match entry <entry>" is emitted
+// once per entry point per non-matching path-scoped rule. On a monorepo that is
+// O(entries x rules) lines that differ only in the trailing entry name. These
+// helpers hoist them to a single map-level list with a count, and separately
+// name any path-scoped rule that matched no discovered entry point at all.
+const DID_NOT_MATCH_RE = /^(.*); did not match entry (.+)$/;
+const PATHS_RULE_ID_RE = /^rule (.+?) is path-scoped \(/;
+const GLOBS_RULE_ID_RE = /^(.+?) is glob-scoped \(/;
+
+function ruleIdFromPrefix(prefix: string): string | null {
+  const m = PATHS_RULE_ID_RE.exec(prefix) ?? GLOBS_RULE_ID_RE.exec(prefix);
+  return m?.[1] ?? null;
+}
+
+export interface MapNoteSummary {
+  /** One line per non-matching path-scoped rule, counted, sorted by prefix. */
+  collapsed: string[];
+  /** Path-scoped rules that matched no discovered entry point, sorted. */
+  deadRules: string[];
+  /** Per-entry notes with the hoisted "did not match entry" lines removed. */
+  perEntry: Map<string, string[]>;
+}
+
+export function summarizeMapNotes(result: MapResult): MapNoteSummary {
+  // prefix -> set of entry names that reported "did not match"
+  const groups = new Map<string, Set<string>>();
+  const perEntry = new Map<string, string[]>();
+  for (const e of result.entries) {
+    const kept: string[] = [];
+    for (const n of e.notes) {
+      const m = DID_NOT_MATCH_RE.exec(n);
+      if (!m || m[1] === undefined || m[2] === undefined) {
+        kept.push(n);
+        continue;
+      }
+      const prefix = m[1];
+      let set = groups.get(prefix);
+      if (!set) {
+        set = new Set<string>();
+        groups.set(prefix, set);
+      }
+      set.add(m[2]);
+    }
+    perEntry.set(e.entry, kept);
+  }
+
+  // A path-scoped rule is "live" if it loaded for at least one entry point,
+  // i.e. it shows up as a rule-scoped block somewhere in the map.
+  const live = new Set<string>();
+  for (const e of result.entries) {
+    for (const b of e.analysis.blocks) {
+      if (b.kind === "rule-scoped") live.add(b.source);
+    }
+  }
+
+  const prefixes = [...groups.keys()].sort();
+  const collapsed: string[] = [];
+  const deadRules: string[] = [];
+  for (const prefix of prefixes) {
+    const entries = [...groups.get(prefix)!].sort();
+    collapsed.push(
+      entries.length === 1
+        ? `${prefix}; did not match entry ${entries[0]}`
+        : `${prefix}; did not match ${entries.length} entry points`,
+    );
+    const id = ruleIdFromPrefix(prefix);
+    if (id && !live.has(id)) {
+      deadRules.push(`${prefix}; matched no discovered entry point`);
+    }
+  }
+  deadRules.sort();
+  return { collapsed, deadRules, perEntry };
+}
+
 function pad(s: string, w: number): string {
   return s.length >= w ? s : s + " ".repeat(w - s.length);
 }
@@ -66,6 +140,18 @@ export function renderMapHuman(
     out.push("");
   }
 
+  const noteSummary = summarizeMapNotes(result);
+  if (noteSummary.collapsed.length > 0) {
+    out.push("path-scoped rules that did not match every entry point:");
+    for (const line of noteSummary.collapsed) out.push(`  ${line}`);
+    out.push("");
+  }
+  if (noteSummary.deadRules.length > 0) {
+    out.push("path-scoped rules that matched no entry point (dead scope):");
+    for (const line of noteSummary.deadRules) out.push(`  ${line}`);
+    out.push("");
+  }
+
   const totalTokens = result.entries.reduce(
     (n, e) => n + e.analysis.totals.stackTokens,
     0,
@@ -101,6 +187,7 @@ export function renderMapJson(
   toolVersion: string,
   configSource: string | null,
 ): string {
+  const noteSummary = summarizeMapNotes(result);
   const payload = {
     tool: "conman",
     toolVersion,
@@ -109,6 +196,13 @@ export function renderMapJson(
     configSource,
     pass: result.pass,
     redundant: mapRedundancy(result),
+    // Map-level rollup of the repeated "did not match entry <x>" resolver notes.
+    // The raw lines used to sit once per entry in each entryPoints[].notes; the
+    // per-entry arrays now carry only their genuinely unique notes and these two
+    // arrays carry the collapsed view. `deadPathScopedRules` names rules that
+    // loaded for no entry point at all.
+    pathScopedRuleNotes: noteSummary.collapsed,
+    deadPathScopedRules: noteSummary.deadRules,
     entryPoints: result.entries.map((e) => ({
       entry: e.entry,
       discovery: e.discovery,
@@ -128,7 +222,7 @@ export function renderMapJson(
         tokens: b.tokens,
       })),
       findings: e.analysis.findings,
-      notes: e.notes,
+      notes: noteSummary.perEntry.get(e.entry) ?? e.notes,
       result: { pass: e.pass, reasons: e.reasons },
     })),
   };

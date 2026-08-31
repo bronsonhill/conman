@@ -10,6 +10,14 @@ entry points discovered: 2
 discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):
   src
 
+path-scoped rules that did not match every entry point:
+  rule .claude/rules/paths-string.md is path-scoped (src/**); did not match 2 entry points
+  rule .claude/rules/valid.md is path-scoped (src/**); did not match 2 entry points
+
+path-scoped rules that matched no entry point (dead scope):
+  rule .claude/rules/paths-string.md is path-scoped (src/**); matched no discovered entry point
+  rule .claude/rules/valid.md is path-scoped (src/**); matched no discovered entry point
+
 repo rollup: 454 tokens across 2 entry points
 redundant tokens: 0 (0% of stack)
 

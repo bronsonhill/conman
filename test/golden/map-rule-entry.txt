@@ -16,6 +16,19 @@ discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):
   src/main
   src/renderer
 
+path-scoped rules that did not match every entry point:
+  rule .claude/rules/broad.md is path-scoped (src/**); did not match 3 entry points
+  rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 5 entry points
+  rule .claude/rules/main.md is path-scoped (src/main/**); did not match 5 entry points
+  rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 5 entry points
+  rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 5 entry points
+
+path-scoped rules that matched no entry point (dead scope):
+  rule .claude/rules/docs-files.md is path-scoped (docs/*.md); matched no discovered entry point
+  rule .claude/rules/main.md is path-scoped (src/main/**); matched no discovered entry point
+  rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); matched no discovered entry point
+  rule .claude/rules/renderer.md is path-scoped (src/renderer/**); matched no discovered entry point
+
 repo rollup: 801 tokens across 5 entry points
 redundant tokens: 0 (0% of stack)
 

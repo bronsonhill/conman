@@ -2,6 +2,7 @@
 {
   "command": "map",
   "configSource": "conman.json",
+  "deadPathScopedRules": [],
   "entryPoints": [
     {
       "blocks": [
@@ -62,7 +63,6 @@
       "findings": [],
       "mode": "stack",
       "notes": [
-        "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry .",
         "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
@@ -145,7 +145,6 @@
       "findings": [],
       "mode": "stack",
       "notes": [
-        "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry legacy",
         "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
@@ -220,7 +219,6 @@
       "mode": "stack",
       "notes": [
         "excluded by settings claudeMdExcludes: services/CLAUDE.md",
-        "rule .claude/rules/backend.md is path-scoped (services/**); did not match entry services",
         "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
         "skill startup index truncated: 1 of 3 skills omitted under skill-listing budget 45"
       ],
@@ -383,6 +381,9 @@
   ],
   "modelVersion": "0.3",
   "pass": false,
+  "pathScopedRuleNotes": [
+    "rule .claude/rules/backend.md is path-scoped (services/**); did not match 3 entry points"
+  ],
   "redundant": {
     "pctOfStack": 3,
     "tokens": 27

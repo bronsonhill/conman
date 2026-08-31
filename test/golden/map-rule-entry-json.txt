@@ -2,6 +2,12 @@
 {
   "command": "map",
   "configSource": "conman.json",
+  "deadPathScopedRules": [
+    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); matched no discovered entry point",
+    "rule .claude/rules/main.md is path-scoped (src/main/**); matched no discovered entry point",
+    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); matched no discovered entry point",
+    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); matched no discovered entry point"
+  ],
   "entryPoints": [
     {
       "blocks": [
@@ -51,13 +57,7 @@
       "entry": ".",
       "findings": [],
       "mode": "stack",
-      "notes": [
-        "rule .claude/rules/broad.md is path-scoped (src/**); did not match entry .",
-        "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match entry .",
-        "rule .claude/rules/main.md is path-scoped (src/main/**); did not match entry .",
-        "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry .",
-        "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry ."
-      ],
+      "notes": [],
       "redundant": {
         "pctOfStack": 0,
         "tokens": 0
@@ -116,13 +116,7 @@
       "entry": "docs",
       "findings": [],
       "mode": "stack",
-      "notes": [
-        "rule .claude/rules/broad.md is path-scoped (src/**); did not match entry docs",
-        "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match entry docs",
-        "rule .claude/rules/main.md is path-scoped (src/main/**); did not match entry docs",
-        "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry docs",
-        "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry docs"
-      ],
+      "notes": [],
       "redundant": {
         "pctOfStack": 0,
         "tokens": 0
@@ -181,13 +175,7 @@
       "entry": "src",
       "findings": [],
       "mode": "stack",
-      "notes": [
-        "rule .claude/rules/broad.md is path-scoped (src/**); did not match entry src",
-        "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match entry src",
-        "rule .claude/rules/main.md is path-scoped (src/main/**); did not match entry src",
-        "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src",
-        "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src"
-      ],
+      "notes": [],
       "redundant": {
         "pctOfStack": 0,
         "tokens": 0
@@ -256,12 +244,7 @@
       "entry": "src/main",
       "findings": [],
       "mode": "stack",
-      "notes": [
-        "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match entry src/main",
-        "rule .claude/rules/main.md is path-scoped (src/main/**); did not match entry src/main",
-        "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src/main",
-        "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src/main"
-      ],
+      "notes": [],
       "redundant": {
         "pctOfStack": 0,
         "tokens": 0
@@ -330,12 +313,7 @@
       "entry": "src/renderer",
       "findings": [],
       "mode": "stack",
-      "notes": [
-        "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match entry src/renderer",
-        "rule .claude/rules/main.md is path-scoped (src/main/**); did not match entry src/renderer",
-        "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match entry src/renderer",
-        "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match entry src/renderer"
-      ],
+      "notes": [],
       "redundant": {
         "pctOfStack": 0,
         "tokens": 0
@@ -350,6 +328,13 @@
   ],
   "modelVersion": "0.3",
   "pass": true,
+  "pathScopedRuleNotes": [
+    "rule .claude/rules/broad.md is path-scoped (src/**); did not match 3 entry points",
+    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 5 entry points",
+    "rule .claude/rules/main.md is path-scoped (src/main/**); did not match 5 entry points",
+    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 5 entry points",
+    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 5 entry points"
+  ],
   "redundant": {
     "pctOfStack": 0,
     "tokens": 0

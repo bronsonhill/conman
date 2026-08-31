@@ -12,7 +12,7 @@
 import type { MapResult, MapEntryResult } from "./map.js";
 import { MODEL_VERSION, type Finding } from "./types.js";
 import { redundancy } from "./report.js";
-import { mapRedundancy } from "./mapReport.js";
+import { mapRedundancy, summarizeMapNotes } from "./mapReport.js";
 
 const KIND_LABEL: Record<string, string> = {
   memory: "memory",
@@ -255,7 +255,11 @@ ${rows}
       </dl>`;
 }
 
-function renderEntrySection(e: MapEntryResult, index: number): string {
+function renderEntrySection(
+  e: MapEntryResult,
+  index: number,
+  notes: string[],
+): string {
   const id = `entry-${index}`;
   return `    <section class="entry" id="${id}">
       <h2>${esc(e.entry)}</h2>
@@ -279,7 +283,7 @@ ${renderBudget(e)}
 ${renderFindings(e)}
 
       <h3>Notes</h3>
-${renderList(e.notes, "notes")}
+${renderList(notes, "notes")}
 
       <h3>Result</h3>
       <p class="${e.pass ? "pass" : "fail"}">${e.pass ? "pass" : "fail"}</p>
@@ -386,9 +390,25 @@ export function renderMapHtml(
     .map((e, i) => `<a href="#entry-${i}">${esc(e.entry)}</a>`)
     .join("\n        ");
 
+  const noteSummary = summarizeMapNotes(result);
   const entrySections = result.entries
-    .map((e, i) => renderEntrySection(e, i))
+    .map((e, i) =>
+      renderEntrySection(e, i, noteSummary.perEntry.get(e.entry) ?? e.notes),
+    )
     .join("\n\n");
+
+  const pathScopedSection =
+    noteSummary.collapsed.length === 0 && noteSummary.deadRules.length === 0
+      ? ""
+      : `  <section id="path-scoped-rules">
+    <h2>Path-scoped rules</h2>
+    <h3>Did not match every entry point</h3>
+${renderList(noteSummary.collapsed, "notes")}
+    <h3>Matched no entry point (dead scope)</h3>
+${renderList(noteSummary.deadRules, "notes")}
+  </section>
+
+`;
 
   const title = gate ? "conman check --map report" : "conman map report";
 
@@ -425,7 +445,7 @@ ${gate ? renderGateVerdict(result) + "\n" : ""}  <section id="summary">
 ${renderSummaryTable(result)}
   </section>
 
-${entrySections}
+${pathScopedSection}${entrySections}
 </main>
 </body>
 </html>
