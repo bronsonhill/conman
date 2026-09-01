@@ -28,12 +28,7 @@ import { dirname, join, resolve } from "node:path";
 import type { Block, Finding, Severity } from "../types.js";
 import type { Config } from "../config.js";
 import { isDir, isFile } from "../repo.js";
-import { fencedLineSet as fencedLines } from "./_fence.js";
-
-/** Blank out inline `code` spans so their contents are not scanned as prose. */
-function stripInlineCode(line: string): string {
-  return line.replace(/`[^`]*`/g, (s) => " ".repeat(s.length));
-}
+import { fencedLineSet as fencedLines, maskInlineCode } from "./_fence.js";
 
 const IMPORT_RE = /(?:^|\s)@([^\s`]+)/g;
 
@@ -135,13 +130,15 @@ export function findDeadReferences(
     const fileDir = dirname(join(repoRoot, b.source));
     const lines = b.text.split("\n");
     const fenced = fencedLines(lines);
+    // Inline-code spans blanked, including spans that wrap across lines.
+    const masked = maskInlineCode(lines, fenced);
 
     lines.forEach((raw, i) => {
       if (fenced.has(i)) return;
       const ln = b.lineStart + i;
 
       // dead-import
-      const noCode = stripInlineCode(raw);
+      const noCode = masked[i]!;
       IMPORT_RE.lastIndex = 0;
       let m: RegExpExecArray | null;
       while ((m = IMPORT_RE.exec(noCode)) !== null) {

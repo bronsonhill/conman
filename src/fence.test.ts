@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { FENCE, fencedFlags, fencedLineSet } from "./findings/_fence.js";
+import {
+  FENCE,
+  fencedFlags,
+  fencedLineSet,
+  maskInlineCode,
+} from "./findings/_fence.js";
 
 /** Sorted array form, easier to assert against. */
 function inside(src: string): number[] {
@@ -46,6 +51,57 @@ test("fencedFlags is the boolean-array view of fencedLineSet", () => {
     fencedFlags(lines),
     lines.map((_, i) => set.has(i)),
   );
+});
+
+test("maskInlineCode blanks a simple single-backtick span, delimiters included", () => {
+  const out = maskInlineCode(["see `@foo/bar` here"]);
+  assert.equal(out[0], "see " + " ".repeat(10) + " here");
+  assert.equal(out[0]!.length, "see `@foo/bar` here".length);
+});
+
+test("maskInlineCode leaves prose and length untouched", () => {
+  const out = maskInlineCode(["plain @foo/bar line"]);
+  assert.deepEqual(out, ["plain @foo/bar line"]);
+});
+
+test("maskInlineCode matches backtick runs by length", () => {
+  // A single backtick inside a ``-delimited span does not close it.
+  const out = maskInlineCode(["a ``x `@y` z`` b"]);
+  assert.equal(out[0], "a" + " ".repeat(13) + " b");
+  assert.ok(!out[0]!.includes("@y"));
+});
+
+test("maskInlineCode: an opener with no matching closer is literal text", () => {
+  assert.deepEqual(maskInlineCode(["a ` @foo/bar and on"]), ["a ` @foo/bar and on"]);
+});
+
+test("maskInlineCode: a span that wraps across lines is blanked on every line", () => {
+  const lines = ["start `code span", "still @foo/bar in span` end"];
+  const masked = maskInlineCode(lines);
+  assert.equal(masked[0], "start           ");
+  assert.ok(!masked[1]!.includes("@foo/bar"));
+  assert.ok(masked[1]!.endsWith(" end"));
+  assert.equal(masked[0]!.length, lines[0]!.length);
+  assert.equal(masked[1]!.length, lines[1]!.length);
+});
+
+test("maskInlineCode: wekan CLAUDE.md:516 case from issue #36", () => {
+  const lines = [
+    "- FerretDB Upcoming structure — `### New Features 🎉`, `### Fixed 🐛`, `### Other Changes",
+    "  🤖`; entries end `... by @xet7. Thanks to xet7.`",
+  ];
+  const masked = maskInlineCode(lines);
+  assert.ok(!masked[1]!.includes("@xet7"), "@xet7 must be inside a masked span");
+  assert.equal(masked[0]!.length, lines[0]!.length);
+  assert.equal(masked[1]!.length, lines[1]!.length);
+});
+
+test("maskInlineCode: backticks inside a fenced block do not open a span", () => {
+  const lines = ["`@a/b`", "```", "`@c/d", "```", "`@e/f`"];
+  const masked = maskInlineCode(lines);
+  assert.ok(!masked[0]!.includes("@a/b"));
+  assert.equal(masked[2], "`@c/d"); // fenced line passed through verbatim
+  assert.ok(!masked[4]!.includes("@e/f"));
 });
 
 test("FENCE matches the opener shapes and rejects short runs and inline spans", () => {

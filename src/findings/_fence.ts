@@ -32,3 +32,69 @@ export function fencedFlags(lines: string[]): boolean[] {
   const set = fencedLineSet(lines);
   return lines.map((_, i) => set.has(i));
 }
+
+/**
+ * Per-line copy of `lines` with every CommonMark inline code span, backtick
+ * delimiters included, blanked to spaces (length preserved so column offsets
+ * still line up). Backtick runs are matched by length: an opener of N backticks
+ * closes only on the next run of exactly N. A span may wrap across lines. An
+ * opener with no matching closer is literal text and stays untouched. Lines
+ * inside a fenced code block are passed through verbatim and never open or
+ * close a span; callers that already skip fenced lines can hand the set in.
+ *
+ * One home for inline-code-span scanning, next to `fencedLineSet`. `resolver`'s
+ * `findImports` and `deadReference`'s dead-import/-script/-path stages each used
+ * to carry a `` `[^`]*` `` regex that could not see a span crossing a line
+ * break; `_fence.test.ts` pins the shared behaviour, including the wekan
+ * `CLAUDE.md:516` case from issue #36.
+ */
+export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] {
+  const fencedSet = fenced ?? fencedLineSet(lines);
+  const scanIdx: number[] = [];
+  for (let i = 0; i < lines.length; i++) if (!fencedSet.has(i)) scanIdx.push(i);
+
+  // Concatenate the scanned lines with "\n" joiners so a span can cross a line
+  // break, then walk the joined text once.
+  const parts = scanIdx.map((i) => lines[i]!);
+  const joined = parts.join("\n");
+  const masked = new Array<boolean>(joined.length).fill(false);
+
+  let i = 0;
+  while (i < joined.length) {
+    if (joined[i] !== "`") {
+      i++;
+      continue;
+    }
+    let n = 0;
+    while (i + n < joined.length && joined[i + n] === "`") n++;
+    let j = i + n;
+    let closed = false;
+    while (j < joined.length) {
+      if (joined[j] === "`") {
+        let m = 0;
+        while (j + m < joined.length && joined[j + m] === "`") m++;
+        if (m === n) {
+          for (let k = i; k < j + n; k++) masked[k] = true;
+          i = j + n;
+          closed = true;
+          break;
+        }
+        j += m;
+      } else {
+        j++;
+      }
+    }
+    if (!closed) i += n;
+  }
+
+  const out = lines.slice();
+  let pos = 0;
+  for (let s = 0; s < scanIdx.length; s++) {
+    const part = parts[s]!;
+    let line = "";
+    for (let k = 0; k < part.length; k++) line += masked[pos + k] ? " " : part[k];
+    out[scanIdx[s]!] = line;
+    pos += part.length + 1; // +1 for the "\n" joiner
+  }
+  return out;
+}

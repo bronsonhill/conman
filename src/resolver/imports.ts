@@ -8,7 +8,7 @@ import { dirname, resolve } from "node:path";
 import type { Block, BlockKind } from "../types.js";
 import type { Tokenizer } from "../tokenizer.js";
 import { isFile, relPosix } from "../repo.js";
-import { fencedLineSet } from "../findings/_fence.js";
+import { fencedLineSet, maskInlineCode } from "../findings/_fence.js";
 
 /** Line count that does not overcount a trailing newline. */
 export function countLines(text: string): number {
@@ -77,12 +77,14 @@ export function findImports(
 ): { path: string; line: number }[] {
   const lines = text.split("\n");
   const fenced = fencedLineSet(lines);
+  // Blank inline-code spans (incl. ones that wrap across lines) so `@foo` in
+  // backticks is not read as an import.
+  const masked = maskInlineCode(lines, fenced);
   const found: { path: string; line: number }[] = [];
   const re = /(?:^|\s)@([^\s`]+)/g;
   lines.forEach((line, i) => {
     if (fenced.has(i)) return;
-    // strip inline-code spans so `@foo` in backticks is ignored
-    const stripped = line.replace(/`[^`]*`/g, (s) => " ".repeat(s.length));
+    const stripped = masked[i]!;
     let m: RegExpExecArray | null;
     re.lastIndex = 0;
     while ((m = re.exec(stripped)) !== null) {
