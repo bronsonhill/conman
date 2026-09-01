@@ -237,10 +237,33 @@ from this and is not tracked.
 
 ### `--agent copilot`
 
-The repo-root `.github/copilot-instructions.md` first (it is repo-wide), then the
-ancestor `AGENTS.md` walk. Both load as `memory` blocks. GitHub Copilot's
-`.github/instructions/*.instructions.md` path-scoped files and `applyTo`
-frontmatter are not modeled yet.
+Load order:
+
+1. The repo-root `.github/copilot-instructions.md`, if present — one `memory`
+   block (it is repo-wide).
+2. The ancestor `AGENTS.md` walk — `memory` blocks, root-most first.
+3. `.github/instructions/**/*.instructions.md`, path-sorted, always-on before
+   matched path-scoped, mirroring the Claude/Cursor rule order.
+
+Each `*.instructions.md` file's `applyTo` frontmatter maps onto conman's
+always-on vs path-scoped split:
+
+- `applyTo: "**"`, or no `applyTo` key → **always-on** (`rule-always`). A missing
+  key adds a NOTE (Copilot applies such a file to every file).
+- any other `applyTo` → **path-scoped** (`rule-scoped`), loaded only when one
+  glob matches the entry path. `applyTo` is one comma-separated string of file
+  globs; conman splits it and matches each with its own literal matcher (no
+  brace expansion), exactly as `paths` is matched for Claude. Because conman
+  resolves an entry *directory*, a `dir/**` glob is also matched against the
+  bare directory, so a directory entry picks up what Copilot would apply to
+  every file beneath it; a pattern that names a file shape (`**/*.ts`) cannot
+  match a directory entry.
+
+`conman map` discovers a directory as an entry point when an `applyTo` glob
+scopes to it, the same way a Claude `paths` glob does. `*.instructions.md`
+frontmatter is not linted by the `frontmatter` finding — that check is
+Claude-specific. This whole ruleset is best-effort and un-anchored, like the
+rest of this section.
 
 ### `--agent cursor`
 

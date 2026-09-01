@@ -475,7 +475,7 @@ unchanged on whatever stack comes out.
 |---|---|
 | `claude` (default) | `CLAUDE.md` / `AGENTS.md` ancestors, `@`-imports, `.claude/rules/`, skill index, `settings.json` keys |
 | `codex` | ancestor `AGENTS.md` only |
-| `copilot` | `.github/copilot-instructions.md`, then ancestor `AGENTS.md` |
+| `copilot` | `.github/copilot-instructions.md`, ancestor `AGENTS.md`, then `.github/instructions/*.instructions.md` (`applyTo` mapped onto always-on vs path-scoped, like Cursor `globs`) |
 | `cursor` | ancestor `AGENTS.md`, then `.cursorrules` and `.cursor/rules/*.mdc` (`.mdc` `alwaysApply` / `globs` mapped onto always-on vs path-scoped; a rule with neither is loaded always-on with a note) |
 
 No non-claude agent follows `@`-imports, reads `.claude/`, or reads
