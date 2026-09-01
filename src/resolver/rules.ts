@@ -197,8 +197,8 @@ function findInstructionFiles(dir: string, repoRoot: string): string[] {
  *
  * - `applyTo: "**"` (or missing) -> always-on (`rule-always`).
  * - any other `applyTo` -> path-scoped (`rule-scoped`), loaded only when one
- *   glob matches the entry path, matched by conman's own literal matcher (no
- *   brace expansion), exactly as `paths` is matched for Claude.
+ *   glob matches the entry path, matched through the shared `matchesAnyGlob`
+ *   (brace lists expanded), exactly as `paths` is matched for Claude.
  *
  * Best-effort: see MODEL.md, "Other agents". Not linted by the `frontmatter`
  * finding, which is Claude-specific.
