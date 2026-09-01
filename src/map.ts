@@ -12,7 +12,7 @@
 // `.git`, `node_modules`, `dist`, `.treehouse`, and config `ignore` globs are
 // skipped. The glob-to-directory rule is documented in MODEL.md.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Analysis } from "./types.js";
 import type { Agent } from "./agent.js";
@@ -111,15 +111,32 @@ export function discoverEntryPoints(
   note(root, "root");
 
   const ruleDirs: string[] = [];
+  // Real paths already walked, so a self-referencing directory symlink does not
+  // recurse forever.
+  const seen = new Set<string>();
   const walk = (dir: string) => {
+    let real: string;
+    try {
+      real = realpathSync(dir);
+    } catch {
+      return;
+    }
+    if (seen.has(real)) return;
+    seen.add(real);
     let entries: string[];
     try {
       entries = readdirSync(dir).sort();
     } catch {
       return;
     }
+    // Match memory files against the on-disk listing with an exact byte
+    // comparison. `readdirSync` preserves case; probing with `isFile` would
+    // resolve case-insensitively on APFS/NTFS and match `claude.md` when asked
+    // for `CLAUDE.md`, so a macOS desk run and Linux CI would disagree on the
+    // entry-point set. Claude Code itself keys off the exact name.
+    const present = new Set(entries);
     for (const name of memoryNames) {
-      if (isFile(join(dir, name))) note(dir, "memory-file");
+      if (present.has(name) && isFile(join(dir, name))) note(dir, "memory-file");
     }
     if (
       ruleSpec &&
