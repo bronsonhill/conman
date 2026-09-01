@@ -77,7 +77,7 @@
     <h1>conman check --map report</h1>
     <dl class="kv">
       <dt>tool</dt><dd>conman VERSION</dd>
-      <dt>model</dt><dd>0.8</dd>
+      <dt>model</dt><dd>0.9</dd>
       <dt>config</dt><dd>conman.json</dd>
       <dt>entry points discovered</dt><dd>4</dd>
       <dt>result</dt><dd class="fail">fail</dd>

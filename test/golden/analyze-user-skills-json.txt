@@ -55,7 +55,7 @@
   "findings": [],
   "machineSpecific": true,
   "mode": "stack",
-  "modelVersion": "0.8",
+  "modelVersion": "0.9",
   "notes": [
     "machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine",
     "rule ~/.claude/rules/ts-only.md is path-scoped (**/*.ts); did not match entry ."

@@ -122,7 +122,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.8",
+  "modelVersion": "0.9",
   "notes": [
     "unresolved @-import \"./missing-setup.md\" in CLAUDE.md:5",
     "unresolved @-import \"superset-ui/core\" in CLAUDE.md:6",

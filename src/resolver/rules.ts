@@ -26,6 +26,33 @@ export function findClaudeDirs(entryDir: string, repoRoot: string): string[] {
   return dirs.reverse(); // root-most first
 }
 
+/**
+ * `*.md` under a `.claude/rules/` directory, recursively, as `/`-joined paths
+ * relative to `rdir`, sorted. Claude Code (v2.1.251) discovers rules files
+ * recursively, so a rule at `.claude/rules/frontend/react.md` loads just like a
+ * top-level one; see MODEL.md. Directory listings are sorted at every level and
+ * the final list is sorted by full relative path, keeping output deterministic.
+ */
+function findRuleFiles(rdir: string): string[] {
+  const out: string[] = [];
+  const walk = (d: string, prefix: string) => {
+    let names: string[];
+    try {
+      names = readdirSync(d).sort();
+    } catch {
+      return;
+    }
+    for (const n of names) {
+      const abs = join(d, n);
+      const rel = prefix ? `${prefix}/${n}` : n;
+      if (isDir(abs)) walk(abs, rel);
+      else if (n.endsWith(".md") && isFile(abs)) out.push(rel);
+    }
+  };
+  walk(rdir, "");
+  return out.sort();
+}
+
 export function collectRuleBlocks(
   claudeDirs: string[],
   entryTargetPosix: string,
@@ -39,9 +66,7 @@ export function collectRuleBlocks(
     const isUserDir = userConfigDir !== undefined && cdir === userConfigDir;
     const rdir = join(cdir, "rules");
     if (!isDir(rdir)) continue;
-    const entries = readdirSync(rdir)
-      .filter((f) => f.endsWith(".md"))
-      .sort();
+    const entries = findRuleFiles(rdir);
     for (const f of entries) {
       const abs = join(rdir, f);
       if (!isFile(abs)) continue;

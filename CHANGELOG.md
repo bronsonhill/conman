@@ -6,6 +6,16 @@ follow semantic versioning.
 
 ## Unreleased
 
+### Changed
+
+- `.claude/rules/` discovery is now recursive. A rule in a subdirectory
+  (`.claude/rules/frontend/react.md`) is resolved and, in `conman map`, can
+  introduce an entry point, matching Claude Code v2.1.251. Both the resolver
+  and `map` walk each `.claude/rules/` tree with sorted directory listings and
+  order files by their full path relative to `rules/`. Always-on vs
+  `paths`-scoped classification is unchanged. Cursor and Copilot paths are
+  untouched. `MODEL_VERSION` → 0.9.
+
 ### Added
 
 - `dead-reference` now checks markdown link targets. A link like

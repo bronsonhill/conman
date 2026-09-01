@@ -7,6 +7,7 @@
     "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); matched no discovered entry point",
     "rule .claude/rules/main.md is path-scoped (src/main/**); matched no discovered entry point",
     "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); matched no discovered entry point",
+    "rule .claude/rules/nested/webview.md is path-scoped (src/webview/**); matched no discovered entry point",
     "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); matched no discovered entry point"
   ],
   "entryPoints": [
@@ -443,17 +444,87 @@
       },
       "stackTokens": 186,
       "tokenizer": "claude-local"
+    },
+    {
+      "blocks": [
+        {
+          "depth": 0,
+          "id": "b1",
+          "kind": "memory",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": "CLAUDE.md",
+          "tokens": 69,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b2",
+          "kind": "rule-always",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": ".claude/rules/keyless.md",
+          "tokens": 30,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b3",
+          "kind": "rule-always",
+          "lineEnd": 7,
+          "lineStart": 1,
+          "source": ".claude/rules/root-scoped.md",
+          "tokens": 44,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b4",
+          "kind": "rule-scoped",
+          "lineEnd": 7,
+          "lineStart": 1,
+          "source": ".claude/rules/broad.md",
+          "tokens": 43,
+          "via": null
+        }
+      ],
+      "budget": {
+        "delta": -174,
+        "effective": 360,
+        "overBudget": false,
+        "safetyMargin": 0.1,
+        "stackTotal": 186,
+        "total": 400
+      },
+      "discovery": [
+        "rule-path"
+      ],
+      "entry": "src/webview",
+      "findings": [],
+      "mode": "stack",
+      "notes": [],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
+      "result": {
+        "pass": true,
+        "reasons": []
+      },
+      "stackTokens": 186,
+      "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.8",
+  "modelVersion": "0.9",
   "pass": true,
   "pathScopedRuleNotes": [
-    "rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); did not match 7 entry points",
+    "rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); did not match 8 entry points",
     "rule .claude/rules/broad.md is path-scoped (src/**); did not match 5 entry points",
-    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 7 entry points",
-    "rule .claude/rules/main.md is path-scoped (src/main/**); did not match 7 entry points",
-    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 7 entry points",
-    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 7 entry points"
+    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 8 entry points",
+    "rule .claude/rules/main.md is path-scoped (src/main/**); did not match 8 entry points",
+    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 8 entry points",
+    "rule .claude/rules/nested/webview.md is path-scoped (src/webview/**); did not match 8 entry points",
+    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 8 entry points"
   ],
   "redundant": {
     "pctOfStack": 0,

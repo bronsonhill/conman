@@ -139,12 +139,38 @@ export function discoverEntryPoints(
   };
   walk(root);
 
+  // Claude Code (v2.1.251) discovers `.claude/rules/` files recursively, so a
+  // rule in `frontend/` or `backend/` path-scopes entry points just like a
+  // top-level one. Cursor/Copilot stay flat here (best-effort).
+  const listRuleFiles = (rdir: string): string[] => {
+    if (agent !== "claude") {
+      return readdirSync(rdir)
+        .filter((f) => f.endsWith(ruleSpec!.ext))
+        .sort();
+    }
+    const out: string[] = [];
+    const walkRules = (d: string, prefix: string) => {
+      let names: string[];
+      try {
+        names = readdirSync(d).sort();
+      } catch {
+        return;
+      }
+      for (const n of names) {
+        const abs = join(d, n);
+        const rel = prefix ? `${prefix}/${n}` : n;
+        if (isDir(abs)) walkRules(abs, rel);
+        else if (n.endsWith(ruleSpec!.ext)) out.push(rel);
+      }
+    };
+    walkRules(rdir, "");
+    return out.sort();
+  };
+
   for (const rdir of ruleSpec ? ruleDirs.sort() : []) {
     let files: string[];
     try {
-      files = readdirSync(rdir)
-        .filter((f) => f.endsWith(ruleSpec!.ext))
-        .sort();
+      files = listRuleFiles(rdir);
     } catch {
       continue;
     }

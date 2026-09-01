@@ -154,7 +154,8 @@ accumulation are the real behavior, and no file overrides another:
    up to `resolve.importDepthLimit` (default 5, Claude Code's documented hop
    limit). Cycles are broken.
 3. **`.claude/rules/` entries** — every `*.md` under a `.claude/rules/` directory
-   at or above the entry. `paths` frontmatter makes a rule path-scoped; a rule
+   at or above the entry, searched recursively (a rule in a `frontend/`
+   subdirectory loads too). `paths` frontmatter makes a rule path-scoped; a rule
    with no `paths` (or `paths: **`) is always-loaded. Always-loaded first, then
    matched path-scoped rules.
 4. **The skill startup index** — one `- <name>: <description>` line per

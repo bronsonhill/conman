@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.8` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.9` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -67,8 +67,15 @@ every block.
      import wins, `AGENTS.md` is not counted twice.
 
 3. **`.claude/rules/` entries.** Every `*.md` under a `.claude/rules/` directory
-   at or above the entry directory (within the repo). With `--user`,
-   `~/.claude/rules/` is included too, root-most; see "User-level config".
+   at or above the entry directory (within the repo), searched **recursively**:
+   a rule at `.claude/rules/frontend/react.md` loads exactly like a top-level
+   one. Claude Code (v2.1.251) discovers rules files recursively — the [memory
+   docs][cc-rules] show a `frontend/` / `backend/` subdirectory layout ("All
+   `.md` files are discovered recursively"). conman walks each `.claude/rules/`
+   tree with sorted directory listings and orders the files by their full
+   `/`-joined path relative to `rules/`, so a nested file sorts among the
+   top-level names by that path. With `--user`, `~/.claude/rules/` is included
+   too, root-most; see "User-level config".
    - Frontmatter `paths` (a string or list of globs) makes a rule
      **path-scoped**: it loads only when one of its globs matches the entry
      path. A rule with no `paths` — or a `paths` of just `**` — is
@@ -549,9 +556,9 @@ and bumps the anchor. The procedure:
    - ancestor `CLAUDE.md` walk direction and the repo-boundary stop;
    - `@`-import handling: inline position, depth-first order, the hop limit
      (`resolve.importDepthLimit`), cycle breaking, `@~/...` skipped;
-   - `.claude/rules/`: `paths` as the only scoping key, always-on vs
-     path-scoped ordering, `**` and keyless treated as always-on, `globs` /
-     `alwaysApply` ignored;
+   - `.claude/rules/`: recursive discovery of rules files in subdirectories,
+     `paths` as the only scoping key, always-on vs path-scoped ordering, `**`
+     and keyless treated as always-on, `globs` / `alwaysApply` ignored;
    - the skill startup index: one line per `SKILL.md`, sorted by name, budget
      truncation;
    - the `settings.json` keys conman acts on (`claudeMdExcludes`,
@@ -572,6 +579,22 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.9** — `.claude/rules/` discovery is recursive.
+
+  conman read `.claude/rules/` as a flat directory: `readdirSync` then a `.md`
+  filter, no descent. A rule at `.claude/rules/frontend/react.md` was invisible
+  to both the resolver and `conman map`. Claude Code (the v2.1.251 anchor)
+  discovers rules files recursively — the memory docs show a `frontend/` /
+  `backend/` layout and say "All `.md` files are discovered recursively" — and
+  Copilot's `.github/instructions/` was already walked recursively here, so the
+  gap was an oversight. Both `collectRuleBlocks` (resolver) and `map.ts` entry
+  discovery now walk each `.claude/rules/` tree, sorting directory listings at
+  every level and ordering files by their full path relative to `rules/`.
+  Always-on vs `paths`-scoped classification, ordering, and every other rule
+  are unchanged. A repo with nested rule files now resolves more blocks and can
+  surface new entry points in `map`, hence the version bump. Cursor `.mdc` and
+  Copilot paths are untouched.
 
 - **0.8** — `dead-reference` gains a `dead-link` sub-source.
 
