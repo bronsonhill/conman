@@ -132,7 +132,7 @@ export function findDeadReferences(
     // Inline-code spans blanked, including spans that wrap across lines.
     const masked = maskInlineCode(lines, fenced);
 
-    lines.forEach((_raw, i) => {
+    lines.forEach((raw, i) => {
       if (fenced.has(i)) return;
       const ln = b.lineStart + i;
 
@@ -158,18 +158,11 @@ export function findDeadReferences(
         }
       }
 
-    });
-
-    // dead-script and dead-path both read only inline code spans (a shell
-    // command or a repo path the author set in backticks); the shared scanner
-    // pairs backtick runs by length and follows a span across a line break.
-    for (const span of inlineCodeSpans(lines, fenced)) {
-      const ln = b.lineStart + span.line;
-
-      // dead-script
+      // dead-script. Scans the raw line, not the masked one: `npm run build` is
+      // written in bare prose about as often as in backticks, and masking here
+      // would drop the prose case the check has always caught.
       SCRIPT_RE.lastIndex = 0;
-      let m: RegExpExecArray | null;
-      while ((m = SCRIPT_RE.exec(span.text)) !== null) {
+      while ((m = SCRIPT_RE.exec(raw)) !== null) {
         const pm = m[1]!;
         const name = m[2]!;
         if (scripts && !scripts.has(name)) {
@@ -183,8 +176,13 @@ export function findDeadReferences(
           );
         }
       }
+    });
 
-      // dead-path
+    // dead-path reads inline code span interiors only (a repo path the author
+    // set in backticks); the shared scanner pairs backtick runs by length and
+    // follows a span across a line break inside a paragraph.
+    for (const span of inlineCodeSpans(lines, fenced)) {
+      const ln = b.lineStart + span.line;
       const p = span.text.trim().replace(/^\.\//, "");
       if (!PATH_LIKE.test(p)) continue;
       if (p.includes("..") || p.startsWith("node_modules/") || p.includes("/node_modules/")) continue;

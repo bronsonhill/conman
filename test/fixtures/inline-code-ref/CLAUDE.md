@@ -9,3 +9,7 @@ span, so none is an `@`-import and none should be flagged as a dead reference.
   --watch` stays code from open to close.
 - A double-backtick span holds a stray backtick: ``@a/b ` @c/d`` is all code.
 - The entry point is `src/index.ts`.
+
+Prose may hold a lone ` backtick; it must not pair across a blank line.
+
+The `@docs/setup.md` span in this paragraph therefore stays masked.

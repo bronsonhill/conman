@@ -129,6 +129,29 @@ test("inlineCodeSpans: backticks inside a fenced block open no span", () => {
   ]);
 });
 
+test("maskInlineCode: a lone backtick does not pair across a blank line", () => {
+  // The bug this guards: scanning the file as one string let the stray backtick
+  // on line 0 close against the opener of the real span on line 2, unmasking
+  // `@foo/bar.md` and reintroducing the issue-#36 false positive.
+  const lines = ["Use the ` character with care.", "", "See `@foo/bar.md` for details."];
+  const masked = maskInlineCode(lines);
+  assert.equal(masked[0], lines[0], "the unpaired backtick line is literal text");
+  assert.ok(!masked[2]!.includes("@foo/bar.md"), "the real span is still masked");
+});
+
+test("maskInlineCode: a span does not pair across a fenced block", () => {
+  const lines = ["opener ` here", "```", "code", "```", "closer ` @foo/bar.md there"];
+  const masked = maskInlineCode(lines);
+  assert.equal(masked[0], lines[0]);
+  assert.equal(masked[4], lines[4]);
+});
+
+test("inlineCodeSpans: pairing is bounded to one paragraph", () => {
+  assert.deepEqual(inlineCodeSpans(["a ` b", "", "c ` d"]), []);
+  // Within one paragraph the wrap still works.
+  assert.deepEqual(inlineCodeSpans(["a `b", "c` d"]), [{ line: 0, text: "b\nc" }]);
+});
+
 test("FENCE matches the opener shapes and rejects short runs and inline spans", () => {
   assert.ok(FENCE.test("```"));
   assert.ok(FENCE.test("~~~~ ruby"));

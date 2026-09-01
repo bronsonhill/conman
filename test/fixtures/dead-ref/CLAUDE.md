@@ -7,4 +7,5 @@ Setup and conventions:
 - Import conventions live at @docs/style-notes.
 - Architecture notes live in `docs/architecture.md`.
 - Run `npm run lint` before every commit.
+- Then run npm run typecheck, written in bare prose without backticks.
 - The entry point is `src/index.ts`.

@@ -5,15 +5,15 @@ config: conman.json
 
 LOAD ORDER
   #    kind         source      lines         tokens
-  b1   memory       CLAUDE.md   1-11             162
+  b1   memory       CLAUDE.md   1-15             202
   --------------------------------------------------
-  total                                          162
+  total                                          202
 
 BUDGET
   budget          2000
   safety margin   10%   ->  effective 1800
-  stack total     162
-  delta           -1638  (under budget)
+  stack total     202
+  delta           -1598  (under budget)
 
 SAVINGS
   redundant tokens: 0 (0% of stack)
