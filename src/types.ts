@@ -112,6 +112,11 @@ export interface Analysis {
   totals: Totals;
   budget: BudgetReport;
   findings: Finding[];
+  /**
+   * Budget / findings gate verdict. Computed once in `analyzeEntry` so every
+   * renderer reads the same result instead of re-running `evaluateGate`.
+   */
+  gate: GateResult;
 }
 
 export interface GateResult {

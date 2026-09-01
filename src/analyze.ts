@@ -9,6 +9,7 @@ import { getTokenizer, type Tokenizer } from "./tokenizer.js";
 import { resolveStack } from "./resolver/index.js";
 import { costBlocks, computeTotals, computeBudget } from "./coster.js";
 import { runFindings } from "./findings/index.js";
+import { evaluateGate } from "./gate.js";
 
 export interface AnalyzeOptions {
   repoRoot: string;
@@ -69,7 +70,9 @@ export function analyzeEntry(
     totals,
     budget,
     findings,
+    gate: { pass: true, reasons: [], exitCode: 0 },
   };
+  analysis.gate = evaluateGate(analysis, opts.config);
   return {
     analysis,
     notes: resolved.notes,

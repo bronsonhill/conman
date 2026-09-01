@@ -28,7 +28,6 @@ import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
 import { computeTrim, renderTrimHuman, renderTrimJson } from "./trim.js";
 import { unifiedDiff } from "./diff.js";
-import { evaluateGate } from "./gate.js";
 import { renderSarif } from "./sarif.js";
 import { renderExplain, renderExplainList } from "./explain.js";
 
@@ -541,8 +540,7 @@ function main(): void {
   );
 
   if (args.command === "check") {
-    const gate = evaluateGate(analysis, config);
-    process.exit(gate.exitCode);
+    process.exit(analysis.gate.exitCode);
   }
 }
 

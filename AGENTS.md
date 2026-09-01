@@ -54,8 +54,9 @@ guaranteed byte-identical (early-return before any shared code). `resolver/` is
 one file per stage (`settings`, `imports`, `rules`, `skills`, `agentsMd`) behind
 `index.ts`, which re-exports the public API (`resolveStack`, `loadSettings`, the
 result types). Most renderers are pure
-  formatters over `Analysis` / `MapResult`; `report.ts` additionally evaluates
-  the gate (see audit item 15). All of them must stay deterministic: no `Date`,
+  formatters over `Analysis` / `MapResult`. The gate is evaluated once in
+  `analyzeEntry` (`analysis.gate`); renderers read that, they do not call
+  `evaluateGate`. All of them must stay deterministic: no `Date`,
   no absolute paths, sort before emit.
   `mapReport.ts`'s `summarizeMapNotes` hoists the resolver's repeated
   "rule ... did not match entry <x>" notes out of every per-entry list into a

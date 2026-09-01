@@ -22,6 +22,7 @@ function fakeAnalysis(findings: Finding[], perFile: Record<string, number>): Ana
       overBudget: false,
     },
     findings,
+    gate: { pass: true, reasons: [], exitCode: 0 },
   } as Analysis;
 }
 
