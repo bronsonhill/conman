@@ -3,7 +3,6 @@
 // the same Analysis.
 
 import { MODEL_VERSION, type Analysis } from "./types.js";
-import { evaluateGate } from "./gate.js";
 import type { Config } from "./config.js";
 import { KIND_LABEL, pad, padStart, severityCounts, sortDeep } from "./reportUtil.js";
 
@@ -20,7 +19,7 @@ export interface RenderContext {
 
 export function renderHuman(ctx: RenderContext): string {
   const { analysis: a } = ctx;
-  const gate = evaluateGate(a, ctx.config);
+  const gate = a.gate;
   const out: string[] = [];
 
   out.push(
@@ -135,7 +134,7 @@ export function redundancy(a: Analysis): { tokens: number; pctOfStack: number } 
 }
 
 export function renderJson(ctx: RenderContext): string {
-  const gate = evaluateGate(ctx.analysis, ctx.config);
+  const gate = ctx.analysis.gate;
   const payload = {
     tool: "conman",
     toolVersion: ctx.toolVersion,

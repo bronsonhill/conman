@@ -18,7 +18,6 @@ import type { Analysis } from "./types.js";
 import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { analyzeEntry } from "./analyze.js";
-import { evaluateGate } from "./gate.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 import { getTokenizer } from "./tokenizer.js";
@@ -206,7 +205,7 @@ export function runMap(
       agent,
       userConfigDir,
     });
-    const gate = evaluateGate(analysis, config);
+    const gate = analysis.gate;
     entries.push({
       entry: analysis.entry || ".",
       discovery: p.discovery,
