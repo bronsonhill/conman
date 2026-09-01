@@ -261,8 +261,9 @@ always-on vs path-scoped split:
   key adds a NOTE (Copilot applies such a file to every file).
 - any other `applyTo` → **path-scoped** (`rule-scoped`), loaded only when one
   glob matches the entry path. `applyTo` is one comma-separated string of file
-  globs; conman splits it and matches each with its own literal matcher (no
-  brace expansion), exactly as `paths` is matched for Claude. Because conman
+  globs; conman splits it and matches each through the shared glob matcher
+  (`src/repo.ts` `matchesAnyGlob`), brace lists expanded, exactly as `paths` is
+  matched for Claude. Because conman
   resolves an entry *directory*, a `dir/**` glob is also matched against the
   bare directory, so a directory entry picks up what Copilot would apply to
   every file beneath it; a pattern that names a file shape (`**/*.ts`) cannot
