@@ -188,7 +188,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.7",
+  "modelVersion": "0.8",
   "notes": [
     "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
     "rule .claude/rules/paths-string.md is path-scoped (src/**); did not match entry .",

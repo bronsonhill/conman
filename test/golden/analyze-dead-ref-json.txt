@@ -5,19 +5,19 @@
       "depth": 0,
       "id": "b1",
       "kind": "memory",
-      "lineEnd": 11,
+      "lineEnd": 14,
       "lineStart": 1,
       "source": "CLAUDE.md",
-      "tokens": 117,
+      "tokens": 174,
       "via": null
     }
   ],
   "budget": {
-    "delta": -1683,
+    "delta": -1626,
     "effective": 1800,
     "overBudget": false,
     "safetyMargin": 0.1,
-    "stackTotal": 117,
+    "stackTotal": 174,
     "total": 2000
   },
   "configSource": "conman.json",
@@ -73,14 +73,30 @@
     },
     {
       "detail": {
-        "ref": "lint",
-        "subcase": "dead-script"
+        "ref": "docs/architecture.md",
+        "subcase": "dead-link"
       },
       "locations": [
         {
           "file": "CLAUDE.md",
           "lineEnd": 9,
           "lineStart": 9
+        }
+      ],
+      "message": "markdown link target `docs/architecture.md` in CLAUDE.md does not resolve on disk",
+      "severity": "warn",
+      "type": "dead-reference"
+    },
+    {
+      "detail": {
+        "ref": "lint",
+        "subcase": "dead-script"
+      },
+      "locations": [
+        {
+          "file": "CLAUDE.md",
+          "lineEnd": 12,
+          "lineStart": 12
         }
       ],
       "message": "`npm run lint` names a script with no matching entry in package.json",
@@ -95,8 +111,8 @@
       "locations": [
         {
           "file": "CLAUDE.md",
-          "lineEnd": 10,
-          "lineStart": 10
+          "lineEnd": 13,
+          "lineStart": 13
         }
       ],
       "message": "`npm run typecheck` names a script with no matching entry in package.json",
@@ -106,7 +122,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.7",
+  "modelVersion": "0.8",
   "notes": [
     "unresolved @-import \"./missing-setup.md\" in CLAUDE.md:5",
     "unresolved @-import \"superset-ui/core\" in CLAUDE.md:6",
@@ -129,9 +145,9 @@
   "toolVersion": "0.1.0",
   "totals": {
     "perFile": {
-      "CLAUDE.md": 117
+      "CLAUDE.md": 174
     },
     "skillIndexTokens": 0,
-    "stackTokens": 117
+    "stackTokens": 174
   }
 }

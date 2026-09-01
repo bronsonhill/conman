@@ -16,6 +16,13 @@
 //                    directory exists and already holds a real file, so a
 //                    reference into a not-yet-created tree is not guessed at.
 //                    Severity: warn.
+//   - dead-link    — the target of a markdown link `[text](path)` that does not
+//                    resolve on disk. A link is meant to resolve, so a missing
+//                    target is at least as strong an author-intent signal as a
+//                    backticked path. Same conservative guards as dead-path
+//                    (extension required, no globs, no `..`, parent dir exists
+//                    and holds a real file); URLs and pure `#anchor` links are
+//                    skipped. Severity: warn.
 //   - dead-script  — `npm|pnpm|yarn run <name>` with no matching entry in the
 //                    repo-root `package.json`. Skipped when there is no
 //                    `package.json` or it has no `scripts`. Severity: warn.
@@ -63,6 +70,12 @@ function looksLikeNpmPackage(ref: string, fileDir: string): boolean {
   return true;
 }
 const SCRIPT_RE = /\b(npm|pnpm|yarn)\s+run\s+([A-Za-z0-9:_.\-]+)/g;
+/** A markdown inline link's target: `](target)`, optional `<>` wrapper, an
+ *  optional `"title"` after whitespace dropped. */
+const MD_LINK_RE = /\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g;
+/** Targets that are not repo-relative paths: absolute URLs, mailto, and
+ *  protocol-relative `//host/...`. */
+const URL_LIKE = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 /** A clean repo-relative path: segments of word/dot/dash, at least one `/`, an
  *  extension on the last segment, no globs, no `..`, not absolute. */
 const PATH_LIKE = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+\.[A-Za-z0-9]{1,8}$/;
@@ -175,6 +188,33 @@ export function findDeadReferences(
             name,
           );
         }
+      }
+
+      // dead-link. Reads the masked line so a `[x](y)` written inside inline
+      // code is literal text, not a link. Same conservative guards as dead-path.
+      MD_LINK_RE.lastIndex = 0;
+      while ((m = MD_LINK_RE.exec(noCode)) !== null) {
+        const raw = m[1]!;
+        if (URL_LIKE.test(raw) || raw.startsWith("#")) continue;
+        // A markdown link resolves relative to the file it sits in, so drop a
+        // `?query` / `#fragment` suffix and check the target against fileDir,
+        // not repoRoot. `../` is excluded by the shared no-`..` guard.
+        const rel = raw.replace(/[?#].*$/, "").replace(/^\.\//, "");
+        if (rel === "") continue;
+        if (!PATH_LIKE.test(rel)) continue;
+        if (rel.includes("..") || rel.startsWith("node_modules/") || rel.includes("/node_modules/"))
+          continue;
+        const abs = resolve(fileDir, rel);
+        if (isFile(abs) || isDir(abs)) continue;
+        if (!dirHasRealFile(dirname(abs))) continue;
+        push(
+          "warn",
+          b.source,
+          ln,
+          `markdown link target \`${rel}\` in ${b.source} does not resolve on disk`,
+          "dead-link",
+          rel,
+        );
       }
     });
 

@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.7` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.8` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -405,6 +405,16 @@ finding — that check is Claude-specific.
     path has a file extension, no globs or `..`, and its parent directory
     already exists and holds a real (non-dotfile) file — a reference into a
     tree that has not been created yet is not guessed at.
+  - `dead-link` (**warn**) — the target of a markdown inline link
+    (`[architecture](docs/architecture.md)`) that does not resolve on disk. A
+    link is meant to resolve, so a missing target is at least as strong an
+    author-intent signal as a backticked path. Same conservative guards as
+    `dead-path`: a file extension, no globs or `..`, and a parent directory
+    that already exists and holds a real file. URLs (`http:`, `https:`,
+    `mailto:`, protocol-relative `//host`) and pure `#anchor` links are
+    skipped; a `?query` or `#fragment` suffix on a repo path is trimmed before
+    the check. Read from the inline-code-masked line, so a `[x](y)` written
+    inside backticks is literal text, not a link.
   - `dead-script` (**warn**) — `npm|pnpm|yarn run <name>` with no matching key
     in the repo-root `package.json` `scripts`. Skipped when there is no
     `package.json` or it has no `scripts`.
@@ -562,6 +572,20 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.8** — `dead-reference` gains a `dead-link` sub-source.
+
+  The dead-path scanner only ever looked inside backticks. A markdown link
+  (`[architecture](docs/architecture.md)`) whose target is missing was never
+  checked, yet a link is meant to resolve — at least as strong an author-intent
+  signal as a backticked path. The scanner now also reads markdown link targets
+  (`](...)`) on depth-0 blocks, under the same conservative guards as
+  `dead-path` (extension required, no globs, no `..`, parent directory exists
+  and holds a real file). URLs and pure `#anchor` links are skipped. New
+  sub-source `dead-link` at **warn**, matching the existing `dead-path`
+  severity; the `config.gate["dead-reference"]` ceiling covers it. Backticked
+  paths are handled exactly as before — this is additive. New warnings can fire
+  on repos that link to a missing file, hence the version bump.
 
 - **0.7** — `budget.total` default gains an empirical basis. Unchanged at
   12,000.

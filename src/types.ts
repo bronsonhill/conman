@@ -4,7 +4,7 @@
 // per-block token counts, findings engine -> findings, report renderer -> text.
 
 /** conman analysis-model version; bump when resolution semantics change. */
-export const MODEL_VERSION = "0.7";
+export const MODEL_VERSION = "0.8";
 
 export type BlockKind =
   | "memory" // an ancestor CLAUDE.md / AGENTS.md

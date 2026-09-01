@@ -211,7 +211,7 @@ never fails the gate.
 | `frontmatter` | error (ceiling) | malformed / missing / wrong-type YAML on a `.claude/rules` entry or a `SKILL.md` — the files whose frontmatter changes what resolves |
 | `lint-duplication` | warn | a context file restating a rule a repo-root linter/formatter config already enforces (`.prettierrc`, `.eslintrc*`, `biome.json`, `pyproject.toml` `[tool.ruff]` / `[tool.black]`) — "use 2-space indent" next to a `.prettierrc` with `tabWidth: 2`. Narrow: known keys, conservative phrasings, numbers must match |
 | `stale-boilerplate` | warn | a stock `/init` sentence still unmodified in a memory file (the "This file provides guidance to Claude Code…" header and close variants) |
-| `dead-reference` | error (ceiling) | a pointer that does not resolve on disk: a missing `@`-import (`error` — Claude Code drops it silently), or a backticked path or `npm run <script>` name with nothing behind it (`warn`) |
+| `dead-reference` | error (ceiling) | a pointer that does not resolve on disk: a missing `@`-import (`error` — Claude Code drops it silently), or a backticked path, a markdown link target, or an `npm run <script>` name with nothing behind it (`warn`) |
 | `max-skills` | warn / error | the resolved skill index lists more than `maxSkills` entries (default 8); 9–15 `warn`, over 15 `error` |
 
 `frontmatter`, `dead-reference`, and `max-skills` are ceilings, not single

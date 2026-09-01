@@ -379,7 +379,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.7",
+  "modelVersion": "0.8",
   "pass": false,
   "pathScopedRuleNotes": [
     "rule .claude/rules/backend.md is path-scoped (services/**); did not match 3 entry points"
