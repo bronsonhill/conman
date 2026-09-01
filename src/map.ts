@@ -19,7 +19,7 @@ import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { analyzeEntry } from "./analyze.js";
 import { parseFrontmatter } from "./frontmatter.js";
-import { isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
+import { expandBraces, isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
 import { getTokenizer } from "./tokenizer.js";
 import { MEMORY_NAMES, RULE_SCOPE_KEY, toStringArray } from "./claudeContext.js";
 
@@ -27,8 +27,9 @@ const ALWAYS_SKIP = new Set([".git", "node_modules", "dist", ".treehouse"]);
 
 /**
  * A path segment containing any of these ends the literal prefix of a glob.
- * conman's matcher does not expand brace lists (see MODEL.md), so `{` `}` `,`
- * are treated as prefix terminators too: `src/{a,b}/**` reduces to `src`.
+ * Brace lists are expanded before this runs (`src/{a,b}/**` is split into
+ * `src/a/**` and `src/b/**` first), so `{` `}` `,` only appear here as a
+ * defensive terminator for a stray unbalanced brace.
  */
 const GLOB_META = /[*?[\]{},]/;
 
@@ -46,7 +47,8 @@ export interface DiscoveredEntry {
 /**
  * Reduce a rule `paths` glob to the repo-relative directory it scopes: the
  * longest leading run of path segments that carry no glob metacharacter
- * (`* ? [ ] { } ,`). `src/renderer/**` scopes `src/renderer`; `src/**` scopes
+ * (`* ? [ ]`). Brace lists are expanded by the caller before this runs.
+ * `src/renderer/**` scopes `src/renderer`; `src/**` scopes
  * `src`; `app/api/**` scopes `app/api`; a wildcard mid-path (`src` then `**`
  * then a filename glob) still scopes `src`. If the run names a file rather than
  * a directory, trailing segments are dropped until an existing directory
@@ -149,11 +151,15 @@ export function discoverEntryPoints(
       } catch {
         continue;
       }
-      for (const pat of patterns) {
-        if (pat === "**") continue; // scopes to everything: no scope at all
-        const rel = globToEntryDir(root, pat);
-        if (!rel || rel === ".") continue;
-        note(resolve(root, rel), "rule-path");
+      for (const rawPat of patterns) {
+        // Claude Code expands `{a,b}` brace lists into separate patterns; each
+        // alternative can scope its own entry-point directory.
+        for (const pat of expandBraces(rawPat)) {
+          if (pat === "**") continue; // scopes to everything: no scope at all
+          const rel = globToEntryDir(root, pat);
+          if (!rel || rel === ".") continue;
+          note(resolve(root, rel), "rule-path");
+        }
       }
     }
   }

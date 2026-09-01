@@ -1,35 +1,41 @@
 # exit: 0
-conman VERSION map  model 0.5
+conman VERSION map  model 0.6
 config: conman.json
-entry points discovered: 5
+entry points discovered: 7
 
   entry         mode           tokens    delta   findings              result
   .             stack             143     -217   0 error, 0 warn       pass
   docs          stack             143     -217   0 error, 0 warn       pass
+  pkg/cli       stack             143     -217   0 error, 0 warn       pass
+  pkg/core      stack             143     -217   0 error, 0 warn       pass
   src           stack             143     -217   0 error, 0 warn       pass
   src/main      stack             186     -174   0 error, 0 warn       pass
   src/renderer  stack             186     -174   0 error, 0 warn       pass
 
 discovered via a path-scoped rule (no CLAUDE.md / AGENTS.md of their own):
   docs
+  pkg/cli
+  pkg/core
   src
   src/main
   src/renderer
 
 path-scoped rules that did not match every entry point:
-  rule .claude/rules/broad.md is path-scoped (src/**); did not match 3 entry points
-  rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 5 entry points
-  rule .claude/rules/main.md is path-scoped (src/main/**); did not match 5 entry points
-  rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 5 entry points
-  rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 5 entry points
+  rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); did not match 7 entry points
+  rule .claude/rules/broad.md is path-scoped (src/**); did not match 5 entry points
+  rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 7 entry points
+  rule .claude/rules/main.md is path-scoped (src/main/**); did not match 7 entry points
+  rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 7 entry points
+  rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 7 entry points
 
 path-scoped rules that matched no entry point (dead scope):
+  rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); matched no discovered entry point
   rule .claude/rules/docs-files.md is path-scoped (docs/*.md); matched no discovered entry point
   rule .claude/rules/main.md is path-scoped (src/main/**); matched no discovered entry point
   rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); matched no discovered entry point
   rule .claude/rules/renderer.md is path-scoped (src/renderer/**); matched no discovered entry point
 
-repo rollup: 801 tokens across 5 entry points
+repo rollup: 1087 tokens across 7 entry points
 redundant tokens: 0 (0% of stack)
 
 RESULT  pass

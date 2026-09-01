@@ -3,6 +3,7 @@
   "command": "map",
   "configSource": "conman.json",
   "deadPathScopedRules": [
+    "rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); matched no discovered entry point",
     "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); matched no discovered entry point",
     "rule .claude/rules/main.md is path-scoped (src/main/**); matched no discovered entry point",
     "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); matched no discovered entry point",
@@ -114,6 +115,124 @@
         "rule-path"
       ],
       "entry": "docs",
+      "findings": [],
+      "mode": "stack",
+      "notes": [],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
+      "result": {
+        "pass": true,
+        "reasons": []
+      },
+      "stackTokens": 143,
+      "tokenizer": "claude-local"
+    },
+    {
+      "blocks": [
+        {
+          "depth": 0,
+          "id": "b1",
+          "kind": "memory",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": "CLAUDE.md",
+          "tokens": 69,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b2",
+          "kind": "rule-always",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": ".claude/rules/keyless.md",
+          "tokens": 30,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b3",
+          "kind": "rule-always",
+          "lineEnd": 7,
+          "lineStart": 1,
+          "source": ".claude/rules/root-scoped.md",
+          "tokens": 44,
+          "via": null
+        }
+      ],
+      "budget": {
+        "delta": -217,
+        "effective": 360,
+        "overBudget": false,
+        "safetyMargin": 0.1,
+        "stackTotal": 143,
+        "total": 400
+      },
+      "discovery": [
+        "rule-path"
+      ],
+      "entry": "pkg/cli",
+      "findings": [],
+      "mode": "stack",
+      "notes": [],
+      "redundant": {
+        "pctOfStack": 0,
+        "tokens": 0
+      },
+      "result": {
+        "pass": true,
+        "reasons": []
+      },
+      "stackTokens": 143,
+      "tokenizer": "claude-local"
+    },
+    {
+      "blocks": [
+        {
+          "depth": 0,
+          "id": "b1",
+          "kind": "memory",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": "CLAUDE.md",
+          "tokens": 69,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b2",
+          "kind": "rule-always",
+          "lineEnd": 5,
+          "lineStart": 1,
+          "source": ".claude/rules/keyless.md",
+          "tokens": 30,
+          "via": null
+        },
+        {
+          "depth": 0,
+          "id": "b3",
+          "kind": "rule-always",
+          "lineEnd": 7,
+          "lineStart": 1,
+          "source": ".claude/rules/root-scoped.md",
+          "tokens": 44,
+          "via": null
+        }
+      ],
+      "budget": {
+        "delta": -217,
+        "effective": 360,
+        "overBudget": false,
+        "safetyMargin": 0.1,
+        "stackTotal": 143,
+        "total": 400
+      },
+      "discovery": [
+        "rule-path"
+      ],
+      "entry": "pkg/core",
       "findings": [],
       "mode": "stack",
       "notes": [],
@@ -326,14 +445,15 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.5",
+  "modelVersion": "0.6",
   "pass": true,
   "pathScopedRuleNotes": [
-    "rule .claude/rules/broad.md is path-scoped (src/**); did not match 3 entry points",
-    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 5 entry points",
-    "rule .claude/rules/main.md is path-scoped (src/main/**); did not match 5 entry points",
-    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 5 entry points",
-    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 5 entry points"
+    "rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); did not match 7 entry points",
+    "rule .claude/rules/broad.md is path-scoped (src/**); did not match 5 entry points",
+    "rule .claude/rules/docs-files.md is path-scoped (docs/*.md); did not match 7 entry points",
+    "rule .claude/rules/main.md is path-scoped (src/main/**); did not match 7 entry points",
+    "rule .claude/rules/missing.md is path-scoped (packages/nowhere/**); did not match 7 entry points",
+    "rule .claude/rules/renderer.md is path-scoped (src/renderer/**); did not match 7 entry points"
   ],
   "redundant": {
     "pctOfStack": 0,

@@ -9,7 +9,7 @@
 //   - @-import inline position, depth-first order, the 5-hop depth limit,
 //     cycle breaking
 //   - .claude/rules/ always-on vs `paths`-scoped, ordering, `globs` ignored,
-//     `**` / keyless treated as always-on
+//     `**` / keyless treated as always-on, `{a,b}` brace lists expanded
 //   - the skill startup index and its settings.json budget truncation
 //   - claudeMdExcludes from settings.json
 //
@@ -29,7 +29,7 @@ import { fixture } from "./testutil.js";
  * The Claude Code release this snapshot was verified against. Keep in sync with
  * MODEL.md's "Accurate as of" section; bumping one without the other is a bug.
  */
-const ANCHOR = { version: "v2.1.251", verified: "2026-08-30" };
+const ANCHOR = { version: "v2.1.251", verified: "2026-09-01" };
 
 const tok = getTokenizer("claude-local");
 
@@ -85,6 +85,7 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
       "rule-scoped:.claude/rules/paths-scoped.md",
     ],
     notes: [
+      "rule .claude/rules/brace-scoped.md is path-scoped (src/{main,renderer}); did not match entry app/api",
       "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
       "rule .claude/rules/motrix-shaped.md is path-scoped (src/**); did not match entry app/api",
     ],
@@ -98,6 +99,7 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
       "rule-always:.claude/rules/keyless.md",
       "rule-always:.claude/rules/legacy-globs.md",
       "rule-always:.claude/rules/scope-everything.md",
+      "rule-scoped:.claude/rules/brace-scoped.md",
       "rule-scoped:.claude/rules/motrix-shaped.md",
     ],
     notes: [

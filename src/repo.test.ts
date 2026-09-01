@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { globToRegExp, matchesAnyGlob } from "./repo.js";
+import { expandBraces, globToRegExp, matchesAnyGlob } from "./repo.js";
 
 test("globToRegExp: * stays within a segment", () => {
   assert.match("src/a.ts", globToRegExp("src/*.ts"));
@@ -22,4 +22,38 @@ test("matchesAnyGlob: exact path and ./ prefix both work", () => {
   assert.equal(matchesAnyGlob("services/CLAUDE.md", ["services/CLAUDE.md"]), true);
   assert.equal(matchesAnyGlob("services/CLAUDE.md", ["./services/CLAUDE.md"]), true);
   assert.equal(matchesAnyGlob("services/api/CLAUDE.md", ["legacy/**"]), false);
+});
+
+test("expandBraces: single group, multiple groups, nesting, and no-op", () => {
+  assert.deepEqual(expandBraces("src/{main,renderer}/**"), [
+    "src/main/**",
+    "src/renderer/**",
+  ]);
+  // cartesian product of two groups
+  assert.deepEqual(expandBraces("{a,b}/{x,y}.ts"), [
+    "a/x.ts",
+    "a/y.ts",
+    "b/x.ts",
+    "b/y.ts",
+  ]);
+  // nested groups expand recursively
+  assert.deepEqual(expandBraces("src/{a,{b,c}}/**"), [
+    "src/a/**",
+    "src/b/**",
+    "src/c/**",
+  ]);
+  // a group with no comma is left literal
+  assert.deepEqual(expandBraces("src/{only}/**"), ["src/{only}/**"]);
+  // no braces: returned unchanged as a one-element list
+  assert.deepEqual(expandBraces("src/**/*.ts"), ["src/**/*.ts"]);
+  // duplicates collapse
+  assert.deepEqual(expandBraces("src/{a,a}/**"), ["src/a/**"]);
+});
+
+test("matchesAnyGlob: brace lists match the way Claude Code expands them", () => {
+  assert.equal(matchesAnyGlob("src/main/app.ts", ["src/**/*.{ts,tsx}"]), true);
+  assert.equal(matchesAnyGlob("src/main/app.tsx", ["src/**/*.{ts,tsx}"]), true);
+  assert.equal(matchesAnyGlob("src/main/app.js", ["src/**/*.{ts,tsx}"]), false);
+  assert.equal(matchesAnyGlob("src/renderer", ["src/{main,renderer}"]), true);
+  assert.equal(matchesAnyGlob("app/api", ["src/{main,renderer}"]), false);
 });
