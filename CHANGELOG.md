@@ -38,6 +38,16 @@ follow semantic versioning.
   research / configuration / commands / CI. No factual claim changed; the
   empirical-honesty content (Probe-and-Refine, "conservative starting points,
   not a standard", no model in the analysis path) is intact and near the top.
+- `budget.total` default is now backed by measurement, not assertion. It stays
+  at 12,000: the resolved-stack size distribution across the pinned corpus (123
+  entry points) and the 2026-08 survey sample is bimodal, with healthy repos
+  under ~7k tokens per entry point, overgrown stacks at 18k and up, and nothing
+  between — so any ceiling in 8k–18k splits the samples the same way and 12,000
+  is the round midpoint. MODEL.md's `budget.total` row and a new "Where
+  `budget.total` = 12,000 comes from" section carry the provenance.
+  `modelVersion` `0.6` -> `0.7` re-pins the default for review the way the 0.4
+  caps are pinned; no resolution or gate behaviour changes, goldens re-pinned
+  for the version string only.
 
 ### Fixed
 
