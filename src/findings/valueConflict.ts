@@ -14,7 +14,7 @@
 import type { Block, Finding, Location } from "../types.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
-import { fencedLineSet } from "./_fence.js";
+import { fencedLineSet, maskInlineCode } from "./_fence.js";
 
 interface Occurrence {
   value: string;
@@ -24,11 +24,11 @@ interface Occurrence {
 
 const PATTERNS: RegExp[] = [
   // `Key`: value   |   `Key` = value
-  /^\s*[-*]?\s*`([A-Za-z][\w .\-\/]{0,40})`\s*[:=]\s*(\S.{0,60}?)\s*$/,
+  /^\s*[-*]?\s*`([A-Za-z][\w .\-\/]{0,40})`\s*[:=]\s*(\S.{0,60}?)\s*$/d,
   // **Key:** value   |   **Key**: value
-  /^\s*[-*]?\s*\*\*([A-Za-z][\w .\-\/]{0,40}?):?\*\*\s*[:=]?\s*(\S.{0,60}?)\s*$/,
+  /^\s*[-*]?\s*\*\*([A-Za-z][\w .\-\/]{0,40}?):?\*\*\s*[:=]?\s*(\S.{0,60}?)\s*$/d,
   // - Key: value   (list item; key must start uppercase to cut noise)
-  /^\s*[-*]\s+([A-Z][\w .\-\/]{0,40}?)\s*[:=]\s+(\S.{0,60}?)\s*$/,
+  /^\s*[-*]\s+([A-Z][\w .\-\/]{0,40}?)\s*[:=]\s+(\S.{0,60}?)\s*$/d,
 ];
 
 function normKey(k: string): string {
@@ -49,11 +49,31 @@ function scanMarkdown(blocks: Block[]): Map<string, Occurrence[]> {
     if (b.kind === "skill-index") continue;
     const lines = b.text.split("\n");
     const fenced = fencedLineSet(lines);
+    // Inline code spans blanked (incl. spans that wrap across lines). A
+    // definitional-looking line whose key or value lands inside a code span is
+    // a documented example — a verbatim changelog trailer, a config snippet —
+    // not a rule the resolved stack applies, so it is not scored as a conflict.
+    // A `Key`: value line in ordinary prose still counts: only the backticked
+    // key is masked, and the check below allows a masked region there but
+    // nowhere else in the match.
+    const masked = maskInlineCode(lines, fenced);
     lines.forEach((line, i) => {
       if (fenced.has(i)) return;
-      for (const re of PATTERNS) {
+      for (let p = 0; p < PATTERNS.length; p++) {
+        const re = PATTERNS[p]!;
         const m = line.match(re);
-        if (!m) continue;
+        if (!m || !m.indices) continue;
+        // The backticked-key pattern (p === 0) legitimately masks its own key;
+        // every other captured span must be free of code-span masking.
+        const spans = p === 0 ? [m.indices[2]] : [m.indices[1], m.indices[2]];
+        const inCode = spans.some((s) => {
+          if (!s) return false;
+          for (let k = s[0]; k < s[1]; k++) {
+            if (line[k] !== " " && masked[i]![k] === " ") return true;
+          }
+          return false;
+        });
+        if (inCode) break;
         const key = normKey(m[1]!);
         const value = normValue(m[2]!);
         if (!key || !value) break;

@@ -41,6 +41,12 @@ follow semantic versioning.
 
 ### Fixed
 
+- `value-conflict` no longer fires on a definitional line (`` `Key`: value ``,
+  `**Key:** value`, `- Key: value`) that sits inside an inline code span or a
+  fenced block. A `CLAUDE.md` that shows a changelog trailer or a config snippet
+  verbatim was being scored a cross-file conflict on example text nothing loads
+  as a rule. Ordinary `` `Key`: value `` prose still counts. `modelVersion`
+  `0.4` -> `0.5`; goldens re-pinned.
 - `scripts/survey.mjs` and `docs/survey-2026-08.md` no longer tell the reader to
   `git checkout fm/conman-survey-100` — that branch is gone and the script is on
   `main`; the reproduction steps are now `git pull` / build / run.

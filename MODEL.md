@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.4` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.5` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -306,7 +306,11 @@ finding — that check is Claude-specific.
   normalized key is bound to two different short values in two different files of
   the stack. Deliberately strict: a missed conflict is cheaper than a false one.
   Structured keys (frontmatter, settings.json) are not cross-compared because
-  each file's values are legitimately its own.
+  each file's values are legitimately its own. A definitional line that sits
+  entirely inside a fenced block or an inline code span (a verbatim changelog
+  trailer, a config snippet) is a documented example, not a rule the stack
+  applies, and is skipped — a `` `Key`: value `` line in ordinary prose still
+  counts, since only the backticked key is masked.
 - **Vehicle fit** — coarse and structural only. A non-code prose segment over
   350 tokens in always-loaded memory or a rule, or an always-loaded rule over
   800 tokens. Keyed off size and shape, never meaning. Left unsharpened until a
@@ -501,6 +505,21 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.5** — `value-conflict` ignores code-span example lines.
+
+  A definitional-looking line (`` `Key`: value ``, `**Key:** value`, `- Key:
+  value`) that sits entirely inside an inline code span or a fenced block is a
+  documented example, not a setting the resolved stack applies. `value-conflict`
+  already skipped fenced lines; it now also skips a line whose every non-space
+  character is masked by the shared inline-code-span scanner
+  (`src/findings/_fence.ts` `maskInlineCode`), including a span that wraps
+  across a line break. This removes the same false-positive class that 0.3's
+  `dead-import` fix removed — a repo that shows a changelog trailer or a config
+  snippet verbatim in its `CLAUDE.md` was being charged a cross-file conflict on
+  text nothing loads as a rule. A bare `` `Key`: value `` line in ordinary
+  prose still counts: only the backticked key is masked, the `: value` tail is
+  live text, so the pattern still matches.
 
 - **0.4** — The two per-part budget caps are enforced.
 

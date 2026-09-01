@@ -1,5 +1,5 @@
 # exit: 1
-conman VERSION  model 0.4  tokenizer claude-local
+conman VERSION  model 0.5  tokenizer claude-local
 entry: services/api   mode: stack
 config: conman.json
 
