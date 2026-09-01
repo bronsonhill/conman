@@ -211,12 +211,43 @@ test("--agent codex: ancestor AGENTS.md only, no CLAUDE.md, no rules, no skills"
   );
 });
 
-test("--agent copilot: copilot-instructions first, then AGENTS.md", () => {
+test("--agent copilot: copilot-instructions, AGENTS.md, then always-on instructions", () => {
   const root = fixture("copilot");
   const r = resolveStack(root, root, DEFAULT_CONFIG, tok, [], "copilot");
   assert.deepEqual(
     r.blocks.map((b) => `${b.kind}:${b.source}`),
-    ["memory:.github/copilot-instructions.md", "memory:AGENTS.md"],
+    [
+      "memory:.github/copilot-instructions.md",
+      "memory:AGENTS.md",
+      "rule-always:.github/instructions/general.instructions.md",
+    ],
+  );
+  // frontend.instructions.md is applyTo-scoped and did not match the root entry
+  assert.ok(
+    r.notes.some(
+      (n) => n.includes("frontend.instructions.md") && n.includes("did not match"),
+    ),
+  );
+});
+
+test("--agent copilot: a matching applyTo makes an instructions file path-scoped", () => {
+  const root = fixture("copilot");
+  const r = resolveStack(
+    fixture("copilot", "src", "frontend"),
+    root,
+    DEFAULT_CONFIG,
+    tok,
+    [],
+    "copilot",
+  );
+  assert.deepEqual(
+    r.blocks.map((b) => `${b.kind}:${b.source}`),
+    [
+      "memory:.github/copilot-instructions.md",
+      "memory:AGENTS.md",
+      "rule-always:.github/instructions/general.instructions.md",
+      "rule-scoped:.github/instructions/frontend.instructions.md",
+    ],
   );
 });
 

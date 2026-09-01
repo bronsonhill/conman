@@ -152,6 +152,16 @@ registerGolden("golden/analyze", [
     ],
   },
   {
+    name: "analyze-copilot-frontend",
+    args: [
+      "test/fixtures/copilot/src/frontend",
+      "--repo-root",
+      "test/fixtures/copilot",
+      "--agent",
+      "copilot",
+    ],
+  },
+  {
     // --user: ~/.claude/CLAUDE.md loads first, ~/.claude/settings.json merges
     // below the repo settings (its claudeMdExcludes drops skip/CLAUDE.md), and
     // the report is flagged machine-specific. --user-config-dir keeps this

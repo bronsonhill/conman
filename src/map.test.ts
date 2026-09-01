@@ -60,6 +60,16 @@ test("the repo root is always an entry point, tagged root plus its memory file",
   assert.deepEqual(byPath.get("."), ["memory-file", "root"]);
 });
 
+test("--agent copilot: an instructions file's applyTo scopes a directory entry point", () => {
+  const root = fixture("copilot");
+  const entries = discoverEntryPoints(root, DEFAULT_CONFIG, "copilot");
+  const byPath = new Map(entries.map((e) => [e.path, e.discovery]));
+  // src/frontend holds only component.tsx; it is an entry point only because
+  // .github/instructions/frontend.instructions.md has applyTo: src/frontend/**.
+  assert.ok(byPath.has("src/frontend"), "src/frontend discovered");
+  assert.deepEqual(byPath.get("src/frontend"), ["rule-path"]);
+});
+
 test("discovery is deterministic and sorted", () => {
   const a = discoverEntryPoints(RULE_ENTRY, DEFAULT_CONFIG).map((e) => e.path);
   const b = discoverEntryPoints(RULE_ENTRY, DEFAULT_CONFIG).map((e) => e.path);

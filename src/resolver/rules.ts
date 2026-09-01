@@ -165,3 +165,97 @@ export function collectCursorRules(
   }
   return { always, scoped };
 }
+
+/** `*.instructions.md` under `dir`, recursively, as repo-relative POSIX paths, sorted. */
+function findInstructionFiles(dir: string, repoRoot: string): string[] {
+  if (!isDir(dir)) return [];
+  const out: string[] = [];
+  const walk = (d: string) => {
+    let names: string[];
+    try {
+      names = readdirSync(d).sort();
+    } catch {
+      return;
+    }
+    for (const n of names) {
+      const abs = join(d, n);
+      if (isDir(abs)) walk(abs);
+      else if (n.endsWith(".instructions.md") && isFile(abs)) {
+        out.push(relPosix(repoRoot, abs));
+      }
+    }
+  };
+  walk(dir);
+  return out.sort();
+}
+
+/**
+ * GitHub Copilot's `.github/instructions/*.instructions.md` path-scoped files.
+ * The `applyTo` frontmatter is one or more comma-separated file globs; conman
+ * maps it onto the same always-on vs path-scoped split it uses for Claude
+ * `paths` and Cursor `globs`:
+ *
+ * - `applyTo: "**"` (or missing) -> always-on (`rule-always`).
+ * - any other `applyTo` -> path-scoped (`rule-scoped`), loaded only when one
+ *   glob matches the entry path, matched by conman's own literal matcher (no
+ *   brace expansion), exactly as `paths` is matched for Claude.
+ *
+ * Best-effort: see MODEL.md, "Other agents". Not linted by the `frontmatter`
+ * finding, which is Claude-specific.
+ */
+export function collectCopilotInstructions(
+  instrDir: string,
+  entryTargetPosix: string,
+  ctx: ImportCtx,
+): { always: Omit<Block, "id" | "tokens">[]; scoped: Omit<Block, "id" | "tokens">[] } {
+  const always: Omit<Block, "id" | "tokens">[] = [];
+  const scoped: Omit<Block, "id" | "tokens">[] = [];
+  for (const rel of findInstructionFiles(instrDir, ctx.repoRoot)) {
+    const abs = join(ctx.repoRoot, rel);
+    const text = readFileSync(abs, "utf8");
+    const fm = parseFrontmatter(text);
+    const lineCount = countLines(text);
+    // Not pushed to ctx.frontmatterSubjects: the `frontmatter` finding is
+    // Claude-specific (it reads `paths` / `globs`), like the Cursor `.mdc` path.
+
+    // `applyTo` is a string like `**/*.ts,**/*.tsx`; split the comma list.
+    const applyTo = toStringArray(fm.data["applyTo"])
+      .flatMap((s) => s.split(","))
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const scopedByPath = applyTo.length > 0 && !applyTo.every((p) => p === "**");
+
+    const block: Omit<Block, "id" | "tokens"> = {
+      kind: scopedByPath ? "rule-scoped" : "rule-always",
+      source: rel,
+      lineStart: 1,
+      lineEnd: Math.max(1, lineCount),
+      text,
+      depth: 0,
+    };
+    if (applyTo.length === 0) {
+      ctx.notes.push(
+        `${rel} has no \`applyTo\`; Copilot applies it to every file, so conman loads it always-on (best-effort)`,
+      );
+    }
+    // conman resolves an entry *directory*, but `applyTo` is a file glob. A
+    // `dir/**` pattern is also matched against the bare directory so a
+    // directory entry picks up the instructions Copilot would apply to every
+    // file under it. Patterns that name a file shape (`**/*.ts`) still cannot
+    // match a directory — a static resolver has no file to test.
+    const matchGlobs = [
+      ...applyTo,
+      ...applyTo.map((p) => p.replace(/\/\*\*\/?\*?$/, "")).filter(Boolean),
+    ];
+    if (block.kind === "rule-scoped") {
+      if (matchesAnyGlob(entryTargetPosix, matchGlobs)) scoped.push(block);
+      else
+        ctx.notes.push(
+          `${rel} is applyTo-scoped (${applyTo.join(", ")}); did not match entry ${entryTargetPosix}`,
+        );
+    } else {
+      always.push(block);
+    }
+  }
+  return { always, scoped };
+}

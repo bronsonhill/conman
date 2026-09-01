@@ -4,26 +4,30 @@ entry: .   mode: stack
 config: conman.json
 
 LOAD ORDER
-  #    kind         source                           lines         tokens
-  b1   memory       .github/copilot-instructions.md  1-9               72
-  b2   memory       AGENTS.md                        1-9               85
-  -----------------------------------------------------------------------
-  total                                                               157
+  #    kind         source                                        lines         tokens
+  b1   memory       .github/copilot-instructions.md               1-9               72
+  b2   memory       AGENTS.md                                     1-9               85
+  b3   rule-always  .github/instructions/general.instructions.md  1-8               40
+  ------------------------------------------------------------------------------------
+  total                                                                            197
 
 BUDGET
   budget          4000
   safety margin   10%   ->  effective 3600
-  stack total     157
-  delta           -3443  (under budget)
+  stack total     197
+  delta           -3403  (under budget)
 
 SAVINGS
-  redundant tokens: 29 (18% of stack)
+  redundant tokens: 29 (15% of stack)
 
 FINDINGS  (1 error, 0 warn)
   error  duplication
          .github/copilot-instructions.md:8-9
          AGENTS.md:8-9
          identical 29-token block "Run `npm ci` then `npm test` before every push. Keep each ch…" appears in 2 files (29 redundant tokens, relation: parent-child)
+
+NOTES
+  - .github/instructions/frontend.instructions.md is applyTo-scoped (src/frontend/**); did not match entry .
 
 RESULT  fail
   - 1 duplication finding at error severity

@@ -38,6 +38,7 @@ import {
   type Settings,
 } from "./settings.js";
 import {
+  collectCopilotInstructions,
   collectCursorRules,
   collectRuleBlocks,
   findClaudeDirs,
@@ -358,7 +359,7 @@ function resolveNonClaude(
       );
     } else {
       notes.push(
-        ".github/copilot-instructions.md not found; Copilot stack carries AGENTS.md only",
+        ".github/copilot-instructions.md not found; Copilot stack carries AGENTS.md and any .github/instructions/*.instructions.md",
       );
     }
   }
@@ -374,6 +375,21 @@ function resolveNonClaude(
     blocks.push(
       ...resolveFileBlocks(abs, "memory", 0, undefined, new Set(), ctx),
     );
+  }
+
+  // Copilot: `.github/instructions/*.instructions.md`, after the repo-wide
+  // instructions and the AGENTS.md walk. Always-on (`applyTo: **` or absent)
+  // before matched path-scoped, mirroring the Claude/Cursor rule order.
+  if (agent === "copilot") {
+    const entryTargetPosix = entryIsMemoryFile
+      ? relPosix(repoRoot, entryDir)
+      : entryPosix;
+    const { always, scoped } = collectCopilotInstructions(
+      join(repoRoot, ".github", "instructions"),
+      entryTargetPosix || ".",
+      ctx,
+    );
+    blocks.push(...always, ...scoped);
   }
 
   // Cursor: legacy `.cursorrules` (repo root, always-on) then `.cursor/rules/*.mdc`.

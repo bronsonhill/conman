@@ -83,10 +83,17 @@ export function discoverEntryPoints(
   // Codex and Copilot have no path-scoped rule mechanism conman models.
   const ruleSpec =
     agent === "claude"
-      ? { dotDir: ".claude", ext: ".md", key: "paths" }
+      ? { dotDir: ".claude", rulesDir: "rules", ext: ".md", key: "paths" }
       : agent === "cursor"
-        ? { dotDir: ".cursor", ext: ".mdc", key: "globs" }
-        : null;
+        ? { dotDir: ".cursor", rulesDir: "rules", ext: ".mdc", key: "globs" }
+        : agent === "copilot"
+          ? {
+              dotDir: ".github",
+              rulesDir: "instructions",
+              ext: ".instructions.md",
+              key: "applyTo",
+            }
+          : null;
   // Keyed by repo-relative POSIX path so entries dedupe regardless of how the
   // directory was reached.
   const reasons = new Map<string, Set<DiscoverySource>>();
@@ -114,7 +121,7 @@ export function discoverEntryPoints(
     }
     if (
       ruleSpec &&
-      basename(dir) === "rules" &&
+      basename(dir) === ruleSpec.rulesDir &&
       basename(dirname(dir)) === ruleSpec.dotDir
     ) {
       ruleDirs.push(dir);
@@ -146,6 +153,13 @@ export function discoverEntryPoints(
       try {
         const fm = parseFrontmatter(readFileSync(abs, "utf8"));
         patterns = toStringArray(fm.data[ruleSpec!.key]);
+        // Copilot's `applyTo` is one comma-separated string of globs.
+        if (agent === "copilot") {
+          patterns = patterns
+            .flatMap((s) => s.split(","))
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
       } catch {
         continue;
       }
