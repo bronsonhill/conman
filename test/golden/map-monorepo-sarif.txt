@@ -1,0 +1,236 @@
+# exit: 0
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "VERSION",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "conman",
+          "informationUri": "https://github.com/bronsonhill/conman",
+          "version": "VERSION",
+          "rules": [
+            {
+              "id": "dead-reference",
+              "name": "dead-reference",
+              "shortDescription": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json."
+              },
+              "fullDescription": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. An npm scoped package name in prose (`@superset-ui/core`) is not counted as a dead import: Claude Code drops it silently too, but nothing the author meant to load is missing. conman checks these on ancestor memory files and `.claude/rules` entries."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A pointer in a context file that does not resolve on disk: an `@`-import whose target file is missing, a repo-relative path named in prose that does not exist, or an `npm run <script>` name with no matching entry in package.json. A missing `@`-import is the worst case — Claude Code drops it from the resolved stack with no error, so content the author expected silently never loads. An npm scoped package name in prose (`@superset-ui/core`) is not counted as a dead import: Claude Code drops it silently too, but nothing the author meant to load is missing. conman checks these on ancestor memory files and `.claude/rules` entries.\n\nRemediation: Fix or remove the reference: correct the `@`-import path, update the prose path, or rename the script to match package.json. A dead `@`-import is a gate error because the drop is silent; a dead prose path or script is a warning."
+              }
+            },
+            {
+              "id": "duplication",
+              "name": "duplication",
+              "shortDescription": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack."
+              },
+              "fullDescription": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack. Every copy past the first is loaded into the same session context, so it is paid for on every request with no added information. When every qualifying segment of one file also appears in another, the whole file is flagged as one duplicate rather than segment by segment."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A run of text (a heading- or blank-line-delimited segment, or a whole fenced code block) whose trimmed bytes are identical in two or more files of the resolved stack. Every copy past the first is loaded into the same session context, so it is paid for on every request with no added information. When every qualifying segment of one file also appears in another, the whole file is flagged as one duplicate rather than segment by segment.\n\nRemediation: Keep one copy at the broadest scope that needs it and delete the rest, or replace a child copy with an `@`-import of the parent. `conman --fix` removes byte-identical parent/child blocks mechanically; whole-file and same-stack duplicates it leaves for you, since removing them means deleting a file or writing a pointer."
+              }
+            },
+            {
+              "id": "frontmatter",
+              "name": "frontmatter",
+              "shortDescription": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type."
+              },
+              "fullDescription": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type. Scope is exactly the files whose frontmatter changes what resolves: a `.claude/rules` entry (its `paths` scope key) and a skill SKILL.md (`name` / `description`). An unreadable `paths` scope silently makes a rule load always-on or never match; a skill missing `name` or `description` weakens or breaks its startup listing."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "The YAML frontmatter on a file the resolver reads keys from is malformed, missing a required key, or the wrong type. Scope is exactly the files whose frontmatter changes what resolves: a `.claude/rules` entry (its `paths` scope key) and a skill SKILL.md (`name` / `description`). An unreadable `paths` scope silently makes a rule load always-on or never match; a skill missing `name` or `description` weakens or breaks its startup listing.\n\nRemediation: Fix the YAML: give `paths` a list of strings, close the `---` fence, and give each skill a usable `name` and `description`. `conman --fix` does not repair frontmatter validity, since a malformed scope key is a change of meaning."
+              }
+            },
+            {
+              "id": "lint-duplication",
+              "name": "lint-duplication",
+              "shortDescription": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`."
+              },
+              "fullDescription": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`. The config runs on save or in CI regardless, so the sentence is context the tooling makes redundant, paid for on every request. conman reads `.prettierrc*`, `.eslintrc*` (JSON/YAML), `biome.json`, and `pyproject.toml` `[tool.ruff]` / `[tool.black]`, and matches a fixed set of keys against conservative prose phrasings."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "An always-loaded context file restates a rule that a linter or formatter config in the repo already enforces mechanically — telling the agent \"use 2-space indent\" next to a `.prettierrc` with `tabWidth: 2`. The config runs on save or in CI regardless, so the sentence is context the tooling makes redundant, paid for on every request. conman reads `.prettierrc*`, `.eslintrc*` (JSON/YAML), `biome.json`, and `pyproject.toml` `[tool.ruff]` / `[tool.black]`, and matches a fixed set of keys against conservative prose phrasings.\n\nRemediation: Delete the sentence and let the linter or formatter config carry the rule. If the rule is not actually configured, add it to the config rather than to the context file."
+              }
+            },
+            {
+              "id": "max-skills",
+              "name": "max-skills",
+              "shortDescription": {
+                "text": "One entry point's startup skill index lists more skills than the count cap."
+              },
+              "fullDescription": {
+                "text": "One entry point's startup skill index lists more skills than the count cap. This is a selection-load signal, separate from the `budget.skillIndex` token cap: a repo can stay under the token budget and still list enough skills that the agent picks the wrong one more often. Every skill in the index sits in context every session as a candidate, and the tool-selection literature shows wrong-pick rates rising as the flat list grows. The default cap is 8 with a hard cap of 15; 9 to 15 skills is a warning, more than 15 is an error."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "One entry point's startup skill index lists more skills than the count cap. This is a selection-load signal, separate from the `budget.skillIndex` token cap: a repo can stay under the token budget and still list enough skills that the agent picks the wrong one more often. Every skill in the index sits in context every session as a candidate, and the tool-selection literature shows wrong-pick rates rising as the flat list grows. The default cap is 8 with a hard cap of 15; 9 to 15 skills is a warning, more than 15 is an error.\n\nRemediation: Consolidate overlapping skills, delete unused ones, or split a sprawling skill set so each entry point's index stays under the cap. The default 8 is transferred from tool-selection research, not measured on skill indexes; override `maxSkills` in conman.json if your skills are well separated."
+              }
+            },
+            {
+              "id": "per-file-budget",
+              "name": "per-file-budget",
+              "shortDescription": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`."
+              },
+              "fullDescription": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`. The resolved stack has no override semantics — every block is loaded and paid for on every request — so a single file this large sets the floor for every session's base context regardless of the task. The default cap is chosen to flag outliers on the 2026-08 survey sample, not as a published limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default; raise `gate.per-file-budget` to error in conman.json to make it a gate failure."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "One resolved memory file's summed token contribution to the stack is over `budget.perFile`. The resolved stack has no override semantics — every block is loaded and paid for on every request — so a single file this large sets the floor for every session's base context regardless of the task. The default cap is chosen to flag outliers on the 2026-08 survey sample, not as a published limit, and is pinned to MODEL_VERSION for re-review. This is a warn by default; raise `gate.per-file-budget` to error in conman.json to make it a gate failure.\n\nRemediation: Split the file, move the task-specific bulk into a skill or a linked document reached on demand, or scope part of it to the paths that need it with a `.claude/rules` entry. If the size is genuinely warranted for this repo, raise `budget.perFile` in conman.json."
+              }
+            },
+            {
+              "id": "skill-index-budget",
+              "name": "skill-index-budget",
+              "shortDescription": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens."
+              },
+              "fullDescription": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens. The listing is loaded into context on every request whether or not any skill is used, so it is pure per-session overhead. This is the cost line for the skill index; `max-skills` is the separate count line, since selection accuracy degrades with the number of candidates independently of how terse each entry is. The default cap is chosen to flag outliers on the 2026-08 survey sample and is pinned to MODEL_VERSION for re-review. Warn by default; raise `gate.skill-index-budget` to error to make it a gate failure."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "The startup skill listing costs more than `budget.skillIndex` tokens. The listing is loaded into context on every request whether or not any skill is used, so it is pure per-session overhead. This is the cost line for the skill index; `max-skills` is the separate count line, since selection accuracy degrades with the number of candidates independently of how terse each entry is. The default cap is chosen to flag outliers on the 2026-08 survey sample and is pinned to MODEL_VERSION for re-review. Warn by default; raise `gate.skill-index-budget` to error to make it a gate failure.\n\nRemediation: Shorten skill descriptions, consolidate or remove skills, or set `skillListingBudget` in settings.json so Claude Code truncates the listing. If the index is genuinely this large for a reason, raise `budget.skillIndex` in conman.json."
+              }
+            },
+            {
+              "id": "stale-boilerplate",
+              "name": "stale-boilerplate",
+              "shortDescription": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header."
+              },
+              "fullDescription": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header. It says nothing project-specific, so it is pure filler in every session's base context. conman matches a small curated set of known `/init` sentences near-verbatim."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A stock sentence that Claude Code's `/init` writes into a fresh CLAUDE.md is still sitting there unmodified — most often the \"This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository\" header. It says nothing project-specific, so it is pure filler in every session's base context. conman matches a small curated set of known `/init` sentences near-verbatim.\n\nRemediation: Replace the template sentence with guidance specific to this repository, or delete it outright."
+              }
+            },
+            {
+              "id": "unlinked-copy",
+              "name": "unlinked-copy",
+              "shortDescription": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import."
+              },
+              "fullDescription": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import. Claude Code loads only the CLAUDE.md, so this costs no extra tokens, but the two hand-maintained copies drift apart over time and a reader cannot tell which one is authoritative."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A directory holds a CLAUDE.md and an AGENTS.md that are separate byte-identical files, not a symlink and not an `@`-import. Claude Code loads only the CLAUDE.md, so this costs no extra tokens, but the two hand-maintained copies drift apart over time and a reader cannot tell which one is authoritative.\n\nRemediation: Link the two files with a symlink, or make CLAUDE.md a one-line `@AGENTS.md` import so a single file is the source of truth."
+              }
+            },
+            {
+              "id": "value-conflict",
+              "name": "value-conflict",
+              "shortDescription": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack."
+              },
+              "fullDescription": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack. The agent sees both and has no rule for which wins, so behaviour depends on load order and attention rather than intent."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A definitional markdown line (`` `Key`: value ``, `**Key:** value`, or `- Key: value` with an uppercase key) binds the same normalized key to two different short values in two different files of the stack. The agent sees both and has no rule for which wins, so behaviour depends on load order and attention rather than intent.\n\nRemediation: Decide the real value, set it once at the broadest scope that applies, and remove the other binding. If both are genuinely correct in their own scope, make the scope explicit in the surrounding text so the narrower one clearly overrides."
+              }
+            },
+            {
+              "id": "vehicle-fit",
+              "name": "vehicle-fit",
+              "shortDescription": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens."
+              },
+              "fullDescription": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens. This check is structural only — it keys off size and shape, never meaning — and flags content large enough that it probably belongs in a skill, a linked doc, or a path-scoped rule rather than in every session's base context."
+              },
+              "helpUri": "https://github.com/bronsonhill/conman#findings",
+              "help": {
+                "text": "A non-code prose segment over 350 tokens sits in always-loaded memory or a rule, or an always-loaded rule runs over 800 tokens. This check is structural only — it keys off size and shape, never meaning — and flags content large enough that it probably belongs in a skill, a linked doc, or a path-scoped rule rather than in every session's base context.\n\nRemediation: Move the bulk into a skill or a separate document referenced on demand, or scope it to the paths that need it with a `.claude/rules` entry. Leave only the part every session needs in always-loaded memory. This advice is structural; conman does not judge the content itself."
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "duplication",
+          "level": "error",
+          "message": {
+            "text": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens, relation: parent-child)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 7,
+                  "endLine": 8
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "services/api/CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 7,
+                  "endLine": 8
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "value-conflict",
+          "level": "error",
+          "message": {
+            "text": "key \"node version\" is set to different values across the stack: \"20\" vs \"22\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 3,
+                  "endLine": 3
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "services/api/CLAUDE.md"
+                },
+                "region": {
+                  "startLine": 3,
+                  "endLine": 3
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

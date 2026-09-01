@@ -28,7 +28,7 @@ import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
 import { computeTrim, renderTrimHuman, renderTrimJson } from "./trim.js";
 import { unifiedDiff } from "./diff.js";
-import { renderSarif } from "./sarif.js";
+import { renderSarif, renderSarifMap } from "./sarif.js";
 import { renderExplain, renderExplainList } from "./explain.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -239,6 +239,9 @@ export function validateArgs(a: Args): string | null {
   if (a.html !== undefined && !(a.command === "map" || (a.command === "check" && a.map))) {
     return "--html is only valid with `conman map` or `conman check --map`";
   }
+  if (a.sarif && a.html !== undefined) {
+    return "--format sarif cannot be combined with --html";
+  }
   return null;
 }
 
@@ -253,7 +256,8 @@ USAGE
 FLAGS
   --json                 machine-readable output (alias for --format json)
   --format <fmt>         human (default) | json | sarif; sarif is SARIF 2.1.0
-                         for GitHub code scanning (single entry point only)
+                         for GitHub code scanning. With map / check --map it
+                         aggregates findings across every entry point
   --config <path>        config file (default: search up for conman.json)
   --budget <n>           override the total-token budget
   --tokenizer <name>     claude-local (default, offline) | exact (opt-in; calls
@@ -443,11 +447,6 @@ function main(): void {
   const userDir = userConfigDir(args, cwd);
   const tv = toolVersion();
 
-  if (args.sarif && (args.command === "map" || args.map)) {
-    process.stderr.write("conman: --format sarif is not supported with map\n");
-    process.exit(2);
-  }
-
   if (args.command === "map" || (args.command === "check" && args.map)) {
     const root = args.target ? resolve(cwd, args.target) : repoRoot;
     if (args.fix) {
@@ -464,9 +463,11 @@ function main(): void {
       process.stdout.write(`wrote ${args.html}\n`);
     } else {
       process.stdout.write(
-        args.json
-          ? renderMapJson(result, tv, configSource)
-          : renderMapHuman(result, tv, configSource),
+        args.sarif
+          ? renderSarifMap(result, tv)
+          : args.json
+            ? renderMapJson(result, tv, configSource)
+            : renderMapHuman(result, tv, configSource),
       );
     }
     process.exit(args.command === "check" ? (result.pass ? 0 : 1) : 0);

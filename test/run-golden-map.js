@@ -4,6 +4,25 @@ import { registerGolden, MONO } from "./golden-lib.js";
 registerGolden("golden/map", [
   { name: "map-monorepo", args: ["map", MONO, "--repo-root", MONO] },
   { name: "map-monorepo-json", args: ["map", MONO, "--repo-root", MONO, "--json"] },
+  {
+    name: "map-monorepo-sarif",
+    args: ["map", MONO, "--repo-root", MONO, "--format", "sarif"],
+  },
+  {
+    name: "check-map-monorepo-sarif",
+    args: ["check", MONO, "--map", "--repo-root", MONO, "--format", "sarif"],
+  },
+  {
+    name: "map-sarif-dedup",
+    args: [
+      "map",
+      "test/fixtures/map-sarif-dedup",
+      "--repo-root",
+      "test/fixtures/map-sarif-dedup",
+      "--format",
+      "sarif",
+    ],
+  },
   { name: "map-monorepo-html", args: ["map", MONO, "--repo-root", MONO], html: true },
   {
     name: "check-map-monorepo-html",

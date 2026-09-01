@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { analyzeEntry } from "./analyze.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { fixture } from "./testutil.js";
-import { renderSarif } from "./sarif.js";
+import { renderSarif, renderSarifMap } from "./sarif.js";
+import { runMap } from "./map.js";
 import { FINDING_IDS } from "./explain.js";
 
 function sarifFor(name: string, ...sub: string[]) {
@@ -60,4 +61,41 @@ test("deterministic: results sorted by ruleId then file then line, stable across
 test("no timestamps anywhere in the document", () => {
   const doc = sarifFor("monorepo", "services", "api");
   assert.ok(!JSON.stringify(doc).match(/\d{4}-\d{2}-\d{2}T/));
+});
+
+test("renderSarifMap aggregates every entry point into one deterministic document", () => {
+  const root = fixture("monorepo");
+  const result = runMap(root, DEFAULT_CONFIG);
+  const a = renderSarifMap(result, "1.2.3");
+  const b = renderSarifMap(result, "1.2.3");
+  assert.equal(a, b);
+  const doc = JSON.parse(a);
+  assert.equal(doc.version, "2.1.0");
+  assert.equal(doc.runs[0].tool.driver.name, "conman");
+  const results = doc.runs[0].results;
+  assert.ok(results.length >= 1);
+  for (const res of results) {
+    assert.ok(FINDING_IDS.includes(res.ruleId));
+    assert.ok(!res.locations[0].physicalLocation.artifactLocation.uri.startsWith("/"));
+  }
+  // sorted by ruleId
+  const ids = results.map((r: any) => r.ruleId);
+  assert.deepEqual(ids, [...ids].sort());
+});
+
+test("renderSarifMap collapses a finding that repeats across entry points", () => {
+  // Root CLAUDE.md carries a dead @-import; pkg-a and pkg-b inherit it, so the
+  // same finding is reported by all three entry points.
+  const result = runMap(fixture("map-sarif-dedup"), DEFAULT_CONFIG);
+  const perEntry = result.entries.flatMap((e) =>
+    e.analysis.findings.map((f) => `${f.type}:${f.message}`),
+  );
+  assert.equal(perEntry.length, 3, "three entry points each report the finding");
+  const results = JSON.parse(renderSarifMap(result, "1.2.3")).runs[0].results;
+  assert.equal(results.length, 1, "collapsed to a single result");
+  assert.equal(results[0].ruleId, "dead-reference");
+  assert.equal(
+    results[0].locations[0].physicalLocation.artifactLocation.uri,
+    "CLAUDE.md",
+  );
 });

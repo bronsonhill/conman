@@ -41,8 +41,11 @@ run procedure.
   `fix`, `diff`, `config`, `tokenizer` around them. `trim` (`conman <entry>
   --trim`, delete-only Tier-1 advice over the whole-file duplication findings)
   reuses `parentFile` / `preferredKeeper` from `fix.ts` to pick which copy of a
-  byte-identical cluster to keep. `sarif` renders findings as SARIF 2.1.0
-  (`conman <entry> --format sarif`, single entry only); `explain` holds the
+  byte-identical cluster to keep. `sarif` renders findings as SARIF 2.1.0:
+  `renderSarif` for a single entry (`conman <entry> --format sarif`),
+  `renderSarifMap` for the whole repo (`conman map` / `conman check --map
+  --format sarif`), which collapses a finding repeated across entry points to
+  one result keyed on rule id + message + physical location; `explain` holds the
   static per-finding-type reference table (`conman explain [<id>]`) that also
   supplies the SARIF rule descriptions — keep its citations in sync with
   README's "What the research says". `cli.ts` is arg-parse and dispatch only; `validateArgs()` there rejects
