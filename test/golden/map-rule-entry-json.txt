@@ -326,7 +326,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.4",
+  "modelVersion": "0.5",
   "pass": true,
   "pathScopedRuleNotes": [
     "rule .claude/rules/broad.md is path-scoped (src/**); did not match 3 entry points",

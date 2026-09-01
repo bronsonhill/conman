@@ -73,7 +73,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.4",
+  "modelVersion": "0.5",
   "pass": true,
   "pathScopedRuleNotes": [],
   "redundant": {
