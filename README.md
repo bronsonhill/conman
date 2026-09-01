@@ -25,24 +25,21 @@
   /></a>
 </p>
 
-Lint the context stack before a Claude Code session loads it.
+Lint the context stack before an agent session loads it.
 
-`conman` is short for context manager. Claude Code assembles its startup context
-fresh every session: it walks the directory tree for `CLAUDE.md` and `AGENTS.md`,
+`conman` is short for context manager. Your agent (Claude Code, Codex etc.) assembles its startup context every session: it walks the directory tree for `CLAUDE.md` and `AGENTS.md`,
 inlines their `@`-imports, pulls in `.claude/rules/`, and appends a one-line index
-of every skill. Every block in that stack was added by someone trying to help the
+of every skill. Every item in that stack was added by someone trying to help the
 agent, and read on its own each one looks reasonable. Read the whole stack and
-the story changes — a root file says Node 20, a service file two directories down
+the story changes — 112k tokens from a single chat message 'Hi' (true story) and root file that says Node 20, a service file two directories down
 says Node 22, both load and nothing reconciles them; a setup paragraph copied
 into a child directory bills the session twice; the skill index creeps up a line
-at a time.
+at a time, and compounds when combined between a repo's stack and your own dev stack.
 
-That is the con. `conman` reads the stack before the session starts and calls it.
+That is the con. Context that doesn't help. `conman` reads the stack before the session starts and calls it.
 Point it at an entry point; it resolves the full chain a session would load and
 reports what is in it, in what order, at what token cost, and where blocks repeat
-verbatim or bind the same key to two different values. It runs offline, uses no
-model in the analysis path, and emits the same bytes for the same input every
-time. The job is to lint your context stack, not to grow it.
+verbatim or bind the same key to two different values. The job is to lint your context stack, not to grow it.
 
 Scope and the reasoning behind it: [`VISION.md`](VISION.md). The resolution model
 — load order, which `settings.json` keys matter, how findings are defined, where
