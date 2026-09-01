@@ -44,7 +44,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.5",
+  "modelVersion": "0.6",
   "notes": [],
   "redundant": {
     "pctOfStack": 0,

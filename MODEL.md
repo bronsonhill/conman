@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.5` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.6` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -11,7 +11,7 @@ If you are debugging a surprising report, start here.
 
 ## Accurate as of
 
-**Claude Code v2.1.251, verified 2026-08-30.**
+**Claude Code v2.1.251, verified 2026-09-01.**
 
 Every resolution rule below — ancestor `CLAUDE.md` walk order, the
 `settings.json` keys conman honours, `@`-import inlining and the 5-hop depth
@@ -82,9 +82,11 @@ every block.
    - Always-loaded rules load first (path-sorted), then path-scoped rules that
      matched (path-sorted). Rules load after all memory files.
    - `@`-imports inside rule files are not followed.
-   - conman's glob matcher (`src/repo.ts`) does not do brace expansion, so a
-     `paths` pattern like `src/**/*.{ts,tsx}` matches literally rather than as
-     the two patterns Claude Code expands it to.
+   - conman's glob matcher (`src/repo.ts`) expands `{a,b}` brace lists the way
+     Claude Code (via minimatch) does: a `paths` pattern like
+     `src/**/*.{ts,tsx}` matches as the two patterns `src/**/*.ts` and
+     `src/**/*.tsx`. Several groups in one pattern give the cartesian product;
+     nested groups expand recursively.
 
 [cc-rules]: https://code.claude.com/docs/en/memory#path-specific-rules
 
@@ -110,17 +112,17 @@ directory is an entry point when either:
   `src/renderer` were entry points that discovery never reported.
 
 **Glob to directory.** Take the longest leading run of path segments that carry
-no glob metacharacter — `*`, `?`, `[`, `]`, `{`, `}`, `,`. `src/renderer/**`
-gives `src/renderer`; `src/**` gives `src`; `app/api/**` gives `app/api`; a
-wildcard anywhere in the path (`src/*/main`) cuts the run at that segment. If
-the run names a file rather than a directory (`docs/CONTRIBUTING.md`), trailing
-segments are dropped until an existing directory is left. A glob whose leading
-run is empty — a bare `**`, or any pattern that starts with a wildcard — or that
+no glob metacharacter — `*`, `?`, `[`, `]`. `src/renderer/**` gives
+`src/renderer`; `src/**` gives `src`; `app/api/**` gives `app/api`; a wildcard
+anywhere in the path (`src/*/main`) cuts the run at that segment. If the run
+names a file rather than a directory (`docs/CONTRIBUTING.md`), trailing segments
+are dropped until an existing directory is left. A glob whose leading run is
+empty — a bare `**`, or any pattern that starts with a wildcard — or that
 reduces to the repo root is skipped, so a keyless or `**`-scoped rule adds no
 entry point. Only directories that exist on disk are added; conman never invents
-a path. Brace lists are not expanded (`src/{main,renderer}/**` stops at the `{`
-and yields `src`), matching the resolver's own literal treatment of `paths`
-globs.
+a path. Brace lists are expanded first, exactly as the resolver expands `paths`
+globs: `src/{main,renderer}/**` yields both `src/main` and `src/renderer`, not a
+single literal `src`.
 
 Note the interaction with rule matching: a `paths` of `src/**` scopes everything
 *under* `src`, not `src` itself, so the rule that made `src` an entry point does
@@ -278,8 +280,8 @@ Ancestor `AGENTS.md` walk, then Cursor rules, in this order:
 - `alwaysApply: true` → **always-on** (`rule-always`).
 - otherwise a non-empty `globs` (string or list) → **path-scoped**
   (`rule-scoped`), loaded only when one glob matches the entry path, matched by
-  conman's own literal matcher (no brace expansion), exactly as `paths` is
-  matched for Claude. A `globs` of just `**` counts as no scope.
+  conman's own matcher — brace lists expanded — exactly as `paths` is matched
+  for Claude. A `globs` of just `**` counts as no scope.
 - neither key → Cursor pulls the rule in *on agent request*, which a static
   resolver cannot predict. conman loads it always-on and adds a NOTE.
 
@@ -528,6 +530,21 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.6** — `paths` glob brace lists are expanded.
+
+  conman's glob matcher (`src/repo.ts`) matched `paths` patterns literally, so a
+  rule scoped with a brace list — `src/**/*.{ts,tsx}`, `src/{main,renderer}/**` —
+  never matched anything and dropped silently out of the resolved stack. Claude
+  Code runs these through minimatch, which expands `{a,b}` into separate
+  patterns before matching. The matcher now does the same: one group expands to
+  its alternatives, several groups give the cartesian product, nested groups
+  expand recursively, a comma-less `{foo}` stays literal. `conman map`'s
+  glob-to-directory discovery expands the same way, so `src/{main,renderer}/**`
+  yields two entry-point directories rather than one literal `src`. The Cursor
+  `.mdc` `globs` matcher shares the same code and picks up brace expansion too.
+  This is a false-negative fix — a rule the repo's author scoped with a brace
+  list was being left out of the stack conman reported and gated.
 
 - **0.5** — `value-conflict` ignores code-span example lines.
 

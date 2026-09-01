@@ -45,8 +45,28 @@ test("a glob one level below a directory resolves to that directory", () => {
 test("a keyless rule and a `**`-scoped rule spawn no phantom entries", () => {
   const { paths } = discovered(RULE_ENTRY);
   // keyless.md has no `paths`; root-scoped.md has `paths: ["**"]`. Neither adds
-  // an entry point, so discovery stays at exactly these five.
-  assert.deepEqual(paths, [".", "docs", "src", "src/main", "src/renderer"]);
+  // an entry point, so discovery stays at exactly this set.
+  assert.deepEqual(paths, [
+    ".",
+    "docs",
+    "pkg/cli",
+    "pkg/core",
+    "src",
+    "src/main",
+    "src/renderer",
+  ]);
+});
+
+test("a brace list in `paths` yields one entry point per alternative", () => {
+  // brace.md scopes `pkg/{cli,core}/**`. Claude Code expands that into
+  // `pkg/cli/**` and `pkg/core/**`, so discovery must add both directories,
+  // not a single literal `pkg`.
+  const { paths, byPath } = discovered(RULE_ENTRY);
+  assert.ok(paths.includes("pkg/cli"), "pkg/cli discovered from the brace list");
+  assert.ok(paths.includes("pkg/core"), "pkg/core discovered from the brace list");
+  assert.ok(!paths.includes("pkg"), "no literal `pkg` entry point");
+  assert.deepEqual(byPath.get("pkg/cli"), ["rule-path"]);
+  assert.deepEqual(byPath.get("pkg/core"), ["rule-path"]);
 });
 
 test("a rule scoping a path that is not on disk invents no entry point", () => {

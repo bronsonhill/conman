@@ -41,6 +41,15 @@ follow semantic versioning.
 
 ### Fixed
 
+- `paths` glob brace lists are now expanded. A rule scoped with
+  `src/**/*.{ts,tsx}` or `src/{main,renderer}/**` matched literally, so it never
+  applied and dropped silently from the resolved stack — a false negative in
+  conman's core job. The matcher now expands `{a,b}` the way Claude Code (via
+  minimatch) does: one group to its alternatives, several groups to the
+  cartesian product, nested groups recursively. `conman map`'s
+  glob-to-directory discovery expands the same way, so `src/{main,renderer}/**`
+  yields two entry-point directories, not one literal `src`. `modelVersion`
+  `0.5` -> `0.6`; goldens re-pinned.
 - `value-conflict` no longer fires on a definitional line (`` `Key`: value ``,
   `**Key:** value`, `- Key: value`) that sits inside an inline code span or a
   fenced block. A `CLAUDE.md` that shows a changelog trailer or a config snippet
