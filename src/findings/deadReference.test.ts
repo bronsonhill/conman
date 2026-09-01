@@ -13,11 +13,24 @@ test("dead-ref: a missing @-import is error, a missing prose path and script are
     [
       ["dead-import", "error"],
       ["dead-import", "error"],
+      ["dead-link", "warn"],
       ["dead-path", "warn"],
       ["dead-script", "warn"],
       ["dead-script", "warn"],
     ],
   );
+});
+
+test("dead-ref: a missing markdown link target is a dead-link warn; a live one and a URL are not", () => {
+  const root = fixture("dead-ref");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const links = analysis.findings
+    .filter((f) => f.type === "dead-reference" && f.detail?.["subcase"] === "dead-link")
+    .map((f) => f.detail?.["ref"])
+    .sort();
+  // `docs/architecture.md` is missing (docs/ holds a real file, so it flags);
+  // `docs/README.md` resolves; `https://example.com/spec.md` is a URL, skipped.
+  assert.deepEqual(links, ["docs/architecture.md"]);
 });
 
 test("dead-ref: a script named in bare prose is caught, not just one in backticks", () => {
@@ -54,7 +67,7 @@ test("dead-reference: gate.dead-reference = 'warn' caps the import case at warn"
   };
   const { analysis } = analyzeEntry(root, { repoRoot: root, config });
   const dr = analysis.findings.filter((f) => f.type === "dead-reference");
-  assert.equal(dr.length, 5);
+  assert.equal(dr.length, 6);
   assert.ok(dr.every((f) => f.severity === "warn"));
 });
 

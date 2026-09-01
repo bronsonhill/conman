@@ -1,5 +1,5 @@
 # exit: 0
-conman VERSION  model 0.7  tokenizer claude-local
+conman VERSION  model 0.8  tokenizer claude-local
 entry: .   mode: stack
 config: conman.json
 tokenizer: claude-local (estimate; see README "How accurate is the token estimate?")

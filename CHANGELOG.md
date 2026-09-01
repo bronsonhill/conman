@@ -8,6 +8,13 @@ follow semantic versioning.
 
 ### Added
 
+- `dead-reference` now checks markdown link targets. A link like
+  `[architecture](docs/architecture.md)` in a depth-0 memory file or rule whose
+  target is missing raises a `dead-link` sub-finding at **warn**, under the same
+  conservative guards as `dead-path` (extension required, no globs, no `..`,
+  parent directory exists and holds a real file). URLs and pure `#anchor` links
+  are skipped. Backticked-path handling is unchanged. `MODEL_VERSION` → 0.8.
+
 - `--agent <claude|codex|cursor|copilot>` selects the resolution ruleset. The
   default `claude` behaviour is unchanged. `codex` and `copilot` resolve an
   `AGENTS.md`-only stack (`copilot` also reads `.github/copilot-instructions.md`);
