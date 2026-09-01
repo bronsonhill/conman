@@ -54,7 +54,16 @@ test("a keyless rule and a `**`-scoped rule spawn no phantom entries", () => {
     "src",
     "src/main",
     "src/renderer",
+    "src/webview",
   ]);
+});
+
+test("a rule in a `.claude/rules/` subdirectory scopes its target directory", () => {
+  // Claude Code walks `.claude/rules/` recursively, so `.claude/rules/nested/
+  // webview.md` (paths: src/webview/**) must make src/webview an entry point.
+  const { paths, byPath } = discovered(RULE_ENTRY);
+  assert.ok(paths.includes("src/webview"), "src/webview discovered from a nested rule");
+  assert.deepEqual(byPath.get("src/webview"), ["rule-path"]);
 });
 
 test("a brace list in `paths` yields one entry point per alternative", () => {

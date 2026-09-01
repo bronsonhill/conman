@@ -192,6 +192,28 @@ test("a `paths` of just `**` scopes to everything, so the rule loads always-on",
   assert.ok(rules.includes("rule-always:.claude/rules/scope-everything.md"));
 });
 
+test("a rule in a `.claude/rules/` subdirectory is discovered and path-scoped", () => {
+  // Claude Code (v2.1.251) walks `.claude/rules/` recursively, so a file at
+  // `.claude/rules/frontend/react.md` loads exactly like a top-level rule.
+  const matched = ruleKinds(["src", "renderer"]);
+  assert.ok(
+    matched.rules.includes("rule-scoped:.claude/rules/frontend/react.md"),
+    "the nested rule resolves as rule-scoped when its `paths` glob matches",
+  );
+
+  const missed = ruleKinds(["app", "api"]);
+  assert.ok(
+    !missed.rules.some((k) => k.endsWith("frontend/react.md")),
+    "the nested rule does not load for a non-matching entry",
+  );
+  assert.ok(
+    missed.notes.some(
+      (n) => n.includes("frontend/react.md") && n.includes("did not match entry app/api"),
+    ),
+    "the miss leaves a NOTE naming the nested rule",
+  );
+});
+
 test("single-file mode: no ancestor walk, no rules", () => {
   const root = fixture("single-file");
   const r = resolveStack(fixture("single-file", "notes.md"), root, DEFAULT_CONFIG, tok, []);

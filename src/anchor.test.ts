@@ -9,7 +9,8 @@
 //   - @-import inline position, depth-first order, the 5-hop depth limit,
 //     cycle breaking
 //   - .claude/rules/ always-on vs `paths`-scoped, ordering, `globs` ignored,
-//     `**` / keyless treated as always-on, `{a,b}` brace lists expanded
+//     `**` / keyless treated as always-on, `{a,b}` brace lists expanded,
+//     recursive discovery of rules in subdirectories
 //   - the skill startup index and its settings.json budget truncation
 //   - claudeMdExcludes from settings.json
 //
@@ -38,6 +39,7 @@ const SCENARIOS: Record<string, { fixture: string; entry: string[] }> = {
   "monorepo services/api": { fixture: "monorepo", entry: ["services", "api"] },
   "rule-scope-keys app/api": { fixture: "rule-scope-keys", entry: ["app", "api"] },
   "rule-scope-keys src/main": { fixture: "rule-scope-keys", entry: ["src", "main"] },
+  "rule-scope-keys src/renderer": { fixture: "rule-scope-keys", entry: ["src", "renderer"] },
   "imports root": { fixture: "imports", entry: [] },
 };
 
@@ -86,6 +88,7 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
     ],
     notes: [
       "rule .claude/rules/brace-scoped.md is path-scoped (src/{main,renderer}); did not match entry app/api",
+      "rule .claude/rules/frontend/react.md is path-scoped (src/renderer); did not match entry app/api",
       "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
       "rule .claude/rules/motrix-shaped.md is path-scoped (src/**); did not match entry app/api",
     ],
@@ -103,8 +106,27 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
       "rule-scoped:.claude/rules/motrix-shaped.md",
     ],
     notes: [
+      "rule .claude/rules/frontend/react.md is path-scoped (src/renderer); did not match entry src/main",
       "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
       "rule .claude/rules/paths-scoped.md is path-scoped (app/**); did not match entry src/main",
+    ],
+    unlinkedAgentsCopies: [],
+  },
+  "rule-scope-keys src/renderer": {
+    mode: "stack",
+    entry: "src/renderer",
+    blocks: [
+      "memory:CLAUDE.md",
+      "rule-always:.claude/rules/keyless.md",
+      "rule-always:.claude/rules/legacy-globs.md",
+      "rule-always:.claude/rules/scope-everything.md",
+      "rule-scoped:.claude/rules/brace-scoped.md",
+      "rule-scoped:.claude/rules/frontend/react.md",
+      "rule-scoped:.claude/rules/motrix-shaped.md",
+    ],
+    notes: [
+      "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
+      "rule .claude/rules/paths-scoped.md is path-scoped (app/**); did not match entry src/renderer",
     ],
     unlinkedAgentsCopies: [],
   },

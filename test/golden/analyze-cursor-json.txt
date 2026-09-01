@@ -79,7 +79,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.8",
+  "modelVersion": "0.9",
   "notes": [
     ".cursor/rules/frontend.mdc is glob-scoped (src/frontend, src/frontend/**); did not match entry .",
     ".cursor/rules/manual.mdc: Cursor loads this rule on agent request (no `globs`, `alwaysApply` unset); conman treats it as always-on (best-effort)"
