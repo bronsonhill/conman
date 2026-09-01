@@ -3,6 +3,7 @@
 // no timestamps, repo-relative URIs only.
 
 import type { Analysis, Finding, Severity } from "./types.js";
+import type { MapResult } from "./map.js";
 import { FINDING_IDS, FINDING_INFO } from "./explain.js";
 
 const INFORMATION_URI = "https://github.com/bronsonhill/conman";
@@ -33,7 +34,18 @@ function resultForFinding(f: Finding) {
   };
 }
 
-export function renderSarif(analysis: Analysis, toolVersion: string): string {
+type SarifResult = ReturnType<typeof resultForFinding>;
+
+function sortResults(results: SarifResult[]): SarifResult[] {
+  return results.slice().sort(
+    (a, b) =>
+      (a.ruleId < b.ruleId ? -1 : a.ruleId > b.ruleId ? 1 : 0) ||
+      cmpLoc(a, b) ||
+      (a.message.text < b.message.text ? -1 : a.message.text > b.message.text ? 1 : 0),
+  );
+}
+
+function sarifDoc(results: SarifResult[], toolVersion: string) {
   const rules = FINDING_IDS.map((id) => ({
     id,
     name: id,
@@ -45,15 +57,7 @@ export function renderSarif(analysis: Analysis, toolVersion: string): string {
     },
   }));
 
-  const results = analysis.findings
-    .map(resultForFinding)
-    .sort(
-      (a, b) =>
-        (a.ruleId < b.ruleId ? -1 : a.ruleId > b.ruleId ? 1 : 0) ||
-        cmpLoc(a, b),
-    );
-
-  const doc = {
+  return {
     $schema: "https://json.schemastore.org/sarif-2.1.0.json",
     version: "2.1.0",
     runs: [
@@ -70,7 +74,37 @@ export function renderSarif(analysis: Analysis, toolVersion: string): string {
       },
     ],
   };
-  return JSON.stringify(doc, null, 2) + "\n";
+}
+
+export function renderSarif(analysis: Analysis, toolVersion: string): string {
+  const results = sortResults(analysis.findings.map(resultForFinding));
+  return JSON.stringify(sarifDoc(results, toolVersion), null, 2) + "\n";
+}
+
+/**
+ * Aggregated SARIF for `conman map` / `conman check --map`: one document over
+ * every discovered entry point. A finding that repeats across entry points —
+ * typically an ancestor CLAUDE.md block resolved into several leaf stacks —
+ * collapses to a single result. The collapse key is the full result shape
+ * (ruleId + level + message + physical locations); since every location is
+ * already repo-relative, two entry points that hit the same block produce
+ * byte-identical results and dedupe cleanly. No per-entry attribution is kept:
+ * SARIF locations are physical, and the physical location is the actionable
+ * fact.
+ */
+export function renderSarifMap(result: MapResult, toolVersion: string): string {
+  const seen = new Set<string>();
+  const results: SarifResult[] = [];
+  for (const e of result.entries) {
+    for (const f of e.analysis.findings) {
+      const r = resultForFinding(f);
+      const key = JSON.stringify(r);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(r);
+    }
+  }
+  return JSON.stringify(sarifDoc(sortResults(results), toolVersion), null, 2) + "\n";
 }
 
 function cmpLoc(a: ReturnType<typeof resultForFinding>, b: ReturnType<typeof resultForFinding>): number {

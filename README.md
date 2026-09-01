@@ -402,11 +402,18 @@ land in the repository's Security → Code scanning tab, one alert per finding,
 annotated on the context file and line it originates from. Each finding type is
 registered as a SARIF rule with a short description; `error` findings map to
 SARIF `error`, `warn` to `warning`. The document carries no timestamps and only
-repo-relative URIs, so it is deterministic for a given tree. Only single-entry
-runs support it; `map` does not.
+repo-relative URIs, so it is deterministic for a given tree.
+
+`conman map --format sarif` and `conman check --map --format sarif` emit one
+aggregated document covering every discovered entry point. A finding that repeats
+across entry points — usually an ancestor `CLAUDE.md` block that resolves into
+several leaf stacks — collapses to a single result, keyed on rule id plus
+message plus physical location. The exit code still follows the gate under
+`check --map`.
 
 ```sh
 conman check src/renderer --format sarif > conman.sarif
+conman check --map --format sarif > conman.sarif   # whole monorepo
 ```
 
 ### `--fix`
