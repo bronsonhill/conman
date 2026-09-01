@@ -4,6 +4,7 @@ import {
   FENCE,
   fencedFlags,
   fencedLineSet,
+  inlineCodeSpans,
   maskInlineCode,
 } from "./findings/_fence.js";
 
@@ -102,6 +103,30 @@ test("maskInlineCode: backticks inside a fenced block do not open a span", () =>
   assert.ok(!masked[0]!.includes("@a/b"));
   assert.equal(masked[2], "`@c/d"); // fenced line passed through verbatim
   assert.ok(!masked[4]!.includes("@e/f"));
+});
+
+test("inlineCodeSpans returns interior text and the opening line for each span", () => {
+  const spans = inlineCodeSpans(["run `npm run lint` then `src/index.ts` ok"]);
+  assert.deepEqual(spans, [
+    { line: 0, text: "npm run lint" },
+    { line: 0, text: "src/index.ts" },
+  ]);
+});
+
+test("inlineCodeSpans matches backtick runs by length and skips unclosed openers", () => {
+  assert.deepEqual(inlineCodeSpans(["a ``x `y` z`` b"]), [{ line: 0, text: "x `y` z" }]);
+  assert.deepEqual(inlineCodeSpans(["a ` unclosed"]), []);
+});
+
+test("inlineCodeSpans: a span wrapping across lines is reported once on its opening line", () => {
+  const spans = inlineCodeSpans(["intro `docs/arch", "notes.md` tail"]);
+  assert.deepEqual(spans, [{ line: 0, text: "docs/arch\nnotes.md" }]);
+});
+
+test("inlineCodeSpans: backticks inside a fenced block open no span", () => {
+  assert.deepEqual(inlineCodeSpans(["```", "`src/x.ts`", "```", "`src/y.ts`"]), [
+    { line: 3, text: "src/y.ts" },
+  ]);
 });
 
 test("FENCE matches the opener shapes and rejects short runs and inline spans", () => {

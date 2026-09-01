@@ -43,21 +43,35 @@ export function fencedFlags(lines: string[]): boolean[] {
  * close a span; callers that already skip fenced lines can hand the set in.
  *
  * One home for inline-code-span scanning, next to `fencedLineSet`. `resolver`'s
- * `findImports` and `deadReference`'s dead-import/-script/-path stages each used
- * to carry a `` `[^`]*` `` regex that could not see a span crossing a line
- * break; `_fence.test.ts` pins the shared behaviour, including the wekan
- * `CLAUDE.md:516` case from issue #36.
+ * `findImports` and `deadReference`'s dead-import stage each used to carry a
+ * `` `[^`]*` `` regex that could not see a span crossing a line break;
+ * `deadReference`'s dead-script and dead-path stages read the span interiors via
+ * `inlineCodeSpans` below. `_fence.test.ts` pins the shared behaviour, including
+ * the wekan `CLAUDE.md:516` case from issue #36.
  */
-export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] {
+interface InlineScan {
+  /** 0-based indices of the lines that were scanned (fenced lines excluded). */
+  scanIdx: number[];
+  /** The scanned line texts, in `scanIdx` order. */
+  parts: string[];
+  /** Joined text (`parts` glued with "\n"). */
+  joined: string;
+  /** Per-char flag over `joined`: true inside a code span, delimiters included. */
+  masked: boolean[];
+  /** One entry per closed span: half-open interior range over `joined`. */
+  spans: { innerLo: number; innerHi: number }[];
+}
+
+/** Single pass shared by every inline-code consumer. See `maskInlineCode`. */
+function scanInlineCode(lines: string[], fenced?: Set<number>): InlineScan {
   const fencedSet = fenced ?? fencedLineSet(lines);
   const scanIdx: number[] = [];
   for (let i = 0; i < lines.length; i++) if (!fencedSet.has(i)) scanIdx.push(i);
 
-  // Concatenate the scanned lines with "\n" joiners so a span can cross a line
-  // break, then walk the joined text once.
   const parts = scanIdx.map((i) => lines[i]!);
   const joined = parts.join("\n");
   const masked = new Array<boolean>(joined.length).fill(false);
+  const spans: { innerLo: number; innerHi: number }[] = [];
 
   let i = 0;
   while (i < joined.length) {
@@ -75,6 +89,7 @@ export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] 
         while (j + m < joined.length && joined[j + m] === "`") m++;
         if (m === n) {
           for (let k = i; k < j + n; k++) masked[k] = true;
+          spans.push({ innerLo: i + n, innerHi: j });
           i = j + n;
           closed = true;
           break;
@@ -87,6 +102,11 @@ export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] 
     if (!closed) i += n;
   }
 
+  return { scanIdx, parts, joined, masked, spans };
+}
+
+export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] {
+  const { scanIdx, parts, masked } = scanInlineCode(lines, fenced);
   const out = lines.slice();
   let pos = 0;
   for (let s = 0; s < scanIdx.length; s++) {
@@ -97,4 +117,36 @@ export function maskInlineCode(lines: string[], fenced?: Set<number>): string[] 
     pos += part.length + 1; // +1 for the "\n" joiner
   }
   return out;
+}
+
+/**
+ * Every CommonMark inline code span in `lines`, in source order. `text` is the
+ * span interior with the backtick delimiters stripped; a span that wraps across
+ * a line break keeps its embedded "\n". `line` is the 0-based index of the line
+ * the span opens on. Same backtick-run matching and fenced-line skipping as
+ * `maskInlineCode`; an opener with no matching closer yields no span. This is
+ * the shared replacement for the `` /`([^`]+)`/g `` extraction regexes that
+ * `deadReference`'s dead-path and dead-script stages used to carry.
+ */
+export function inlineCodeSpans(
+  lines: string[],
+  fenced?: Set<number>,
+): { line: number; text: string }[] {
+  const { scanIdx, parts, joined, spans } = scanInlineCode(lines, fenced);
+  // Offset of each scanned part's first char within `joined`.
+  const partStart: number[] = [];
+  let acc = 0;
+  for (const p of parts) {
+    partStart.push(acc);
+    acc += p.length + 1;
+  }
+  const lineOf = (offset: number): number => {
+    let s = 0;
+    while (s + 1 < partStart.length && partStart[s + 1]! <= offset) s++;
+    return scanIdx.length ? scanIdx[s]! : 0;
+  };
+  return spans.map((sp) => ({
+    line: lineOf(sp.innerLo),
+    text: joined.slice(sp.innerLo, sp.innerHi),
+  }));
 }
