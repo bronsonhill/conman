@@ -28,12 +28,7 @@ import { dirname, join, resolve } from "node:path";
 import type { Block, Finding, Severity } from "../types.js";
 import type { Config } from "../config.js";
 import { isDir, isFile } from "../repo.js";
-import { fencedLineSet as fencedLines } from "./_fence.js";
-
-/** Blank out inline `code` spans so their contents are not scanned as prose. */
-function stripInlineCode(line: string): string {
-  return line.replace(/`[^`]*`/g, (s) => " ".repeat(s.length));
-}
+import { fencedLineSet as fencedLines, inlineCodeSpans, maskInlineCode } from "./_fence.js";
 
 const IMPORT_RE = /(?:^|\s)@([^\s`]+)/g;
 
@@ -68,7 +63,6 @@ function looksLikeNpmPackage(ref: string, fileDir: string): boolean {
   return true;
 }
 const SCRIPT_RE = /\b(npm|pnpm|yarn)\s+run\s+([A-Za-z0-9:_.\-]+)/g;
-const INLINE_CODE_RE = /`([^`]+)`/g;
 /** A clean repo-relative path: segments of word/dot/dash, at least one `/`, an
  *  extension on the last segment, no globs, no `..`, not absolute. */
 const PATH_LIKE = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+\.[A-Za-z0-9]{1,8}$/;
@@ -135,13 +129,15 @@ export function findDeadReferences(
     const fileDir = dirname(join(repoRoot, b.source));
     const lines = b.text.split("\n");
     const fenced = fencedLines(lines);
+    // Inline-code spans blanked, including spans that wrap across lines.
+    const masked = maskInlineCode(lines, fenced);
 
     lines.forEach((raw, i) => {
       if (fenced.has(i)) return;
       const ln = b.lineStart + i;
 
       // dead-import
-      const noCode = stripInlineCode(raw);
+      const noCode = masked[i]!;
       IMPORT_RE.lastIndex = 0;
       let m: RegExpExecArray | null;
       while ((m = IMPORT_RE.exec(noCode)) !== null) {
@@ -162,7 +158,9 @@ export function findDeadReferences(
         }
       }
 
-      // dead-script
+      // dead-script. Scans the raw line, not the masked one: `npm run build` is
+      // written in bare prose about as often as in backticks, and masking here
+      // would drop the prose case the check has always caught.
       SCRIPT_RE.lastIndex = 0;
       while ((m = SCRIPT_RE.exec(raw)) !== null) {
         const pm = m[1]!;
@@ -178,27 +176,21 @@ export function findDeadReferences(
           );
         }
       }
-
-      // dead-path (inside backticks only)
-      INLINE_CODE_RE.lastIndex = 0;
-      while ((m = INLINE_CODE_RE.exec(raw)) !== null) {
-        let p = m[1]!.trim().replace(/^\.\//, "");
-        if (!PATH_LIKE.test(p)) continue;
-        if (p.includes("..") || p.startsWith("node_modules/") || p.includes("/node_modules/"))
-          continue;
-        const abs = join(repoRoot, p);
-        if (isFile(abs) || isDir(abs)) continue;
-        if (!dirHasRealFile(dirname(abs))) continue;
-        push(
-          "warn",
-          b.source,
-          ln,
-          `referenced path \`${p}\` does not exist in the repo`,
-          "dead-path",
-          p,
-        );
-      }
     });
+
+    // dead-path reads inline code span interiors only (a repo path the author
+    // set in backticks); the shared scanner pairs backtick runs by length and
+    // follows a span across a line break inside a paragraph.
+    for (const span of inlineCodeSpans(lines, fenced)) {
+      const ln = b.lineStart + span.line;
+      const p = span.text.trim().replace(/^\.\//, "");
+      if (!PATH_LIKE.test(p)) continue;
+      if (p.includes("..") || p.startsWith("node_modules/") || p.includes("/node_modules/")) continue;
+      const abs = join(repoRoot, p);
+      if (isFile(abs) || isDir(abs)) continue;
+      if (!dirHasRealFile(dirname(abs))) continue;
+      push("warn", b.source, ln, `referenced path \`${p}\` does not exist in the repo`, "dead-path", p);
+    }
   }
 
   findings.sort(

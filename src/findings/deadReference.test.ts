@@ -15,8 +15,21 @@ test("dead-ref: a missing @-import is error, a missing prose path and script are
       ["dead-import", "error"],
       ["dead-path", "warn"],
       ["dead-script", "warn"],
+      ["dead-script", "warn"],
     ],
   );
+});
+
+test("dead-ref: a script named in bare prose is caught, not just one in backticks", () => {
+  // dead-script scans the whole line. `npm run lint` sits in backticks in the
+  // fixture and `npm run typecheck` does not; both must flag.
+  const root = fixture("dead-ref");
+  const { analysis } = analyzeEntry(root, { repoRoot: root, config: DEFAULT_CONFIG });
+  const scripts = analysis.findings
+    .filter((f) => f.type === "dead-reference" && f.detail?.["subcase"] === "dead-script")
+    .map((f) => f.detail?.["ref"])
+    .sort();
+  assert.deepEqual(scripts, ["lint", "typecheck"]);
 });
 
 test("dead-ref: npm scoped package names in prose are not dead imports", () => {
@@ -41,7 +54,7 @@ test("dead-reference: gate.dead-reference = 'warn' caps the import case at warn"
   };
   const { analysis } = analyzeEntry(root, { repoRoot: root, config });
   const dr = analysis.findings.filter((f) => f.type === "dead-reference");
-  assert.equal(dr.length, 4);
+  assert.equal(dr.length, 5);
   assert.ok(dr.every((f) => f.severity === "warn"));
 });
 

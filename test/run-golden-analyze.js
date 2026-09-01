@@ -59,6 +59,13 @@ registerGolden("golden/analyze", [
     args: ["test/fixtures/dead-ref", "--repo-root", "test/fixtures/dead-ref", "--json"],
   },
   {
+    // Issue #36: `@token` inside an inline code span (incl. spans that wrap
+    // across lines) is not an @-import and must not be flagged. Expect a clean
+    // report with zero findings.
+    name: "analyze-inline-code-ref",
+    args: ["test/fixtures/inline-code-ref", "--repo-root", "test/fixtures/inline-code-ref"],
+  },
+  {
     name: "analyze-per-file-budget",
     args: ["test/fixtures/per-file-budget", "--repo-root", "test/fixtures/per-file-budget"],
   },
