@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.6` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.7` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -451,12 +451,44 @@ visible, not a standard. Override them per repo in `conman.json`.
 
 | Key                    | Default | Reasoning |
 |------------------------|---------|-----------|
-| `budget.total`         | 12000   | A stack in the low thousands of tokens leaves the context window mostly for the session. 12k is a soft ceiling that a healthy small-to-mid repo stays well under. |
+| `budget.total`         | 12000   | Ceiling on the whole resolved stack per entry point. Calibrated on the resolved-stack size distribution across the pinned corpus and the 2026-08 survey sample (see below): the two samples are bimodal — healthy small-to-mid repos top out near 5–7k tokens per entry point, overgrown stacks start at ~18k, and nothing lands in between. 12k sits in that empty band, so it clears every healthy stack with 2x-plus headroom and flags every overgrown one. Any value in 8k–18k splits the samples identically; 12k is the round number in the middle. Pinned to `MODEL_VERSION` for re-review. |
 | `budget.perFile`       | 4000    | Roughly a third of the total: no single memory file should dominate the stack. Enforced as the **per-file-budget** finding (**warn**). Calibrated on the 2026-08 survey sample (25 repos with a resolved stack): 5 of 25 have a file over 4000 tokens; lowering to 2000 would flag 14 of 25. Pinned to `MODEL_VERSION` for re-review. |
 | `budget.skillIndex`    | 1000    | **Cost line for the skill index.** The listing is pure overhead paid every session. Enforced as the **skill-index-budget** finding (**warn**). Calibrated on the same sample: every skill index but one is under 300 tokens, one repo is at ~1016; 1000 flags that outlier and clears a ~12-entry terse index. `max-skills` is the separate count line. Pinned to `MODEL_VERSION` for re-review. |
 | `maxSkills`            | 8       | **Performance line for the skill index**, complementary to `budget.skillIndex` — a count cap, not a token cap. A repo can sit under the token cap and still list enough skills that selection accuracy drops. The number is **transferred from tool / function-selection research** — arXiv 2605.24660 ("How Many Tools Should an LLM Agent See?", knee around 7 to 8) and Anthropic's "advanced tool use" post (retrieve rather than list past ~10 tools, keep 3 to 5 always loaded) — and is **not measured on Claude Code skill indexes**. `gate["max-skills"]` is a ceiling: 9 to 15 skills warn, more than 15 error. Pinned to the `MODEL_VERSION` / "Accurate as of" anchor for re-review as models change: the tool-selection penalty shrinks across model releases (Opus 4: 49% to 74% with retrieval; Opus 4.5: 79.5% to 88.1%), so this knee moves. |
 | `safetyMargin`         | 0.1     | The local tokenizer is an estimate (see below). The gate compares against `total * (1 - margin)` so a stack near the line fails before the real count would. |
 | `resolve.importDepthLimit` | 5   | Matches Claude Code's documented import hop limit. |
+
+### Where `budget.total` = 12,000 comes from
+
+The other calibrated rows count how many real repos cross a candidate per-part
+cap. `budget.total` is a whole-stack ceiling, so the evidence is the
+distribution of resolved-stack sizes per entry point, taken from two samples
+already in the tree:
+
+- **Pinned corpus** (`data/conman-corpus-map-reports/report.md`,
+  `test/corpus-digest.json`): 11 repos, 123 entry points. Median resolved stack
+  4,270 tokens. Eight repos resolve every entry point under ~5.5k
+  (`llm` 0, `lila` 1,814, `humanlayer` ~1.7k, `motrix` ~2–3k, `cockroach`
+  ~2.7–5.5k, `ack-nestjs-boilerplate` ~5.5k, `inbox-zero` 5,566,
+  `vercel-ai` 7,918). The other three jump straight past 18k: `firstmate`
+  18,299, `ruflo` entry points 22k–31k, `posthog` 25k–39k.
+- **2026-08 survey** (`docs/survey-2026-08.md`): 9 repos. Same shape — the
+  largest healthy stack is `rust-lang/rust` at 6,943 across two entry points;
+  everything else is either under 1.6k or in the tens of thousands.
+
+Both samples are bimodal with an empty band between roughly 7k and 18k tokens.
+`budget.total` only has to fall inside that gap: below it, healthy stacks would
+warn; above 18k, the overgrown ones would not. 12,000 is the round midpoint,
+with ~1.7x headroom over the largest healthy stack in either sample and a wide
+margin below the smallest overgrown one. Re-measuring would have to move a
+whole cluster to shift the number, so it is pinned to `MODEL_VERSION` rather
+than to any single sweep.
+
+This is a size-distribution knee, not a task-accuracy knee. The
+model-in-the-loop retrieval-degradation sweep in `eval/budget-calibration/`
+(procedure in `docs/budget-calibration.md`) is the way to put a behavioural
+number behind this ceiling; it needs `ANTHROPIC_API_KEY` and has not been run.
+If it ever is, cite its knee here alongside the distribution.
 
 ## The tokenizer is an estimate
 
@@ -530,6 +562,20 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.7** — `budget.total` default gains an empirical basis. Unchanged at
+  12,000.
+
+  The last qualitative default. The `budget.total` row was a soft-ceiling
+  assertion; it is now backed by the resolved-stack size distribution across
+  the pinned corpus (123 entry points) and the 2026-08 survey sample. Both are
+  bimodal — healthy small-to-mid repos resolve to under ~7k tokens per entry
+  point, overgrown stacks to 18k and up, with an empty band between — so any
+  ceiling in 8k–18k partitions the samples the same way and 12,000 is the round
+  midpoint. See "Where `budget.total` = 12,000 comes from". No resolution or
+  gate behaviour changes; the version bump re-pins the default for review the
+  way the 0.4 caps are pinned. Goldens re-pinned for the `modelVersion` string
+  only.
 
 - **0.6** — `paths` glob brace lists are expanded.
 

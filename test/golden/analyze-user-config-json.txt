@@ -35,7 +35,7 @@
   "findings": [],
   "machineSpecific": true,
   "mode": "stack",
-  "modelVersion": "0.6",
+  "modelVersion": "0.7",
   "notes": [
     "machine-specific: --user pulled in this machine's ~/.claude config; this report will not reproduce on another machine",
     "excluded by settings claudeMdExcludes: skip/CLAUDE.md"

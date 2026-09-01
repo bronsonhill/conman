@@ -124,7 +124,7 @@
   ],
   "machineSpecific": false,
   "mode": "stack",
-  "modelVersion": "0.6",
+  "modelVersion": "0.7",
   "notes": [
     "excluded by settings claudeMdExcludes: services/CLAUDE.md",
     "excluded by settings claudeMdExcludes: .claude/rules/excluded.md",
