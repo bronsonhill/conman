@@ -2,6 +2,7 @@
 conman VERSION  model 0.6  tokenizer claude-local
 entry: .   mode: stack
 config: conman.json
+tokenizer: claude-local (estimate; see README "How accurate is the token estimate?")
 
 LOAD ORDER
   #    kind         source      lines         tokens

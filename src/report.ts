@@ -27,6 +27,9 @@ export function renderHuman(ctx: RenderContext): string {
   );
   out.push(`entry: ${a.entry || "."}   mode: ${ctx.mode}`);
   out.push(`config: ${ctx.configSource ?? "(built-in defaults)"}`);
+  out.push(
+    `tokenizer: ${a.tokenizer} (estimate; see README "How accurate is the token estimate?")`,
+  );
   if (ctx.machineSpecific) {
     out.push(
       "scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)",
@@ -144,6 +147,8 @@ export function renderJson(ctx: RenderContext): string {
     configSource: ctx.configSource,
     entry: ctx.analysis.entry,
     tokenizer: ctx.analysis.tokenizer,
+    tokenizerNote:
+      'estimate; see README "How accurate is the token estimate?"',
     blocks: ctx.analysis.blocks.map((b) => ({
       id: b.id,
       kind: b.kind,
