@@ -69,6 +69,7 @@
     "reasons": []
   },
   "tokenizer": "claude-local",
+  "tokenizerNote": "estimate; see README \"How accurate is the token estimate?\"",
   "tool": "conman",
   "toolVersion": "0.1.0",
   "totals": {

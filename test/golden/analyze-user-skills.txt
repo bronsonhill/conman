@@ -2,6 +2,7 @@
 conman VERSION  model 0.6  tokenizer claude-local
 entry: .   mode: stack
 config: (built-in defaults)
+tokenizer: claude-local (estimate; see README "How accurate is the token estimate?")
 scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)
 
 LOAD ORDER
