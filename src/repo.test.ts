@@ -1,6 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { expandBraces, globToRegExp, matchesAnyGlob } from "./repo.js";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  expandBraces,
+  globToRegExp,
+  matchesAnyGlob,
+  walkFilesRecursive,
+} from "./repo.js";
 
 test("globToRegExp: * stays within a segment", () => {
   assert.match("src/a.ts", globToRegExp("src/*.ts"));
@@ -56,4 +64,37 @@ test("matchesAnyGlob: brace lists match the way Claude Code expands them", () =>
   assert.equal(matchesAnyGlob("src/main/app.js", ["src/**/*.{ts,tsx}"]), false);
   assert.equal(matchesAnyGlob("src/renderer", ["src/{main,renderer}"]), true);
   assert.equal(matchesAnyGlob("app/api", ["src/{main,renderer}"]), false);
+});
+
+test("walkFilesRecursive: recurses, filters by suffix, sorts, and honours relTo", () => {
+  const root = mkdtempSync(join(tmpdir(), "conman-walk-"));
+  try {
+    mkdirSync(join(root, "rules/nested/deep"), { recursive: true });
+    writeFileSync(join(root, "rules/b.md"), "b");
+    writeFileSync(join(root, "rules/a.md"), "a");
+    writeFileSync(join(root, "rules/skip.txt"), "x");
+    writeFileSync(join(root, "rules/nested/c.md"), "c");
+    writeFileSync(join(root, "rules/nested/deep/d.md"), "d");
+
+    assert.deepEqual(walkFilesRecursive(join(root, "rules"), { ext: ".md" }), [
+      "a.md",
+      "b.md",
+      "nested/c.md",
+      "nested/deep/d.md",
+    ]);
+    // A directory named like a match is not reported (isFile guard).
+    mkdirSync(join(root, "rules/weird.md"));
+    assert.ok(
+      !walkFilesRecursive(join(root, "rules"), { ext: ".md" }).includes("weird.md"),
+    );
+    // relTo returns repo-relative POSIX paths.
+    assert.deepEqual(
+      walkFilesRecursive(join(root, "rules/nested"), { ext: ".md", relTo: root }),
+      ["rules/nested/c.md", "rules/nested/deep/d.md"],
+    );
+    // A missing directory is swallowed, not thrown.
+    assert.deepEqual(walkFilesRecursive(join(root, "nope"), { ext: ".md" }), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

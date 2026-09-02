@@ -28,6 +28,7 @@ FINDINGS  (1 error, 0 warn)
          identical 29-token block "Run `npm ci` then `npm test` before every push. Keep each ch…" appears in 2 files (29 redundant tokens, relation: parent-child)
 
 NOTES
+  - .github/instructions/backend/api.instructions.md is applyTo-scoped (src/backend/**); did not match entry .
   - .github/instructions/frontend.instructions.md is applyTo-scoped (src/frontend/**); did not match entry .
 
 RESULT  fail

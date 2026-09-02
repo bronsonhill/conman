@@ -21,9 +21,17 @@ import type { Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { analyzeEntry } from "./analyze.js";
 import { parseFrontmatter } from "./frontmatter.js";
-import { expandBraces, isDir, isFile, matchesAnyGlob, relPosix } from "./repo.js";
+import {
+  expandBraces,
+  isDir,
+  isFile,
+  matchesAnyGlob,
+  relPosix,
+  walkFilesRecursive,
+} from "./repo.js";
 import { getTokenizer } from "./tokenizer.js";
-import { MEMORY_NAMES, RULE_SCOPE_KEY, toStringArray } from "./claudeContext.js";
+import { toStringArray } from "./claudeContext.js";
+import { AGENT_RULE_SPEC } from "./agent.js";
 
 const ALWAYS_SKIP = new Set([".git", "node_modules", "dist", ".treehouse"]);
 
@@ -81,23 +89,14 @@ export function discoverEntryPoints(
   agent: Agent = "claude",
 ): DiscoveredEntry[] {
   const root = resolve(repoRoot);
-  // Claude Code special-cases CLAUDE.md; every other agent keys off AGENTS.md.
-  const memoryNames = agent === "claude" ? MEMORY_NAMES : ["AGENTS.md"];
-  // Which rule directory path-scopes entry points, and on which frontmatter key.
-  // Codex and Copilot have no path-scoped rule mechanism conman models.
-  const ruleSpec =
-    agent === "claude"
-      ? { dotDir: ".claude", rulesDir: "rules", ext: ".md", key: "paths" }
-      : agent === "cursor"
-        ? { dotDir: ".cursor", rulesDir: "rules", ext: ".mdc", key: "globs" }
-        : agent === "copilot"
-          ? {
-              dotDir: ".github",
-              rulesDir: "instructions",
-              ext: ".instructions.md",
-              key: "applyTo",
-            }
-          : null;
+  // One table carries the per-agent knowledge both this stage and the resolver
+  // need: which memory files mark an entry point, and which rule directory
+  // path-scopes one (Codex has no such mechanism conman models, so `rules` is
+  // null). Claude Code special-cases CLAUDE.md; every other agent keys off
+  // AGENTS.md.
+  const spec = AGENT_RULE_SPEC[agent];
+  const memoryNames = spec.memoryNames;
+  const rules = spec.rules;
   // Keyed by repo-relative POSIX path so entries dedupe regardless of how the
   // directory was reached.
   const reasons = new Map<string, Set<DiscoverySource>>();
@@ -141,9 +140,9 @@ export function discoverEntryPoints(
       if (present.has(name) && isFile(join(dir, name))) note(dir, "memory-file");
     }
     if (
-      ruleSpec &&
-      basename(dir) === ruleSpec.rulesDir &&
-      basename(dirname(dir)) === ruleSpec.dotDir
+      rules &&
+      basename(dir) === rules.ruleDir &&
+      basename(dirname(dir)) === rules.dotDir
     ) {
       ruleDirs.push(dir);
     }
@@ -160,64 +159,38 @@ export function discoverEntryPoints(
 
   // Claude Code (v2.1.251) discovers `.claude/rules/` files recursively, so a
   // rule in `frontend/` or `backend/` path-scopes entry points just like a
-  // top-level one. Cursor/Copilot stay flat here (best-effort).
-  const listRuleFiles = (rdir: string): string[] => {
-    if (agent !== "claude") {
-      return readdirSync(rdir)
-        .filter((f) => f.endsWith(ruleSpec!.ext))
-        .sort();
-    }
-    const out: string[] = [];
-    const walkRules = (d: string, prefix: string) => {
-      let names: string[];
-      try {
-        names = readdirSync(d).sort();
-      } catch {
-        return;
-      }
-      for (const n of names) {
-        const abs = join(d, n);
-        const rel = prefix ? `${prefix}/${n}` : n;
-        if (isDir(abs)) walkRules(abs, rel);
-        else if (n.endsWith(ruleSpec!.ext)) out.push(rel);
-      }
-    };
-    walkRules(rdir, "");
-    return out.sort();
-  };
-
-  for (const rdir of ruleSpec ? ruleDirs.sort() : []) {
-    let files: string[];
-    try {
-      files = listRuleFiles(rdir);
-    } catch {
-      continue;
-    }
-    for (const f of files) {
-      const abs = join(rdir, f);
-      if (!isFile(abs)) continue;
-      let patterns: string[];
-      try {
-        const fm = parseFrontmatter(readFileSync(abs, "utf8"));
-        patterns = toStringArray(fm.data[ruleSpec!.key]);
-        // Copilot's `applyTo` is one comma-separated string of globs.
-        if (agent === "copilot") {
-          patterns = patterns
-            .flatMap((s) => s.split(","))
-            .map((s) => s.trim())
-            .filter(Boolean);
+  // top-level one. The shared walk always recurses; Cursor/Copilot rule dirs
+  // are shallow in practice, and Copilot's own docs scope nested
+  // `.github/instructions/**/*.instructions.md`, so recursing is correct there
+  // too and keeps discovery in step with the resolver.
+  if (rules) {
+    for (const rdir of ruleDirs.sort()) {
+      const files = walkFilesRecursive(rdir, { ext: rules.ruleExt });
+      for (const f of files) {
+        const abs = join(rdir, f);
+        let patterns: string[];
+        try {
+          const fm = parseFrontmatter(readFileSync(abs, "utf8"));
+          patterns = toStringArray(fm.data[rules.scopeKey]);
+          // Copilot's `applyTo` is one comma-separated string of globs.
+          if (rules.applyToIsCommaList) {
+            patterns = patterns
+              .flatMap((s) => s.split(","))
+              .map((s) => s.trim())
+              .filter(Boolean);
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        continue;
-      }
-      for (const rawPat of patterns) {
-        // Claude Code expands `{a,b}` brace lists into separate patterns; each
-        // alternative can scope its own entry-point directory.
-        for (const pat of expandBraces(rawPat)) {
-          if (pat === "**") continue; // scopes to everything: no scope at all
-          const rel = globToEntryDir(root, pat);
-          if (!rel || rel === ".") continue;
-          note(resolve(root, rel), "rule-path");
+        for (const rawPat of patterns) {
+          // Claude Code expands `{a,b}` brace lists into separate patterns; each
+          // alternative can scope its own entry-point directory.
+          for (const pat of expandBraces(rawPat)) {
+            if (pat === "**") continue; // scopes to everything: no scope at all
+            const rel = globToEntryDir(root, pat);
+            if (!rel || rel === ".") continue;
+            note(resolve(root, rel), "rule-path");
+          }
         }
       }
     }
