@@ -33,6 +33,11 @@ export interface Config {
   ignore: string[];
 }
 
+// The four budget defaults below (budget.total / perFile / skillIndex and
+// maxSkills) are calibrated in MODEL.md's "Default budget numbers, and why"
+// section and pinned to MODEL_VERSION (src/types.ts): re-review these literals
+// against that section on every MODEL_VERSION bump. src/modelDoc.test.ts guards
+// the anchor prose; the calibration itself is a manual re-check.
 export const DEFAULT_CONFIG: Config = {
   budget: {
     total: 12000,
