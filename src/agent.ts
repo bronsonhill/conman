@@ -7,6 +7,7 @@
 // (best-effort)".
 
 import { ANCHOR } from "./anchor.js";
+import { MEMORY_NAMES } from "./claudeContext.js";
 
 export type Agent = "claude" | "codex" | "cursor" | "copilot";
 
@@ -28,6 +29,62 @@ export const AGENT_VERIFICATION: Record<Agent, AgentVerification> = {
   codex: { anchored: false },
   cursor: { anchored: false },
   copilot: { anchored: false },
+};
+
+// Per-agent knowledge that both entry-point discovery (`src/map.ts`) and the
+// resolver (`src/resolver/`) need, kept in one place so the two stages cannot
+// drift. `rules` is null for an agent conman models no path-scoped rule
+// mechanism for (Codex).
+export interface AgentRules {
+  /** `.<dotDir>/<ruleDir>/` holds the path-scoped rule files. */
+  dotDir: string;
+  ruleDir: string;
+  /** Filename suffix of a rule file in that directory. */
+  ruleExt: string;
+  /** Frontmatter key that path-scopes a rule. */
+  scopeKey: string;
+  /** The scope value is one comma-separated string of globs (Copilot `applyTo`). */
+  applyToIsCommaList: boolean;
+}
+
+export interface AgentRuleSpec {
+  /** Memory file names that mark a directory an entry point, in load order. */
+  memoryNames: readonly string[];
+  rules: AgentRules | null;
+}
+
+export const AGENT_RULE_SPEC: Record<Agent, AgentRuleSpec> = {
+  claude: {
+    memoryNames: MEMORY_NAMES,
+    rules: {
+      dotDir: ".claude",
+      ruleDir: "rules",
+      ruleExt: ".md",
+      scopeKey: "paths",
+      applyToIsCommaList: false,
+    },
+  },
+  codex: { memoryNames: ["AGENTS.md"], rules: null },
+  cursor: {
+    memoryNames: ["AGENTS.md"],
+    rules: {
+      dotDir: ".cursor",
+      ruleDir: "rules",
+      ruleExt: ".mdc",
+      scopeKey: "globs",
+      applyToIsCommaList: false,
+    },
+  },
+  copilot: {
+    memoryNames: ["AGENTS.md"],
+    rules: {
+      dotDir: ".github",
+      ruleDir: "instructions",
+      ruleExt: ".instructions.md",
+      scopeKey: "applyTo",
+      applyToIsCommaList: true,
+    },
+  },
 };
 
 /**

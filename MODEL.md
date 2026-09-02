@@ -640,6 +640,17 @@ checked.
   surface new entry points in `map`, hence the version bump. Cursor `.mdc` and
   Copilot paths are untouched.
 
+  A later refactor (no model-version bump) pulled the three separate recursive
+  walks — `collectRuleBlocks`, `collectCopilotInstructions`, and `map.ts` entry
+  discovery — behind one helper, `walkFilesRecursive` in `src/repo.ts`, and
+  lifted the per-agent rule spec (`memoryNames`, `dotDir`, `ruleDir`, `ruleExt`,
+  `scopeKey`) into `AGENT_RULE_SPEC` in `src/agent.ts`, read by both `map.ts`
+  and the resolver. As a side effect `conman map` discovery for `--agent cursor`
+  / `--agent copilot` now recurses, matching the resolver: a nested
+  `.github/instructions/**/*.instructions.md` (the layout GitHub's own docs use)
+  can now surface an entry point in `map`, where before only the resolver saw
+  it.
+
 - **0.8** — `dead-reference` gains a `dead-link` sub-source.
 
   The dead-path scanner only ever looked inside backticks. A markdown link

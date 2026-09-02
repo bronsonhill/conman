@@ -4,8 +4,8 @@
 // and testable. The matcher expands `{a,b}` brace lists the way Claude Code
 // (via minimatch) does before matching each alternative literally.
 
-import { existsSync, statSync } from "node:fs";
-import { dirname, relative, resolve, sep } from "node:path";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 export function findRepoRoot(startDir: string): string {
   let dir = resolve(startDir);
@@ -37,6 +37,43 @@ export function isFile(p: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Depth-first list of files under `dir` whose name ends with one of `ext`,
+ * recursively. Directory listings are sorted at every level and the final list
+ * is sorted again, so output is deterministic regardless of on-disk order. A
+ * `readdirSync` that throws (missing dir, `dir` is a file, permission) ends that
+ * subtree quietly and the walk continues with the siblings. Each hit is checked
+ * with `isFile` so a directory named `foo.md` is not reported.
+ *
+ * With `relTo`, paths come back repo-relative POSIX (`relPosix(relTo, abs)`);
+ * without it, they are `/`-joined relative to `dir`.
+ */
+export function walkFilesRecursive(
+  dir: string,
+  opts: { ext: string | readonly string[]; relTo?: string },
+): string[] {
+  const exts = typeof opts.ext === "string" ? [opts.ext] : opts.ext;
+  const out: string[] = [];
+  const walk = (d: string, prefix: string) => {
+    let names: string[];
+    try {
+      names = readdirSync(d).sort();
+    } catch {
+      return;
+    }
+    for (const n of names) {
+      const abs = join(d, n);
+      const rel = prefix ? `${prefix}/${n}` : n;
+      if (isDir(abs)) walk(abs, rel);
+      else if (exts.some((e) => n.endsWith(e)) && isFile(abs)) {
+        out.push(opts.relTo ? relPosix(opts.relTo, abs) : rel);
+      }
+    }
+  };
+  walk(dir, "");
+  return out.sort();
 }
 
 /**

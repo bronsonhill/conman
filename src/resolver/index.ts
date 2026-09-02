@@ -20,7 +20,7 @@
 import { readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Block } from "../types.js";
-import type { Agent } from "../agent.js";
+import { AGENT_RULE_SPEC, type Agent } from "../agent.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "../repo.js";
@@ -366,6 +366,9 @@ function resolveNonClaude(
   }
 
   const blocks: Omit<Block, "id" | "tokens">[] = [];
+  // Same per-agent table `conman map` reads, so discovery and resolution cannot
+  // disagree on directory names or the rule extension.
+  const spec = AGENT_RULE_SPEC[agent];
 
   // Copilot: the repo-wide `.github/copilot-instructions.md`, first.
   if (agent === "copilot") {
@@ -385,24 +388,26 @@ function resolveNonClaude(
   // first, entry-closest last. No CLAUDE.md special-casing.
   const dirs = ancestorDirs(entryDir, repoRoot, config.resolve.repoBoundary);
   for (const dir of dirs) {
-    const abs = join(dir, "AGENTS.md");
-    if (!isFile(abs)) continue;
-    const rel = relPosix(repoRoot, abs);
-    if (ctx.seen.has(rel)) continue;
-    blocks.push(
-      ...resolveFileBlocks(abs, "memory", 0, undefined, new Set(), ctx),
-    );
+    for (const name of spec.memoryNames) {
+      const abs = join(dir, name);
+      if (!isFile(abs)) continue;
+      const rel = relPosix(repoRoot, abs);
+      if (ctx.seen.has(rel)) continue;
+      blocks.push(
+        ...resolveFileBlocks(abs, "memory", 0, undefined, new Set(), ctx),
+      );
+    }
   }
 
   // Copilot: `.github/instructions/*.instructions.md`, after the repo-wide
   // instructions and the AGENTS.md walk. Always-on (`applyTo: **` or absent)
   // before matched path-scoped, mirroring the Claude/Cursor rule order.
-  if (agent === "copilot") {
+  if (agent === "copilot" && spec.rules) {
     const entryTargetPosix = entryIsMemoryFile
       ? relPosix(repoRoot, entryDir)
       : entryPosix;
     const { always, scoped } = collectCopilotInstructions(
-      join(repoRoot, ".github", "instructions"),
+      join(repoRoot, spec.rules.dotDir, spec.rules.ruleDir),
       entryTargetPosix || ".",
       ctx,
     );
@@ -410,14 +415,14 @@ function resolveNonClaude(
   }
 
   // Cursor: legacy `.cursorrules` (repo root, always-on) then `.cursor/rules/*.mdc`.
-  if (agent === "cursor") {
+  if (agent === "cursor" && spec.rules) {
     const legacy = join(repoRoot, ".cursorrules");
     if (isFile(legacy)) {
       blocks.push(
         ...resolveFileBlocks(legacy, "rule-always", 0, undefined, new Set(), ctx),
       );
     }
-    const cursorDirs = findDirsNamed(entryDir, repoRoot, ".cursor");
+    const cursorDirs = findDirsNamed(entryDir, repoRoot, spec.rules.dotDir);
     const entryTargetPosix = entryIsMemoryFile
       ? relPosix(repoRoot, entryDir)
       : entryPosix;

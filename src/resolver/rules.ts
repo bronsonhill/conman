@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { Block } from "../types.js";
-import { isDir, isFile, matchesAnyGlob, relPosix } from "../repo.js";
+import { isDir, isFile, matchesAnyGlob, relPosix, walkFilesRecursive } from "../repo.js";
 import { parseFrontmatter } from "../frontmatter.js";
 import { RULE_SCOPE_KEY, toStringArray } from "../claudeContext.js";
 import { USER_RULES_LABEL } from "./settings.js";
@@ -26,33 +26,6 @@ export function findClaudeDirs(entryDir: string, repoRoot: string): string[] {
   return dirs.reverse(); // root-most first
 }
 
-/**
- * `*.md` under a `.claude/rules/` directory, recursively, as `/`-joined paths
- * relative to `rdir`, sorted. Claude Code (v2.1.251) discovers rules files
- * recursively, so a rule at `.claude/rules/frontend/react.md` loads just like a
- * top-level one; see MODEL.md. Directory listings are sorted at every level and
- * the final list is sorted by full relative path, keeping output deterministic.
- */
-function findRuleFiles(rdir: string): string[] {
-  const out: string[] = [];
-  const walk = (d: string, prefix: string) => {
-    let names: string[];
-    try {
-      names = readdirSync(d).sort();
-    } catch {
-      return;
-    }
-    for (const n of names) {
-      const abs = join(d, n);
-      const rel = prefix ? `${prefix}/${n}` : n;
-      if (isDir(abs)) walk(abs, rel);
-      else if (n.endsWith(".md") && isFile(abs)) out.push(rel);
-    }
-  };
-  walk(rdir, "");
-  return out.sort();
-}
-
 export function collectRuleBlocks(
   claudeDirs: string[],
   entryTargetPosix: string,
@@ -66,10 +39,12 @@ export function collectRuleBlocks(
     const isUserDir = userConfigDir !== undefined && cdir === userConfigDir;
     const rdir = join(cdir, "rules");
     if (!isDir(rdir)) continue;
-    const entries = findRuleFiles(rdir);
+    // Claude Code (v2.1.251) discovers rules files recursively, so a rule at
+    // `.claude/rules/frontend/react.md` loads just like a top-level one; see
+    // MODEL.md. `walkFilesRecursive` already filtered to real `.md` files.
+    const entries = walkFilesRecursive(rdir, { ext: ".md" });
     for (const f of entries) {
       const abs = join(rdir, f);
-      if (!isFile(abs)) continue;
       // User-level rules (`~/.claude/rules/`, only with `--user`) are labelled
       // with the stable `~/.claude/rules/<file>` path so the report stays
       // machine-independent; `claudeMdExcludes` globs are repo-relative and so
@@ -191,29 +166,6 @@ export function collectCursorRules(
   return { always, scoped };
 }
 
-/** `*.instructions.md` under `dir`, recursively, as repo-relative POSIX paths, sorted. */
-function findInstructionFiles(dir: string, repoRoot: string): string[] {
-  if (!isDir(dir)) return [];
-  const out: string[] = [];
-  const walk = (d: string) => {
-    let names: string[];
-    try {
-      names = readdirSync(d).sort();
-    } catch {
-      return;
-    }
-    for (const n of names) {
-      const abs = join(d, n);
-      if (isDir(abs)) walk(abs);
-      else if (n.endsWith(".instructions.md") && isFile(abs)) {
-        out.push(relPosix(repoRoot, abs));
-      }
-    }
-  };
-  walk(dir);
-  return out.sort();
-}
-
 /**
  * GitHub Copilot's `.github/instructions/*.instructions.md` path-scoped files.
  * The `applyTo` frontmatter is one or more comma-separated file globs; conman
@@ -235,7 +187,11 @@ export function collectCopilotInstructions(
 ): { always: Omit<Block, "id" | "tokens">[]; scoped: Omit<Block, "id" | "tokens">[] } {
   const always: Omit<Block, "id" | "tokens">[] = [];
   const scoped: Omit<Block, "id" | "tokens">[] = [];
-  for (const rel of findInstructionFiles(instrDir, ctx.repoRoot)) {
+  const instrFiles = walkFilesRecursive(instrDir, {
+    ext: ".instructions.md",
+    relTo: ctx.repoRoot,
+  });
+  for (const rel of instrFiles) {
     const abs = join(ctx.repoRoot, rel);
     const text = readFileSync(abs, "utf8");
     const fm = parseFrontmatter(text);

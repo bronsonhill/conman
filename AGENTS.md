@@ -50,10 +50,13 @@ run procedure.
   supplies the SARIF rule descriptions — keep its citations in sync with
   README's "What the research says". `cli.ts` is arg-parse and dispatch only; `validateArgs()` there rejects
 flag/command mismatches and a non-numeric `--budget` before any work runs.
-`agent.ts` is the `--agent` enum;
-`resolver/index.ts`'s `resolveNonClaude` and `map.ts`'s agent-keyed discovery
-hold the best-effort non-Claude rulesets, and the `agent === "claude"` path is
-guaranteed byte-identical (early-return before any shared code). `resolver/` is
+`agent.ts` is the `--agent` enum plus `AGENT_RULE_SPEC`, the per-agent table
+(`memoryNames`, `dotDir`/`ruleDir`/`ruleExt`, `scopeKey`) both `map.ts` and
+`resolver/index.ts`'s `resolveNonClaude` read so they cannot drift.
+`resolveNonClaude` and `map.ts`'s agent-keyed discovery hold the best-effort
+non-Claude rulesets; the `agent === "claude"` path is guaranteed byte-identical
+(early-return before any shared code). `walkFilesRecursive` in `repo.ts` is the
+one sorted recursive rule-file walk, shared by resolver and `map`. `resolver/` is
 one file per stage (`settings`, `imports`, `rules`, `skills`, `agentsMd`) behind
 `index.ts`, which re-exports the public API (`resolveStack`, `loadSettings`, the
 result types). Most renderers are pure
