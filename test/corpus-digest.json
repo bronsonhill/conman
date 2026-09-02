@@ -1,6 +1,6 @@
 {
   "tool": "conman",
-  "modelVersion": "0.6",
+  "modelVersion": "0.9",
   "repos": [
     {
       "repo": "llm",
