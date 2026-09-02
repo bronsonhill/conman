@@ -2,7 +2,9 @@
 // across all of them, so a monorepo can be taken in one pass.
 //
 // A directory is an entry point when either:
-//   - it contains a CLAUDE.md or an AGENTS.md (or it is the repo root), or
+//   - it contains a CLAUDE.md, a CLAUDE.local.md, or an AGENTS.md (or it is the
+//     repo root) — a gitignored CLAUDE.local.md alone still marks the directory
+//     an entry point for the developer who has one, or
 //   - a `.claude/rules/` file path-scopes to it via `paths` — the directory a
 //     glob like `src/renderer/**` points at, even with no memory file of its
 //     own. This is the shape `conman map` on Motrix used to miss: `src/main`

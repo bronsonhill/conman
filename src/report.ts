@@ -13,7 +13,10 @@ export interface RenderContext {
   notes: string[];
   mode: "stack" | "single-file";
   toolVersion: string;
-  /** `--user` was in effect: the stack includes machine-local `~/.claude` config. */
+  /**
+   * The stack includes machine-local config that CI never sees: `--user`'s
+   * `~/.claude` files, or a gitignored `CLAUDE.local.md` in the checkout.
+   */
   machineSpecific?: boolean;
 }
 
@@ -32,7 +35,7 @@ export function renderHuman(ctx: RenderContext): string {
   );
   if (ctx.machineSpecific) {
     out.push(
-      "scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)",
+      "scope: machine-specific (includes machine-local config: ~/.claude user config and/or a gitignored CLAUDE.local.md; not reproducible on another machine)",
     );
   }
   out.push("");

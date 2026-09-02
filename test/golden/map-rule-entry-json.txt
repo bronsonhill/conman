@@ -515,7 +515,7 @@
       "tokenizer": "claude-local"
     }
   ],
-  "modelVersion": "0.9",
+  "modelVersion": "0.10",
   "pass": true,
   "pathScopedRuleNotes": [
     "rule .claude/rules/brace.md is path-scoped (pkg/{cli,core}/**); did not match 8 entry points",

@@ -5,47 +5,40 @@
       "depth": 0,
       "id": "b1",
       "kind": "memory",
-      "lineEnd": 19,
+      "lineEnd": 6,
       "lineStart": 1,
       "source": "CLAUDE.md",
-      "tokens": 242,
+      "tokens": 42,
+      "via": null
+    },
+    {
+      "depth": 0,
+      "id": "b2",
+      "kind": "memory",
+      "lineEnd": 6,
+      "lineStart": 1,
+      "source": "CLAUDE.local.md",
+      "tokens": 53,
       "via": null
     }
   ],
   "budget": {
-    "delta": -3358,
-    "effective": 3600,
+    "delta": -1705,
+    "effective": 1800,
     "overBudget": false,
     "safetyMargin": 0.1,
-    "stackTotal": 242,
-    "total": 4000
+    "stackTotal": 95,
+    "total": 2000
   },
   "configSource": "conman.json",
   "entry": ".",
-  "findings": [
-    {
-      "detail": {
-        "cap": 150,
-        "file": "CLAUDE.md",
-        "tokens": 242
-      },
-      "locations": [
-        {
-          "file": "CLAUDE.md",
-          "lineEnd": 1,
-          "lineStart": 1
-        }
-      ],
-      "message": "CLAUDE.md contributes 242 tokens to the resolved stack, over the 150-token per-file budget",
-      "severity": "warn",
-      "tokens": 242,
-      "type": "per-file-budget"
-    }
-  ],
-  "machineSpecific": false,
+  "findings": [],
+  "machineSpecific": true,
   "mode": "stack",
   "modelVersion": "0.10",
-  "notes": [],
+  "notes": [
+    "machine-specific: CLAUDE.local.md is Claude Code's gitignored personal memory; it loads in a desk-run session but not in CI, so this report will not reproduce elsewhere"
+  ],
   "redundant": {
     "pctOfStack": 0,
     "tokens": 0
@@ -60,9 +53,10 @@
   "toolVersion": "0.1.0",
   "totals": {
     "perFile": {
-      "CLAUDE.md": 242
+      "CLAUDE.local.md": 53,
+      "CLAUDE.md": 42
     },
     "skillIndexTokens": 0,
-    "stackTokens": 242
+    "stackTokens": 95
   }
 }

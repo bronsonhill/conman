@@ -27,6 +27,23 @@ registerGolden("golden/analyze", [
   },
   { name: "analyze-imports", args: ["test/fixtures/imports", "--repo-root", "test/fixtures/imports"] },
   {
+    // CLAUDE.local.md loads right after CLAUDE.md in the same directory, its
+    // @-imports inlined like any memory file, and the report is flagged
+    // machine-specific (NOTE + scope: line) because the file is gitignored and
+    // CI never sees it.
+    name: "analyze-claude-local",
+    args: ["test/fixtures/claude-local", "--repo-root", "test/fixtures/claude-local"],
+  },
+  {
+    name: "analyze-claude-local-json",
+    args: [
+      "test/fixtures/claude-local",
+      "--repo-root",
+      "test/fixtures/claude-local",
+      "--json",
+    ],
+  },
+  {
     name: "analyze-single-file",
     args: ["test/fixtures/single-file/notes.md", "--repo-root", "test/fixtures/single-file"],
   },

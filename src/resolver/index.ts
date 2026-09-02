@@ -24,7 +24,7 @@ import type { Agent } from "../agent.js";
 import type { Config } from "../config.js";
 import type { Tokenizer } from "../tokenizer.js";
 import { isDir, isFile, matchesAnyGlob, relPosix } from "../repo.js";
-import { MEMORY_NAMES } from "../claudeContext.js";
+import { LOCAL_MEMORY_NAMES, MEMORY_NAMES } from "../claudeContext.js";
 import {
   countLines,
   findImports,
@@ -110,7 +110,10 @@ export function resolveStack(
     return resolveNonClaude(entryPathAbs, repoRoot, config, tok, notes, agent);
   }
   const settings = loadSettings(repoRoot, userConfigDir);
-  const machineSpecific = userConfigDir !== undefined;
+  // `--user` folds in `~/.claude`, and a loaded `CLAUDE.local.md` (set below in
+  // the ancestor walk) also makes the report machine-specific: both pull in
+  // config that a desk-run session sees but CI does not.
+  let machineSpecific = userConfigDir !== undefined;
   const ctx: ImportCtx = {
     repoRoot,
     tok,
@@ -195,6 +198,7 @@ export function resolveStack(
 
   const dirs = ancestorDirs(entryDir, repoRoot, config.resolve.repoBoundary);
   const memoryBlocks: Omit<Block, "id" | "tokens">[] = [];
+  let localMemoryNoted = false;
   for (const dir of dirs) {
     for (const name of MEMORY_NAMES) {
       const abs = join(dir, name);
@@ -218,6 +222,19 @@ export function resolveStack(
       if (name === "AGENTS.md") {
         classifyAgentsMd(dir, abs, rel, repoRoot, ctx, unlinkedAgentsCopies);
         continue;
+      }
+
+      // `CLAUDE.local.md` is Claude Code's gitignored personal memory. It loads
+      // right after this directory's `CLAUDE.md` and is treated the same way
+      // (imports followed). It lives inside the checkout, so a desk-run session
+      // assembles it while CI never does: flag the whole report machine-specific
+      // and record a NOTE, the same convention `--user` uses for `~/.claude`.
+      if (LOCAL_MEMORY_NAMES.includes(name) && !localMemoryNoted) {
+        machineSpecific = true;
+        localMemoryNoted = true;
+        notes.push(
+          `machine-specific: ${rel} is Claude Code's gitignored personal memory; it loads in a desk-run session but not in CI, so this report will not reproduce elsewhere`,
+        );
       }
 
       memoryBlocks.push(
