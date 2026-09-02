@@ -27,7 +27,10 @@ run procedure.
   `src/resolver.ts` or the defaults in `src/config.ts`. Its "Accurate as of"
   section pins the model to a named Claude Code release; `src/anchor.test.ts`
   fails when resolved output drifts from it, and MODEL.md's "Bumping the version
-  anchor" section is the procedure to follow when it does. Its "Entry-point
+  anchor" section is the procedure to follow when it does. `src/modelDoc.test.ts`
+  separately asserts the anchor facts agree across `MODEL_VERSION`
+  (`src/types.ts`), `ANCHOR` (`src/anchor.ts`), and MODEL.md's "Accurate as of"
+  line and "`X.Y` today" prose. Its "Entry-point
   discovery" section covers how `conman map` (`src/map.ts`) turns a rule `paths`
   glob into an entry-point directory. Its "Other agents (best-effort)" section
   documents the `--agent codex|cursor|copilot` rulesets, which are NOT
