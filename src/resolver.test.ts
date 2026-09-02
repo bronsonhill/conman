@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolveStack, loadSettings } from "./resolver/index.js";
+import { findImports } from "./resolver/imports.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { getTokenizer } from "./tokenizer.js";
 import { fixture } from "./testutil.js";
@@ -58,6 +59,38 @@ test("import depth limit stops the chain and leaves a note", () => {
   assert.ok(sources.includes("chain-e.md"), "chain-e is at the limit and loads");
   assert.ok(!sources.includes("chain-f.md"), "chain-f is past the limit");
   assert.ok(r.notes.some((n) => n.includes("import depth limit (5) reached")));
+});
+
+test("@~/... home-dir imports are skipped as out-of-repo", () => {
+  // MODEL.md "What resolves": `@~/...` is dropped, no block, silently.
+  // findImports is the seam the resolver calls; assert it directly so the
+  // claim has a guard that does not need a fixture.
+  const found = findImports(
+    "prose @~/.claude/notes.md more @./local.md end\n",
+    fixture("imports", "CLAUDE.md"),
+  );
+  assert.deepEqual(
+    found.map((f) => f.path),
+    ["./local.md"],
+    "the ~-prefixed reference is dropped; the repo-relative one is kept",
+  );
+});
+
+test("CLAUDE.local.md flags the whole stack machine-specific", () => {
+  // The anchor snapshot checks the NOTE text; this asserts the
+  // machineSpecific flag directly (MODEL.md "What resolves", CLAUDE.local.md).
+  const root = fixture("claude-local");
+  const r = resolveStack(root, root, DEFAULT_CONFIG, tok, []);
+  assert.equal(r.machineSpecific, true);
+  assert.ok(
+    r.blocks.some((b) => b.source === "CLAUDE.local.md" && b.kind === "memory"),
+    "CLAUDE.local.md loads as a memory block",
+  );
+  assert.ok(
+    r.notes.some(
+      (n) => n.includes("machine-specific") && n.includes("CLAUDE.local.md"),
+    ),
+  );
 });
 
 test("import cycle is broken with a note", () => {

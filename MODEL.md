@@ -569,7 +569,10 @@ Regenerate with `node scripts/measure-tokenizer.mjs`.
 `src/anchor.test.ts` fails when the resolved output for its pinned fixtures
 drifts from what this file's **Accurate as of** release documents. A conman
 maintainer sees that failure, re-verifies against the newer Claude Code release,
-and bumps the anchor. The procedure:
+and bumps the anchor. `docs/model-traceability.md` maps each rule in the
+checklist below to the resolver code that implements it and the test that
+guards it — start there to see what a re-verify actually needs to cover, and
+which claims rest on prose alone. The procedure:
 
 1. **Re-verify each resolution rule** against the new release's docs and, where
    possible, its rule parser:
