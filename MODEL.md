@@ -20,10 +20,13 @@ startup index — was checked against that release's documented behaviour and it
 rule parser. conman models this release; it does not track newer ones
 automatically.
 
-`src/anchor.test.ts` pins the observable resolution output for this anchor. If
-a newer Claude Code release changes any of these rules, that test fails with a
-pointer back here. When it does, follow **Bumping the version anchor** at the
-bottom of this file — do not just regenerate the golden.
+The anchor version and date live in one constant, `ANCHOR` in `src/anchor.ts`.
+`src/anchor.test.ts` imports it and snapshots the observable resolution output
+for the anchored release; every report header prints it (`model 0.10 (Claude
+Code anchor v2.1.251, verified 2026-09-01)`) via `src/agent.ts`. If a newer
+Claude Code release changes any of these rules, the snapshot test diff points
+back here. When it does, follow **Bumping the version anchor** at the bottom of
+this file — do not just regenerate the golden.
 
 ## What resolves, and in what order
 
@@ -586,7 +589,7 @@ and bumps the anchor. The procedure:
 2. **If behaviour changed**, update `src/resolver.ts` / `src/config.ts` to
    match, then bump `modelVersion` and add a `## Model version history` entry.
 3. **Update the anchor**: change the version and date in **Accurate as of**
-   above, and the `ANCHOR` constant in `src/anchor.test.ts`.
+   above, and the `ANCHOR` constant in `src/anchor.ts`.
 4. **Regenerate the drift-test expectation and the goldens**: update the
    `EXPECTED` literal in `src/anchor.test.ts` to the new resolved output, then
    `npm run test:update-golden`. Review the diff — an unexplained change there

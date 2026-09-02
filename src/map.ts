@@ -250,6 +250,8 @@ export interface MapResult {
   repoRoot: string;
   entries: MapEntryResult[];
   pass: boolean;
+  /** Resolution ruleset used; selects the model-freshness header note. */
+  agent: Agent;
 }
 
 export function runMap(
@@ -282,5 +284,5 @@ export function runMap(
     });
   }
   entries.sort((a, b) => (a.entry < b.entry ? -1 : a.entry > b.entry ? 1 : 0));
-  return { repoRoot, entries, pass: entries.every((e) => e.pass) };
+  return { repoRoot, entries, pass: entries.every((e) => e.pass), agent };
 }

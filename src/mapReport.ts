@@ -1,6 +1,7 @@
 // Rendering for `conman map`: a per-entry rollup plus a repo total. Deterministic.
 
 import type { MapResult } from "./map.js";
+import { modelFreshness } from "./agent.js";
 import { MODEL_VERSION } from "./types.js";
 import { redundancy } from "./report.js";
 import { pad, padStart, sortDeep } from "./reportUtil.js";
@@ -92,7 +93,9 @@ export function renderMapHuman(
   configSource: string | null,
 ): string {
   const out: string[] = [];
-  out.push(`conman ${toolVersion} map  model ${MODEL_VERSION}`);
+  out.push(
+    `conman ${toolVersion} map  model ${MODEL_VERSION}  ${modelFreshness(result.agent)}`,
+  );
   out.push(`config: ${configSource ?? "(built-in defaults)"}`);
   out.push(`entry points discovered: ${result.entries.length}`);
   out.push("");
