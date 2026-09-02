@@ -30,7 +30,10 @@ export interface AnalyzeResult {
   analysis: Analysis;
   notes: string[];
   mode: "stack" | "single-file";
-  /** True when `--user` folded machine-local `~/.claude` config into the stack. */
+  /**
+   * True when the stack includes machine-local config CI never sees: `--user`'s
+   * `~/.claude` files, or a gitignored `CLAUDE.local.md` in the checkout.
+   */
   machineSpecific: boolean;
 }
 

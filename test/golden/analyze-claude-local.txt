@@ -1,0 +1,29 @@
+# exit: 0
+conman VERSION  model 0.10  tokenizer claude-local
+entry: .   mode: stack
+config: conman.json
+tokenizer: claude-local (estimate; see README "How accurate is the token estimate?")
+scope: machine-specific (includes machine-local config: ~/.claude user config and/or a gitignored CLAUDE.local.md; not reproducible on another machine)
+
+LOAD ORDER
+  #    kind         source           lines         tokens
+  b1   memory       CLAUDE.md        1-6               42
+  b2   memory       CLAUDE.local.md  1-6               53
+  -------------------------------------------------------
+  total                                                95
+
+BUDGET
+  budget          2000
+  safety margin   10%   ->  effective 1800
+  stack total     95
+  delta           -1705  (under budget)
+
+SAVINGS
+  redundant tokens: 0 (0% of stack)
+
+FINDINGS  (0 error, 0 warn)  none
+
+NOTES
+  - machine-specific: CLAUDE.local.md is Claude Code's gitignored personal memory; it loads in a desk-run session but not in CI, so this report will not reproduce elsewhere
+
+RESULT  pass

@@ -18,6 +18,16 @@ follow semantic versioning.
 
 ### Added
 
+- `CLAUDE.local.md`, Claude Code's gitignored personal memory, is now resolved
+  in the ancestor walk. It loads right after each directory's `CLAUDE.md`, with
+  its `@`-imports inlined, matching Claude Code's documented behaviour. Because
+  the file lives in the checkout but CI and teammates never see it, any stack
+  that includes one is flagged **machine-specific** (a NOTE plus the `scope:`
+  line), the same convention `--user` uses for `~/.claude`, rather than folded
+  silently into the gated total. `conman map` also treats a directory whose
+  only memory file is a `CLAUDE.local.md` as an entry point. No change for a
+  checkout without one. `MODEL_VERSION` → 0.10.
+
 - `dead-reference` now checks markdown link targets. A link like
   `[architecture](docs/architecture.md)` in a depth-0 memory file or rule whose
   target is missing raises a `dead-link` sub-finding at **warn**, under the same

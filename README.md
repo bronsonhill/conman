@@ -147,9 +147,13 @@ For one entry point, `conman` builds the resolved stack in load order — order 
 accumulation are the real behavior, and no file overrides another:
 
 1. **Ancestor memory files** — `CLAUDE.md` from the entry directory up to the repo
-   root (or the filesystem root with `--no-repo-boundary`), root-most first. A
-   bare `AGENTS.md` is the cross-tool file; Claude Code does not load it on its
-   own, so `conman` leaves it out of the stack and records a note.
+   root (or the filesystem root with `--no-repo-boundary`), root-most first, and
+   each directory's gitignored `CLAUDE.local.md` right after its `CLAUDE.md`. A
+   stack that picks up a `CLAUDE.local.md` is marked `machine-specific` (a note
+   plus the `scope:` line), the same way `--user` marks `~/.claude` files, since
+   CI and a teammate's clone never see it. A bare `AGENTS.md` is the cross-tool
+   file; Claude Code does not load it on its own, so `conman` leaves it out of
+   the stack and records a note.
 2. **`@`-imports** — inlined right after the file that imports them, depth-first,
    up to `resolve.importDepthLimit` (default 5, Claude Code's documented hop
    limit). Cycles are broken.

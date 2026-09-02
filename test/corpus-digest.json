@@ -1,6 +1,6 @@
 {
   "tool": "conman",
-  "modelVersion": "0.6",
+  "modelVersion": "0.10",
   "repos": [
     {
       "repo": "llm",
@@ -88,7 +88,7 @@
     {
       "repo": "ruflo",
       "entryPoints": 6,
-      "stackTokens": 143051,
+      "stackTokens": 146819,
       "redundantTokens": 1688,
       "overBudgetEntryPoints": 6,
       "valueConflictEntryPoints": 2,
@@ -141,7 +141,7 @@
     "totalEntryPoints": 123,
     "redundantTokenPct": 0.1,
     "redundantTokens": 1688,
-    "stackTokens": 1669985,
+    "stackTokens": 1673753,
     "valueConflictEntryPoints": 2,
     "valueConflictRatePct": 1.63,
     "medianResolvedStackTokens": 4270,
