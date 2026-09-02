@@ -148,6 +148,13 @@ Note the interaction with rule matching: a `paths` of `src/**` scopes everything
 not necessarily load into `src`'s own resolved stack. Discovery still surfaces
 the directory so it is analyzed and gated.
 
+Memory-file names are matched case-exactly against the directory listing:
+`claude.md` or `agents.md` in lowercase is not a `CLAUDE.md` / `AGENTS.md`, the
+same as Claude Code, which keys off the exact name. Discovery does not probe the
+filesystem with a `stat`, so a case-insensitive host (APFS, NTFS) resolves the
+same entry-point set as case-sensitive Linux. A directory symlink that points at
+one of its own ancestors is walked once, not followed into a cycle.
+
 The `map` JSON report tags each entry point with a `discovery` array — some of
 `root`, `memory-file`, `rule-path` — recording why it was picked up. The human
 report lists, under the table, any entry point found only through a path-scoped

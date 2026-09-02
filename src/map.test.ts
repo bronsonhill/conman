@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 import { discoverEntryPoints, globToEntryDir, runMap } from "./map.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { fixture } from "./testutil.js";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  symlinkSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // --- entry-point discovery via path-scoped rules ---------------------------
 //
@@ -152,4 +160,28 @@ test("globToEntryDir: a file-scoped glob drops to its containing directory", () 
 
 test("globToEntryDir: a prefix that is not on disk resolves to nothing", () => {
   assert.equal(globToEntryDir(RULE_ENTRY, "packages/nowhere/**"), null);
+});
+
+// --- host filesystem must not change the entry-point set --------------------
+
+test("a lowercase claude.md is not a memory file (case-exact on any host FS)", () => {
+  const root = mkdtempSync(join(tmpdir(), "conman-casefs-"));
+  mkdirSync(join(root, "sub"));
+  writeFileSync(join(root, "sub", "claude.md"), "# not a memory file\n");
+  writeFileSync(join(root, "CLAUDE.md"), "# real root memory\n");
+  const paths = discoverEntryPoints(root, DEFAULT_CONFIG).map((e) => e.path);
+  assert.deepEqual(paths, ["."], "only the root, whose CLAUDE.md is exact");
+});
+
+test("a self-referencing directory symlink does not recurse forever", () => {
+  const root = mkdtempSync(join(tmpdir(), "conman-symlink-"));
+  mkdirSync(join(root, "a"));
+  writeFileSync(join(root, "a", "CLAUDE.md"), "# a\n");
+  try {
+    symlinkSync(root, join(root, "a", "loop"), "dir");
+  } catch {
+    return; // no symlink permission on this host; skip
+  }
+  const paths = discoverEntryPoints(root, DEFAULT_CONFIG).map((e) => e.path);
+  assert.deepEqual(paths, [".", "a"]);
 });

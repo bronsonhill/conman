@@ -119,10 +119,10 @@ depend on.
 
 `test/corpus-sweep.js` (run via `npm run test:corpus` / `test:corpus:all`, not
 `npm test`) runs `conman map` over every fetched fixture and diffs a compact
-per-repo digest against `test/corpus-digest.json`. The baseline is Linux-only:
-macOS's case-insensitive filesystem over-discovers entry points from lowercase
-`claude.md` / `agents.md` files in `firstmate` and `ruflo`, so those records
-won't match a local macOS run. Regenerate from the `corpus-digest` artifact of
+per-repo digest against `test/corpus-digest.json`. Entry-point discovery is
+case-exact on every host FS (`src/map.ts` matches memory files against the
+`readdirSync` listing, not a case-folding `isFile` probe), so a local macOS run
+matches the Linux baseline. Regenerate from the `corpus-digest` artifact of
 the `full-sweep` CI job whenever findings logic changes, and update the "What
 conman finds in the wild" numbers in `README.md` /
 `data/conman-corpus-map-reports/report.md` in the same commit. CI: `corpus-fast`

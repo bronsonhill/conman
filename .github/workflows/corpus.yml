@@ -7,11 +7,10 @@ name: Corpus sweep (full)
 # weekly and on demand rather than per-PR; the per-PR CI job sweeps a small
 # subset instead.
 #
-# The digest is generated here, on a case-sensitive Linux filesystem. A
-# case-insensitive dev machine (macOS) over-discovers entry points from
-# lowercase `claude.md` / `agents.md` files in some fixtures, so the committed
-# baseline must come from this job, not a local run. Regenerate by reading the
-# uploaded `corpus-digest` artifact from a run of this workflow.
+# The digest is generated here, on Linux. Entry-point discovery is case-exact on
+# every host filesystem, so a local macOS run produces the same numbers; the
+# committed baseline still comes from this job for reproducibility. Regenerate by
+# reading the uploaded `corpus-digest` artifact from a run of this workflow.
 
 on:
   schedule:

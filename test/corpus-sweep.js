@@ -11,13 +11,12 @@
 // fixtures/README.md) and posthog/ruflo take a few seconds each.
 //
 // The baseline is generated on Linux (the `full-sweep` job in
-// .github/workflows/corpus.yml). A case-insensitive dev filesystem (macOS)
-// over-discovers entry points from lowercase `claude.md` / `agents.md` files in
-// the firstmate and ruflo fixtures, so those two repos' records will not match a
-// local macOS run - that is expected; CI is the gate. On Linux the digest is
-// deterministic per conman build (every fixture is SHA-pinned), so when the
-// numbers move it is because findings logic changed: regenerate the baseline
-// from the CI `corpus-digest` artifact in the same commit.
+// .github/workflows/corpus.yml). Entry-point discovery is case-exact regardless
+// of the host filesystem (src/map.ts matches memory files against the directory
+// listing, not a case-folding stat probe), so a local macOS run matches it too.
+// The digest is deterministic per conman build (every fixture is SHA-pinned), so
+// when the numbers move it is because findings logic changed: regenerate the
+// baseline from the CI `corpus-digest` artifact in the same commit.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

@@ -551,10 +551,9 @@ npm run test:corpus:all     # fetch every fixture, sweep all 11 (~60s)
 npm run test:corpus:update  # regenerate the digest baseline
 ```
 
-The baseline is generated on Linux by CI. On a case-insensitive dev filesystem
-(macOS) the `firstmate` and `ruflo` records will not match, because lowercase
-`claude.md` / `agents.md` files in those fixtures get discovered as extra entry
-points — expected, and why the numbers come from the CI `corpus-digest` artifact.
+The baseline is generated on Linux by CI, but entry-point discovery is case-exact
+on every host filesystem, so a local macOS run matches it. The numbers still come
+from the CI `corpus-digest` artifact so they stay reproducible.
 CI runs the fast subset on every PR and the full sweep weekly and whenever the
 corpus tooling changes (see `.github/workflows/`).
 
