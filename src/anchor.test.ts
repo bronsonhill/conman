@@ -15,10 +15,14 @@
 //   - the skill startup index and its settings.json budget truncation
 //   - claudeMdExcludes from settings.json
 //
-// If a newer Claude Code release changes any of these, this test fails loudly.
-// That failure is the signal for a conman maintainer to re-verify against the
-// new release and bump the anchor — see "Bumping the version anchor" in
-// MODEL.md. Do not just paste the new output into EXPECTED.
+// This test does not detect Claude Code releases. It snapshots conman's own
+// resolver output for these fixtures and diffs it against a frozen EXPECTED, so
+// a refactor of src/resolver/ cannot silently change what conman reports as the
+// resolved stack. When the output does move — deliberately or not — the diff
+// forces a conscious re-anchor: re-verify every rule above against the current
+// Claude Code release, then bump ANCHOR, EXPECTED, and the goldens together.
+// See "Bumping the version anchor" in MODEL.md. Do not just paste the new
+// output into EXPECTED.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -26,12 +30,7 @@ import { resolveStack } from "./resolver/index.js";
 import { DEFAULT_CONFIG } from "./config.js";
 import { getTokenizer } from "./tokenizer.js";
 import { fixture } from "./testutil.js";
-
-/**
- * The Claude Code release this snapshot was verified against. Keep in sync with
- * MODEL.md's "Accurate as of" section; bumping one without the other is a bug.
- */
-const ANCHOR = { version: "v2.1.251", verified: "2026-09-01" };
+import { ANCHOR } from "./anchor.js";
 
 const tok = getTokenizer("claude-local");
 

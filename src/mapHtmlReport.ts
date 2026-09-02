@@ -10,6 +10,7 @@
 // sorts findings) or is sorted here before rendering.
 
 import type { MapResult, MapEntryResult } from "./map.js";
+import { modelFreshness } from "./agent.js";
 import { MODEL_VERSION, type Finding } from "./types.js";
 import { redundancy } from "./report.js";
 import { mapRedundancy, summarizeMapNotes } from "./mapReport.js";
@@ -411,7 +412,7 @@ ${STYLE}
     <h1>${title}</h1>
     <dl class="kv">
       <dt>tool</dt><dd>conman ${esc(toolVersion)}</dd>
-      <dt>model</dt><dd>${esc(MODEL_VERSION)}</dd>
+      <dt>model</dt><dd>${esc(MODEL_VERSION)} ${esc(modelFreshness(result.agent))}</dd>
       <dt>config</dt><dd>${esc(configSource ?? "(built-in defaults)")}</dd>
       <dt>entry points discovered</dt><dd>${esc(result.entries.length)}</dd>
       <dt>result</dt><dd class="${result.pass ? "pass" : "fail"}">${

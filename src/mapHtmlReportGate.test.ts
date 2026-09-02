@@ -37,6 +37,7 @@ test("gate verdict handles a MapResult with no entry points", () => {
     entries: [],
     notes: [],
     blocks: [],
+    agent: "claude",
   } as unknown as MapResult;
   const html = renderMapHtml(empty, "9.9.9", null, { gate: true });
   assert.ok(html.includes("<dt>budget</dt><dd>(no entry points)</dd>"));

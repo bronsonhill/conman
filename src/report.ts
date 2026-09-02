@@ -3,6 +3,7 @@
 // the same Analysis.
 
 import { MODEL_VERSION, type Analysis } from "./types.js";
+import { modelFreshness, type Agent } from "./agent.js";
 import type { Config } from "./config.js";
 import { KIND_LABEL, pad, padStart, severityCounts, sortDeep } from "./reportUtil.js";
 
@@ -13,6 +14,8 @@ export interface RenderContext {
   notes: string[];
   mode: "stack" | "single-file";
   toolVersion: string;
+  /** Resolution ruleset in effect; selects the model-freshness header note. */
+  agent: Agent;
   /**
    * The stack includes machine-local config that CI never sees: `--user`'s
    * `~/.claude` files, or a gitignored `CLAUDE.local.md` in the checkout.
@@ -26,7 +29,7 @@ export function renderHuman(ctx: RenderContext): string {
   const out: string[] = [];
 
   out.push(
-    `conman ${ctx.toolVersion}  model ${MODEL_VERSION}  tokenizer ${a.tokenizer}`,
+    `conman ${ctx.toolVersion}  model ${MODEL_VERSION}  ${modelFreshness(ctx.agent)}  tokenizer ${a.tokenizer}`,
   );
   out.push(`entry: ${a.entry || "."}   mode: ${ctx.mode}`);
   out.push(`config: ${ctx.configSource ?? "(built-in defaults)"}`);

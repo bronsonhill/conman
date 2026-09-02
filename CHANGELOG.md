@@ -6,6 +6,17 @@ follow semantic versioning.
 
 ## Unreleased
 
+### Added
+
+- Report headers (text, `map`, and HTML) now name the anchored Claude Code
+  release and its verification date next to the model version:
+  `model 0.10  (Claude Code anchor v2.1.251, verified 2026-09-01)`. For
+  `--agent codex|cursor|copilot` the header reads
+  `(best-effort, un-anchored - see MODEL.md)` instead. The date is printed, not
+  a computed age — no clock read on the output path. One shared constant,
+  `ANCHOR` in `src/anchor.ts`, is the single source; `src/anchor.test.ts`
+  imports it. No change to what resolves.
+
 ### Changed
 
 - `.claude/rules/` discovery is now recursive. A rule in a subdirectory

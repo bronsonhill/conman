@@ -1,5 +1,5 @@
 # exit: 0
-conman VERSION map  model 0.10
+conman VERSION map  model 0.10  (best-effort, un-anchored - see MODEL.md)
 config: conman.json
 entry points discovered: 2
 

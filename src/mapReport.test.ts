@@ -148,6 +148,7 @@ function fakeEntry(over: {
 test("summarizeMapNotes uses the singular phrasing for a single non-matching entry", () => {
   const result: MapResult = {
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [
       fakeEntry({
@@ -174,6 +175,7 @@ test("summarizeMapNotes uses the singular phrasing for a single non-matching ent
 test("summarizeMapNotes flags a rule that loaded nowhere as dead scope", () => {
   const result: MapResult = {
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [
       fakeEntry({
@@ -200,6 +202,7 @@ test("summarizeMapNotes collapses multiple entries with a count", () => {
     });
   const s = summarizeMapNotes({
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [mk("a"), mk("b"), mk("c")],
   });
@@ -211,6 +214,7 @@ test("summarizeMapNotes collapses multiple entries with a count", () => {
 test("summarizeMapNotes handles the glob-scoped prefix form", () => {
   const s = summarizeMapNotes({
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [
       fakeEntry({
@@ -229,6 +233,7 @@ test("summarizeMapNotes handles the glob-scoped prefix form", () => {
 test("mapRedundancy sums per-entry redundant tokens and the stack share", () => {
   const result: MapResult = {
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [
       fakeEntry({ entry: "a", stackTokens: 100, dupTokens: 10 }),
@@ -241,6 +246,7 @@ test("mapRedundancy sums per-entry redundant tokens and the stack share", () => 
 test("mapRedundancy reports a zero share when the rollup is empty", () => {
   const result: MapResult = {
     repoRoot: "/x",
+    agent: "claude",
     pass: true,
     entries: [fakeEntry({ entry: "a", stackTokens: 0, dupTokens: 0 })],
   };

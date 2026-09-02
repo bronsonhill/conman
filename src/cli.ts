@@ -530,6 +530,7 @@ function main(): void {
     notes,
     mode,
     toolVersion: tv,
+    agent: args.agent,
     machineSpecific,
   };
   process.stdout.write(
