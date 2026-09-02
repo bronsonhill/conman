@@ -6,6 +6,7 @@
 // anchor covers:
 //
 //   - ancestor CLAUDE.md walk order and the repo-boundary stop
+//   - CLAUDE.local.md loading right after CLAUDE.md, flagged machine-specific
 //   - @-import inline position, depth-first order, the 5-hop depth limit,
 //     cycle breaking
 //   - .claude/rules/ always-on vs `paths`-scoped, ordering, `globs` ignored,
@@ -41,6 +42,7 @@ const SCENARIOS: Record<string, { fixture: string; entry: string[] }> = {
   "rule-scope-keys src/main": { fixture: "rule-scope-keys", entry: ["src", "main"] },
   "rule-scope-keys src/renderer": { fixture: "rule-scope-keys", entry: ["src", "renderer"] },
   "imports root": { fixture: "imports", entry: [] },
+  "claude-local root": { fixture: "claude-local", entry: [] },
 };
 
 /** Compact, deterministic view of a resolved stack. */
@@ -127,6 +129,15 @@ const EXPECTED: Record<string, ReturnType<typeof snapshot>> = {
     notes: [
       "rule .claude/rules/legacy-globs.md sets `globs` but not `paths`; Claude Code path-scopes rules only on `paths`, so this rule loads always-on",
       "rule .claude/rules/paths-scoped.md is path-scoped (app/**); did not match entry src/renderer",
+    ],
+    unlinkedAgentsCopies: [],
+  },
+  "claude-local root": {
+    mode: "stack",
+    entry: ".",
+    blocks: ["memory:CLAUDE.md", "memory:CLAUDE.local.md"],
+    notes: [
+      "machine-specific: CLAUDE.local.md is Claude Code's gitignored personal memory; it loads in a desk-run session but not in CI, so this report will not reproduce elsewhere",
     ],
     unlinkedAgentsCopies: [],
   },

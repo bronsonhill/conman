@@ -1,7 +1,7 @@
 # The conman resolution model
 
 conman reports on a *model* of how Claude Code assembles startup context. The
-model is versioned (`modelVersion` in every report; `0.9` today) and is the thing
+model is versioned (`modelVersion` in every report; `0.10` today) and is the thing
 under test. It is not a claim of bug-for-bug parity with any Claude Code release.
 When Claude Code changes how it loads context, the model version bumps and the
 golden fixtures move with it.
@@ -13,11 +13,12 @@ If you are debugging a surprising report, start here.
 
 **Claude Code v2.1.251, verified 2026-09-01.**
 
-Every resolution rule below — ancestor `CLAUDE.md` walk order, the
-`settings.json` keys conman honours, `@`-import inlining and the 5-hop depth
-limit, `.claude/rules/` always-on vs `paths`-scoped, and the skill startup
-index — was checked against that release's documented behaviour and its rule
-parser. conman models this release; it does not track newer ones automatically.
+Every resolution rule below — ancestor `CLAUDE.md` / `CLAUDE.local.md` walk
+order, the `settings.json` keys conman honours, `@`-import inlining and the
+5-hop depth limit, `.claude/rules/` always-on vs `paths`-scoped, and the skill
+startup index — was checked against that release's documented behaviour and its
+rule parser. conman models this release; it does not track newer ones
+automatically.
 
 `src/anchor.test.ts` pins the observable resolution output for this anchor. If
 a newer Claude Code release changes any of these rules, that test fails with a
@@ -31,10 +32,19 @@ order. Order matters because nothing overrides anything: the session accumulates
 every block.
 
 1. **Ancestor memory files.** Walk from the entry directory upward. At each
-   directory, load `CLAUDE.md` if present. Root-most directory first,
-   entry-closest last. With `resolve.repoBoundary: true` (default) the walk stops
-   at the repo root (nearest `.git`); `--no-repo-boundary` continues to the
-   filesystem root.
+   directory, load `CLAUDE.md` if present, then `CLAUDE.local.md` if present.
+   Root-most directory first, entry-closest last. With
+   `resolve.repoBoundary: true` (default) the walk stops at the repo root
+   (nearest `.git`); `--no-repo-boundary` continues to the filesystem root.
+   - **`CLAUDE.local.md`** is Claude Code's gitignored personal memory: per the
+     docs it loads right after that directory's `CLAUDE.md` and is "treated the
+     same way", so conman inlines its `@`-imports like any memory file. It sits
+     *inside* the checkout, so a developer's own session assembles it while CI
+     and a teammate's clone do not. Any stack that includes one is flagged
+     **machine-specific** — a NOTE plus the `scope:` line, the same convention
+     `--user` uses for `~/.claude` — rather than folded silently into the gated
+     total. It is not deprecated, but Claude Code's docs steer multi-worktree
+     users to a `@~/…` home-dir import instead, which `--user` would cover.
    - `~/.claude/CLAUDE.md` (Claude Code's "User" memory) is not read by default —
      conman's default output describes a repository, not a machine. Pass `--user`
      to fold it in; see "User-level config" below.
@@ -111,7 +121,9 @@ every block.
 `conman map` resolves and gates every entry point it can find in the repo. A
 directory is an entry point when either:
 
-- it holds a `CLAUDE.md` or an `AGENTS.md` (the repo root always counts), or
+- it holds a `CLAUDE.md`, a `CLAUDE.local.md`, or an `AGENTS.md` (the repo root
+  always counts) — a directory whose only memory file is a gitignored
+  `CLAUDE.local.md` is still a real entry point for the developer who has one, or
 - a `.claude/rules/` file path-scopes to it through `paths` — the directory a
   glob such as `src/renderer/**` points at, even when that directory carries no
   memory file of its own. This is the shape `conman map` on Motrix used to
@@ -580,6 +592,24 @@ of** and the `ANCHOR` constant so the anchor records the last time it was
 checked.
 
 ## Model version history
+
+- **0.10** — `CLAUDE.local.md` is resolved in the ancestor walk.
+
+  conman modelled `CLAUDE.md` and never `CLAUDE.local.md`, Claude Code's
+  gitignored personal memory. Claude Code still loads it: per the docs it sits
+  right after each directory's `CLAUDE.md` in the walk and is "treated the same
+  way", imports and all. A desk-run `conman <entry>` was therefore
+  under-reporting the stack the developer's own session assembles. The resolver
+  now loads `CLAUDE.local.md` at that position with its `@`-imports inlined.
+  Because the file is inside the checkout but invisible to CI and to teammates,
+  any stack that includes one is flagged **machine-specific** — a NOTE plus the
+  `scope:` line — the same way `--user` marks `~/.claude` files, rather than
+  folded silently into the gated total. `conman map` now also treats a
+  directory whose only memory file is a `CLAUDE.local.md` as an entry point.
+  Additive for the common case (no such file, no change); reports on a checkout
+  that has one gain a block and the machine-specific flag, hence the bump. The
+  anchored Claude Code release is unchanged (v2.1.251); this closes a modelling
+  gap, it does not track a Claude Code change.
 
 - **0.9** — `.claude/rules/` discovery is recursive.
 

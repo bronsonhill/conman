@@ -1,9 +1,9 @@
 # exit: 0
-conman VERSION  model 0.9  tokenizer claude-local
+conman VERSION  model 0.10  tokenizer claude-local
 entry: .   mode: stack
 config: (built-in defaults)
 tokenizer: claude-local (estimate; see README "How accurate is the token estimate?")
-scope: machine-specific (includes ~/.claude user config; not reproducible on another machine)
+scope: machine-specific (includes machine-local config: ~/.claude user config and/or a gitignored CLAUDE.local.md; not reproducible on another machine)
 
 LOAD ORDER
   #    kind         source                          lines         tokens
