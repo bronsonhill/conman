@@ -1,0 +1,28 @@
+# exit: 0
+conman VERSION diff  model 0.10
+config: conman.json  (applied to both sides)
+
+                        base    head   delta
+  entry points             1       1       0
+  tokens                 115     124      +9
+  redundant tokens        27      27       0
+  errors                   2       1      -1
+  warnings                 0       0       0
+
+NEW ENTRY POINTS  (0)  none
+
+REMOVED ENTRY POINTS  (0)  none
+
+TOKEN CHANGES  (1)
+  api               115 ->    124      +9
+
+NEW FINDINGS  (0)  none
+
+RESOLVED FINDINGS  (1)
+  error  value-conflict
+         CLAUDE.md
+         api/CLAUDE.md
+         key "node version" is set to different values across the stack: "20" vs "22"
+         in: api
+
+RESULT  grew  (+9 tokens, findings: 0 new, 1 resolved)

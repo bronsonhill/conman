@@ -87,3 +87,19 @@ registerGolden("golden/map", [
     ],
   },
 ]);
+
+const DELTA = "test/fixtures/delta";
+registerGolden("golden/diff", [
+  {
+    name: "diff-map-delta",
+    args: ["diff", `${DELTA}/head`, "--map", "--base-dir", `${DELTA}/base`, "--repo-root", `${DELTA}/head`],
+  },
+  {
+    name: "diff-map-delta-json",
+    args: ["diff", `${DELTA}/head`, "--map", "--base-dir", `${DELTA}/base`, "--repo-root", `${DELTA}/head`, "--json"],
+  },
+  {
+    name: "diff-entry-delta",
+    args: ["diff", `${DELTA}/head/api`, "--base-dir", `${DELTA}/base`, "--repo-root", `${DELTA}/head`],
+  },
+]);

@@ -119,6 +119,23 @@ every block.
      `resolve.skillListingBudget` if set, else the `skillListingBudget` key from
      `.claude/settings.json`, else no limit.
 
+## Comparing two checkouts (`conman diff`)
+
+`conman diff --base-dir <path>` resolves the stack in two directories (base, and
+the current repo as head) in one process and reports what changed. It runs no
+git and never changes the resolution rules above; the base side is analysed with
+the base directory as its repo root, and both sides use the head's config, so
+the delta reflects file content and not a policy change. Entry points partition
+into added, removed, and common by repo-relative path; token deltas are reported
+only for common entry points, and added or removed ones count whole-stack in the
+summary. A finding's identity across the two sides is its type, severity, sorted
+file paths (no line numbers), and message with whitespace runs collapsed, so a
+finding that only moved down a file is unchanged, while a severity change reads
+as one resolved finding plus one new one. A message that embeds a token count
+changes when the underlying text changes size, and then also reads as
+resolved plus new. Findings are counted once per identity across the whole
+comparison, not once per entry point. The command reports only and exits 0.
+
 ## Entry-point discovery (`conman map`)
 
 `conman map` resolves and gates every entry point it can find in the repo. A

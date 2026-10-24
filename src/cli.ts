@@ -4,9 +4,10 @@
 //   conman map [root]            discover and analyze every entry point in the repo
 //   conman check [<entrypoint>]  analyze + gate; non-zero exit over budget or on gated findings
 //   conman explain [<id>]        describe a finding type (explanation, research, fix)
+//   conman diff --base-dir <p>   compare this checkout's stack against a second checkout
 //
 // Flags: --json  --format <human|json|sarif>  --config <path>  --budget <n>  --tokenizer <name>
-//        --no-repo-boundary  --fix  --dry-run  --trim  --map (check only)
+//        --no-repo-boundary  --fix  --dry-run  --trim  --map (check, diff)  --base-dir <path> (diff)
 //        --html <path> (map, or check --map)  --user [--user-config-dir <path>]
 //
 // Exit codes: 0 ok / gate pass, 1 gate fail, 2 usage or runtime error.
@@ -28,6 +29,8 @@ import { renderMapHtml } from "./mapHtmlReport.js";
 import { computeFixes, applyFixes } from "./fix.js";
 import { computeTrim, renderTrimHuman, renderTrimJson } from "./trim.js";
 import { unifiedDiff } from "./diff.js";
+import { diffAnalysis, diffMap } from "./delta.js";
+import { renderDeltaHuman, renderDeltaJson } from "./deltaReport.js";
 import { renderSarif, renderSarifMap } from "./sarif.js";
 import { renderExplain, renderExplainList } from "./explain.js";
 
@@ -43,7 +46,7 @@ function toolVersion(): string {
 }
 
 interface Args {
-  command: "analyze" | "map" | "check" | "explain";
+  command: "analyze" | "map" | "check" | "explain" | "diff";
   target: string | null;
   json: boolean;
   sarif: boolean;
@@ -57,6 +60,8 @@ interface Args {
   trim: boolean;
   map: boolean;
   html?: string;
+  /** `diff --base-dir <path>`: the checkout to compare against. */
+  baseDir?: string;
   repoRoot?: string;
   /** `--user` / `--include-user-config`: fold in `~/.claude` user config. */
   user: boolean;
@@ -157,6 +162,9 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
       case "--html":
         a.html = argv[++i];
         break;
+      case "--base-dir":
+        a.baseDir = argv[++i];
+        break;
       case "--repo-root":
         a.repoRoot = argv[++i];
         break;
@@ -174,6 +182,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
         else if (t.startsWith("--budget=")) a.budget = Number(t.slice("--budget=".length));
         else if (t.startsWith("--config=")) a.configPath = t.slice("--config=".length);
         else if (t.startsWith("--html=")) a.html = t.slice("--html=".length);
+        else if (t.startsWith("--base-dir=")) a.baseDir = t.slice("--base-dir=".length);
         else if (t.startsWith("--repo-root=")) a.repoRoot = t.slice("--repo-root=".length);
         else if (t.startsWith("--user-config-dir=")) {
           a.userConfigDir = t.slice("--user-config-dir=".length);
@@ -191,6 +200,7 @@ function parseArgs(argv: string[]): Args | { help: true } | { version: true } {
   if (
     positional[0] === "map" ||
     positional[0] === "check" ||
+    positional[0] === "diff" ||
     positional[0] === "explain"
   ) {
     a.command = positional[0];
@@ -218,6 +228,19 @@ export function validateArgs(a: Args): string | null {
     }
     return null;
   }
+  if (a.baseDir !== undefined && a.command !== "diff") {
+    return "--base-dir is only valid with `conman diff`";
+  }
+  if (a.command === "diff") {
+    if (a.baseDir === undefined || a.baseDir === "") {
+      return "diff needs --base-dir <path>: a second checkout to compare against";
+    }
+    if (a.sarif) return "--format sarif is not supported by `conman diff`";
+    if (a.fix || a.dryRun || a.trim || a.html !== undefined || a.user) {
+      return "diff takes no --fix, --dry-run, --trim, --html, or --user flags";
+    }
+    return null;
+  }
   if (a.trim && a.command !== "analyze") {
     return "--trim is an analyze-only flag";
   }
@@ -228,7 +251,7 @@ export function validateArgs(a: Args): string | null {
     return "--trim cannot be combined with --map";
   }
   if (a.map && a.command !== "check") {
-    return "--map is only valid with `conman check`";
+    return "--map is only valid with `conman check` or `conman diff`";
   }
   if (a.fix && a.command === "check") {
     return "--fix is not valid with `conman check`; run `conman <entry> --fix` or `conman map --fix`";
@@ -251,6 +274,7 @@ USAGE
   conman <entrypoint> [flags]      analyze one entry point
   conman map [root] [flags]        analyze every entry point (memory files + path-scoped rule targets)
   conman check [<entrypoint>]      analyze + gate on budget / findings
+  conman diff --base-dir <path>    compare this checkout against a second one (report only)
   conman explain [<finding-id>]    describe a finding type, its research, its fix
 
 FLAGS
@@ -282,7 +306,10 @@ FLAGS
   --dry-run              with --fix: print a diff, write nothing
   --trim                 (analyze only) list provably-redundant whole files and a
                          git-apply-able diff that deletes them; writes nothing
-  --map                  (check only) gate across all discovered entry points
+  --map                  (check, diff) run across all discovered entry points
+  --base-dir <path>      (diff) the checkout to compare against; the current repo
+                         is the head. No git is run: check out the base yourself.
+                         Both sides use the head's config
   --html <path>          (map, or check --map) write a self-contained HTML report
                          to <path>; with check --map the page leads with the gate
                          verdict, effective budget, and failing entry points
@@ -446,6 +473,48 @@ function main(): void {
   const config = applyOverrides(baseConfig, args);
   const userDir = userConfigDir(args, cwd);
   const tv = toolVersion();
+
+  if (args.command === "diff") {
+    const baseDir = resolve(cwd, args.baseDir!);
+    if (!isDir(baseDir)) {
+      process.stderr.write(`conman: --base-dir is not a directory: ${args.baseDir}\n`);
+      process.exit(2);
+    }
+    const ctx = {
+      toolVersion: tv,
+      scope: args.map ? ("map" as const) : ("entry" as const),
+      configSource,
+    };
+    let delta;
+    if (args.map) {
+      const root = args.target ? resolve(cwd, args.target) : repoRoot;
+      const baseRoot = resolve(baseDir, relPosix(repoRoot, root));
+      const head = runMap(root, config, args.tokenizer, args.agent);
+      // The base side is analysed with the base dir as its repoRoot: lint
+      // duplication and dead-reference checks read files under it.
+      const base = isDir(baseRoot)
+        ? runMap(baseRoot, config, args.tokenizer, args.agent)
+        : { entries: [] };
+      delta = diffMap(base, head);
+    } else {
+      if (!isDir(rawTarget) && !isFile(rawTarget)) {
+        process.stderr.write(`conman: entry point not found: ${args.target}\n`);
+        process.exit(2);
+      }
+      const opts = { config, tokenizerName: args.tokenizer, agent: args.agent };
+      const head = analyzeEntry(rawTarget, { ...opts, repoRoot }).analysis;
+      const baseEntry = resolve(baseDir, relPosix(repoRoot, rawTarget));
+      const base =
+        isDir(baseEntry) || isFile(baseEntry)
+          ? analyzeEntry(baseEntry, { ...opts, repoRoot: baseDir }).analysis
+          : null;
+      delta = diffAnalysis(base, head);
+    }
+    process.stdout.write(
+      args.json ? renderDeltaJson(delta, ctx) : renderDeltaHuman(delta, ctx),
+    );
+    return;
+  }
 
   if (args.command === "map" || (args.command === "check" && args.map)) {
     const root = args.target ? resolve(cwd, args.target) : repoRoot;

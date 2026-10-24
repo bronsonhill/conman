@@ -1,0 +1,85 @@
+# exit: 0
+{
+  "base": {
+    "entryPoints": 3,
+    "errors": 2,
+    "redundantTokens": 27,
+    "tokens": 245,
+    "warnings": 0
+  },
+  "command": "diff",
+  "configSource": "conman.json",
+  "delta": {
+    "entryPoints": 0,
+    "errors": 0,
+    "redundantTokens": 27,
+    "tokens": 76,
+    "warnings": 0
+  },
+  "entryPointDeltas": [
+    {
+      "base": 58,
+      "delta": 16,
+      "entry": ".",
+      "head": 74
+    },
+    {
+      "base": 115,
+      "delta": 9,
+      "entry": "api",
+      "head": 124
+    }
+  ],
+  "entryPointsAdded": [
+    {
+      "entry": "web",
+      "tokens": 123
+    }
+  ],
+  "entryPointsRemoved": [
+    {
+      "entry": "legacy",
+      "tokens": 72
+    }
+  ],
+  "findingsAdded": [
+    {
+      "entries": [
+        "web"
+      ],
+      "files": [
+        "CLAUDE.md",
+        "web/CLAUDE.md"
+      ],
+      "message": "identical 27-token block \"Run `npm ci` then `npm test`. Do not skip the lint step.…\" appears in 2 files (27 redundant tokens, relation: parent-child)",
+      "severity": "error",
+      "type": "duplication"
+    }
+  ],
+  "findingsResolved": [
+    {
+      "entries": [
+        "api"
+      ],
+      "files": [
+        "CLAUDE.md",
+        "api/CLAUDE.md"
+      ],
+      "message": "key \"node version\" is set to different values across the stack: \"20\" vs \"22\"",
+      "severity": "error",
+      "type": "value-conflict"
+    }
+  ],
+  "head": {
+    "entryPoints": 3,
+    "errors": 2,
+    "redundantTokens": 54,
+    "tokens": 321,
+    "warnings": 0
+  },
+  "modelVersion": "0.10",
+  "result": "grew",
+  "scope": "map",
+  "tool": "conman",
+  "toolVersion": "0.1.0"
+}
