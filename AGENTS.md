@@ -41,7 +41,8 @@ run procedure.
 - `src/` — one module per stage: `resolver` → `coster` → `findings/` → `report`
   / `mapReport` / `mapHtmlReport` (`conman map --html`, plus a gate-focused
   variant for `conman check --map --html`), with `gate`, `map`,
-  `fix`, `diff`, `config`, `tokenizer` around them. `trim` (`conman <entry>
+  `fix`, `diff`, `config`, `tokenizer` around them. `delta` / `deltaReport` back
+  `conman diff --base-dir` (pure two-checkout comparison, no git; not `diff.ts`). `trim` (`conman <entry>
   --trim`, delete-only Tier-1 advice over the whole-file duplication findings)
   reuses `parentFile` / `preferredKeeper` from `fix.ts` to pick which copy of a
   byte-identical cluster to keep. `sarif` renders findings as SARIF 2.1.0:

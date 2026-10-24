@@ -1,0 +1,36 @@
+# exit: 0
+conman VERSION diff  model 0.10
+config: conman.json  (applied to both sides)
+
+                        base    head   delta
+  entry points             3       3       0
+  tokens                 245     321     +76
+  redundant tokens        27      54     +27
+  errors                   2       2       0
+  warnings                 0       0       0
+
+NEW ENTRY POINTS  (1)
+  web  +123 tokens
+
+REMOVED ENTRY POINTS  (1)
+  legacy  -72 tokens
+
+TOKEN CHANGES  (2)
+  .                  58 ->     74     +16
+  api               115 ->    124      +9
+
+NEW FINDINGS  (1)
+  error  duplication
+         CLAUDE.md
+         web/CLAUDE.md
+         identical 27-token block "Run `npm ci` then `npm test`. Do not skip the lint step.…" appears in 2 files (27 redundant tokens, relation: parent-child)
+         in: web
+
+RESOLVED FINDINGS  (1)
+  error  value-conflict
+         CLAUDE.md
+         api/CLAUDE.md
+         key "node version" is set to different values across the stack: "20" vs "22"
+         in: api
+
+RESULT  grew  (+76 tokens, findings: 1 new, 1 resolved)
