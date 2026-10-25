@@ -143,7 +143,7 @@ local `conman map` build over each, deletes the clone, and writes
 `docs/survey-<YYYY-MM>.md` plus the README "Broader sample" block (between the
 `<!-- survey:begin -->` / `<!-- survey:end -->` markers). Its header comment has
 `--help`, the flags, and the captain's full ~100-repo run command. Keep it off
-CI and out of `fixtures/`.
+CI and out of `fixtures/`. Predicates: `scripts/survey-lib.mjs`; suite rules: `docs/suite-criteria.md`.
 
 ## Maintaining this file
 

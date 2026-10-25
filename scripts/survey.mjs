@@ -12,6 +12,9 @@
 //   1. discover  — GitHub code-search (via gh-axi) for public repos carrying a
 //                  real agent context stack (.claude/, CLAUDE.md, AGENTS.md),
 //                  drop forks + archived, sort, write a candidate list.
+//   1b. qualify  — (--qualify / --qualify-only) GitHub-API-only filter that applies
+//                  docs/suite-criteria.md criteria 1-3 and records a reason for
+//                  every rejection. No clones. Predicates live in survey-lib.mjs.
 //   2. sample    — deterministic pick of --limit repos from the candidate list
 //                  (stable sha256(seed + repo) ordering; a rerun over the same
 //                  list + seed picks the same repos).
@@ -41,6 +44,15 @@
 //   --out PATH           results markdown (default docs/survey-<YYYY-MM>.md)
 //   --keep-json DIR      also dump each repo's raw map JSON into DIR
 //   --no-readme          do not patch README.md
+//   --qualify            run the qualify stage on the candidates before sampling
+//   --qualify-only       qualify, write the suite file + rejection report, stop
+//   --suite [PATH]       map the curated suite (default docs/survey-suite.txt)
+//                        instead of hash-sampling; --limit and --seed are ignored
+//   --suite-out PATH     where qualify writes the suite (default docs/survey-suite.txt)
+//   --suite-size N       cap on suite length (default 50); when more repos qualify,
+//                        keep the first N by stable sha256(seed + repo) ordering
+//   --qualify-cache PATH JSONL cache of per-repo qualify verdicts; a rerun (or a
+//                        rate-limit crash) resumes instead of refetching
 //   --help
 //
 // CAPTAIN'S FULL RUN (do NOT run this in a firstmate worktree — clones persist
@@ -63,7 +75,11 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, openSync, closeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  THRESHOLDS, aggregate, ageDays, borderlineFlags, checkMeta, checkProject, parseRepoList,
+  projectStats, rejectionCounts, rootMemoryEntry, rootStack, structuralFeatures, suiteLine, summariseRepo,
+} from "./survey-lib.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(ROOT, "dist", "cli.js");
@@ -83,6 +99,12 @@ function parseArgs(argv) {
     out: null,
     keepJson: null,
     readme: true,
+    qualify: false,
+    qualifyOnly: false,
+    suite: null,
+    suiteOut: null,
+    suiteSize: 50,
+    qualifyCache: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const v = argv[i];
@@ -98,6 +120,16 @@ function parseArgs(argv) {
       case "--out": a.out = next(); break;
       case "--keep-json": a.keepJson = next(); break;
       case "--no-readme": a.readme = false; break;
+      case "--qualify": a.qualify = true; break;
+      case "--qualify-only": a.qualify = true; a.qualifyOnly = true; break;
+      case "--suite": {
+        const nx = argv[i + 1];
+        a.suite = nx && !nx.startsWith("--") ? argv[++i] : join(ROOT, "docs", "survey-suite.txt");
+        break;
+      }
+      case "--suite-out": a.suiteOut = next(); break;
+      case "--suite-size": a.suiteSize = parseInt(next(), 10); break;
+      case "--qualify-cache": a.qualifyCache = next(); break;
       default:
         console.error(`unknown flag: ${v}`);
         process.exit(2);
@@ -138,12 +170,15 @@ function yyyymm() {
  * Pull the body string back out. Returns "" if the shape is unexpected.
  */
 function ghLines(path, jq, { dropEmpty = true } = {}) {
-  const out = execFileSync("gh-axi", ["api", path, "--jq", jq], {
+  const out = execFileSync("gh-axi", ["api", path, "--jq", jq, "--full"], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });
+  if (/^\s*truncated:\s*true/m.test(out)) throw new Error(`gh-axi truncated the response for ${path}`);
   const m = out.match(/body:\s*("(?:[^"\\]|\\.)*")/s);
-  const body = m ? JSON.parse(m[1]) : out;
+  // Short single-line bodies come back unquoted.
+  const plain = m ? null : out.match(/^\s*body:[ \t]*(.*)$/m);
+  const body = m ? JSON.parse(m[1]) : plain ? plain[1] : out;
   const lines = body.split("\n").map((s) => s.trim());
   return dropEmpty ? lines.filter(Boolean) : lines;
 }
@@ -196,6 +231,8 @@ const QUERIES = [
   "path:.claude/commands",
   "filename:CLAUDE.md",
   "filename:AGENTS.md",
+  "path:.claude/rules",
+  "filename:SKILL.md path:.claude/skills",
 ];
 
 async function discover(pages) {
@@ -244,6 +281,158 @@ async function filterRepos(fullNames) {
     await sleep(120);
   }
   return { kept, dropped };
+}
+
+// ---------------------------------------------------------------------------
+// qualify — GitHub API only (repo metadata, one recursive tree listing, and the
+// root CLAUDE.md / @-imported blobs). Never clones.
+
+function repoMeta(repo) {
+  const [row] = ghLines(
+    `/repos/${repo}`,
+    '[.full_name, .fork, .archived, .is_template, .stargazers_count, .pushed_at, .default_branch, (.topics // [] | join(","))] | @tsv',
+  );
+  const [full_name, fork, archived, tmpl, stars, pushed, branch, topics] = row.split("\t");
+  return {
+    full_name, fork: fork === "true", archived: archived === "true", is_template: tmpl === "true",
+    stargazers_count: parseInt(stars, 10), pushed_at: pushed, default_branch: branch,
+    topics: topics ? topics.split(",") : [],
+  };
+}
+
+/** Recursive tree as [{mode, type, sha, path}] plus GitHub's `truncated` flag. */
+function repoTree(repo, branch) {
+  const lines = ghLines(
+    `/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+    '(.tree[] | [.mode, .type, .sha, .path] | @tsv), ("#truncated\t" + (.truncated | tostring))',
+  );
+  const entries = [];
+  let truncated = false;
+  for (const l of lines) {
+    const f = l.split("\t");
+    if (f[0] === "#truncated") { truncated = f[1] === "true"; continue; }
+    entries.push({ mode: f[0], type: f[1], sha: f[2], path: f.slice(3).join("\t") });
+  }
+  return { entries, truncated };
+}
+
+function fetchBlobText(repo, sha) {
+  const b64 = ghLines(`/repos/${repo}/git/blobs/${sha}`, ".content").join("");
+  return Buffer.from(b64, "base64").toString("utf8");
+}
+
+/** Qualify one repo. Returns {ok:true, ...record} or {ok:false, reason}. */
+function qualifyRepo(repo, now, countTokens) {
+  let meta;
+  try {
+    meta = repoMeta(repo);
+  } catch {
+    return { ok: false, reason: "meta-failed" }; // 404 or rate limit; retried on rerun
+  }
+  const metaReject = checkMeta(meta, now);
+  if (metaReject) return { ok: false, reason: metaReject };
+
+  let tree;
+  try {
+    tree = repoTree(repo, meta.default_branch);
+  } catch {
+    return { ok: false, reason: "tree-failed" };
+  }
+  const blobs = tree.entries.filter((e) => e.type === "blob");
+  const paths = blobs.map((e) => e.path);
+  const shaOf = new Map(blobs.map((e) => [e.path, e.sha]));
+  const stats = projectStats(paths);
+  const projectReject = checkProject(stats);
+  if (projectReject) return { ok: false, reason: projectReject };
+
+  const entry = rootMemoryEntry(blobs);
+  if (!entry) return { ok: false, reason: "no-root-memory (no CLAUDE.md that loads)" };
+  const texts = [];
+  const read = (p) => {
+    try {
+      if (!shaOf.has(p)) return null;
+      const t = fetchBlobText(repo, shaOf.get(p));
+      texts.push(t);
+      return t;
+    } catch { return null; }
+  };
+  const stack = rootStack(entry, paths, read, countTokens);
+  const rootHash = createHash("sha256").update(texts.join("\0")).digest("hex").slice(0, 12);
+  if (stack.tokens < THRESHOLDS.minRootTokens) {
+    return { ok: false, reason: `root-memory-below-floor (${stack.tokens} < ${THRESHOLDS.minRootTokens} tok)` };
+  }
+  let features = structuralFeatures(paths, { memoryPath: stack.files[0], imports: stack.imports });
+  if (Object.keys(features).length === 0 && shaOf.has(".claude/settings.json")) {
+    features = structuralFeatures(paths, {
+      memoryPath: stack.files[0], imports: stack.imports, settingsText: read(".claude/settings.json"),
+    });
+  }
+  if (Object.keys(features).length === 0) return { ok: false, reason: "no-structural-feature" };
+
+  const age = ageDays(meta.pushed_at, now);
+  const rec = {
+    repo, branch: meta.default_branch, stars: meta.stargazers_count, ageDays: age,
+    rootTokens: stack.tokens, rootHash, features, stats, truncated: !!tree.truncated,
+  };
+  rec.borderline = borderlineFlags(rec);
+  if (rec.truncated) rec.borderline.push("git tree truncated by GitHub; file mix and features may be undercounted");
+  return { ok: true, ...rec };
+}
+
+async function qualifyAll(repos, { cachePath, now, countTokens }) {
+  const cache = new Map();
+  if (cachePath && existsSync(cachePath)) {
+    for (const l of readFileSync(cachePath, "utf8").split("\n").filter(Boolean)) {
+      const r = JSON.parse(l);
+      cache.set(r.repo, r);
+    }
+  }
+  const accepted = [];
+  const rejected = [];
+  let i = 0;
+  for (const repo of repos) {
+    i++;
+    let res = cache.get(repo);
+    if (!res) {
+      res = { repo, ...qualifyRepo(repo, now, countTokens) };
+      if (res.reason === "meta-failed" || res.reason === "tree-failed") {
+        // Transient (rate limit, 404). Do not cache; the rerun retries.
+      } else if (cachePath) {
+        writeFileSync(cachePath, JSON.stringify(res) + "\n", { flag: "a" });
+      }
+      await sleep(150);
+    }
+    console.error(`[qualify ${i}/${repos.length}] ${repo}: ${res.ok ? "ok " + Object.keys(res.features).join(",") : "reject " + res.reason}`);
+    (res.ok ? accepted : rejected).push(res);
+  }
+  // Copies and generated mirrors share a root memory byte for byte. Keep them,
+  // but flag every member of the group so the captain can rule on it.
+  const byHash = new Map();
+  for (const r of accepted) byHash.set(r.rootHash, [...(byHash.get(r.rootHash) || []), r.repo]);
+  for (const r of accepted) {
+    const twins = byHash.get(r.rootHash).filter((x) => x !== r.repo);
+    if (twins.length) r.borderline = [...r.borderline, `root memory byte-identical to ${twins.join(", ")}`];
+  }
+  return { accepted, rejected };
+}
+
+function suiteFileText({ month, accepted, selected, rejected, args, candidateCount }) {
+  const L = [
+    `# conman curated survey suite — ${month}`,
+    `# Criteria: docs/suite-criteria.md. ${selected.length} repos selected from ${accepted.length} that qualified (${candidateCount} candidates).`,
+    `# regenerate: node scripts/survey.mjs --candidates <list> --qualify-only${args.suiteSize ? ` --suite-size ${args.suiteSize}` : ""}`,
+    "# lines marked '# borderline:' passed every threshold but sit near one; the captain rules on them.",
+    "",
+  ];
+  for (const r of selected) L.push(suiteLine(r));
+  L.push("");
+  return L.join("\n");
+}
+
+function rejectionReport({ rejected, accepted, selected, candidateCount }) {
+  const L = [`candidates: ${candidateCount}`, `qualified: ${accepted.length}`, `selected: ${selected.length}`, "", "rejections by reason:"];
+  for (const [code, n] of rejectionCounts(rejected)) L.push(`  ${String(n).padStart(4)}  ${code}`);
+  return L.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -301,69 +490,6 @@ function classify(txt) {
 }
 
 // ---------------------------------------------------------------------------
-// aggregate
-
-function summariseRepo(name, map) {
-  const eps = map.entryPoints || [];
-  let stackTokens = 0;
-  let redundantTokens = 0;
-  let overBudgetEps = 0;
-  let valueConflictEps = 0;
-  const stackSizes = [];
-  for (const e of eps) {
-    stackTokens += e.stackTokens || 0;
-    redundantTokens += e.redundant?.tokens || 0;
-    stackSizes.push(e.stackTokens || 0);
-    if (e.budget?.overBudget) overBudgetEps++;
-    const vc = (e.findings || []).some(
-      (f) => f.type === "value-conflict" && f.severity === "error",
-    );
-    if (vc) valueConflictEps++;
-  }
-  return {
-    repo: name,
-    entryPoints: eps.length,
-    stackTokens,
-    redundantTokens,
-    redundantPct: stackTokens ? +((redundantTokens / stackTokens) * 100).toFixed(2) : 0,
-    overBudgetEntryPoints: overBudgetEps,
-    valueConflictEntryPoints: valueConflictEps,
-    stackSizes,
-  };
-}
-
-const median = (xs) => {
-  if (xs.length === 0) return 0;
-  const s = [...xs].sort((a, b) => a - b);
-  const m = s.length >> 1;
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-};
-const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-
-function aggregate(repoSummaries) {
-  const mapped = repoSummaries.filter((r) => r.entryPoints > 0);
-  const redundantPcts = mapped.map((r) => r.redundantPct);
-  const allStackSizes = mapped.flatMap((r) => r.stackSizes);
-  const vcRepos = mapped.filter((r) => r.valueConflictEntryPoints > 0).length;
-  const overBudgetRepos = mapped.filter((r) => r.overBudgetEntryPoints > 0).length;
-  const totalEps = mapped.reduce((n, r) => n + r.entryPoints, 0);
-  const overBudgetEps = mapped.reduce((n, r) => n + r.overBudgetEntryPoints, 0);
-  return {
-    reposMapped: mapped.length,
-    entryPoints: totalEps,
-    redundantTokenPctMedian: +median(redundantPcts).toFixed(2),
-    redundantTokenPctMean: +mean(redundantPcts).toFixed(2),
-    valueConflictRepoRatePct: mapped.length ? +((vcRepos / mapped.length) * 100).toFixed(1) : 0,
-    valueConflictRepos: vcRepos,
-    medianResolvedStackTokens: median(allStackSizes),
-    overBudgetRepoRatePct: mapped.length ? +((overBudgetRepos / mapped.length) * 100).toFixed(1) : 0,
-    overBudgetRepos,
-    overBudgetEntryPointRatePct: totalEps ? +((overBudgetEps / totalEps) * 100).toFixed(1) : 0,
-    overBudgetEntryPoints: overBudgetEps,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // output
 
 function toolVersion() {
@@ -388,11 +514,18 @@ function resultsDoc({ month, args, candidateCount, discoverySource, sample, repo
   L.push(`- **Budget**: built-in default, \`--budget ${DEFAULT_BUDGET}\` with the 0.10 safety margin (10,800-token gate line).`);
   L.push(`- **Candidates**: ${candidateCount} public repos, from ${discoverySource}.`);
   L.push(`  Forks and archived repos dropped. Discovery queries: ${QUERIES.map((q) => `\`${q}\``).join(", ")}.`);
-  L.push(`- **Sample**: ${sample.length} repos, seed \`${args.seed}\`, picked by stable \`sha256(seed + "\\0" + repo)\` ordering — a rerun over the same candidate list and seed picks the same repos.`);
+  if (args.suite || args.qualify) {
+    L.push(`- **Sample**: the curated suite, ${sample.length} repos, no sampling. Inclusion rules: \`docs/suite-criteria.md\`.`);
+  } else {
+    L.push(`- **Sample**: ${sample.length} repos, seed \`${args.seed}\`, picked by stable \`sha256(seed + "\\0" + repo)\` ordering — a rerun over the same candidate list and seed picks the same repos.`);
+  }
   L.push(`- **Per repo**: \`git clone --depth 1\`, \`conman map --json\`, capture, then delete the clone before the next.`);
   L.push(`- **Mapped**: ${agg.reposMapped}. **Skipped**: ${skips.length}.`);
   L.push("");
   L.push("## Aggregate");
+  L.push("");
+  L.push("Pooled rows weigh every entry point equally, so a repo with many entry");
+  L.push("points moves them most. Per-repo rows weigh every repo equally.");
   L.push("");
   L.push("| measure | result |");
   L.push("|---------|--------|");
@@ -400,17 +533,21 @@ function resultsDoc({ month, args, candidateCount, discoverySource, sample, repo
   L.push(`| entry points resolved | **${agg.entryPoints}** |`);
   L.push(`| redundant tokens, % of resolved stack (per repo) | **median ${agg.redundantTokenPctMedian}%, mean ${agg.redundantTokenPctMean}%** |`);
   L.push(`| repos with ≥1 error-severity value conflict | **${agg.valueConflictRepos} of ${agg.reposMapped} — ${agg.valueConflictRepoRatePct}%** |`);
-  L.push(`| median resolved stack (across all entry points) | **${agg.medianResolvedStackTokens.toLocaleString("en-US")} tokens** |`);
+  L.push(`| repos with any redundant tokens | **${agg.redundantRepos} of ${agg.reposMapped} — ${agg.redundantRepoRatePct}%** |`);
+  L.push(`| median resolved stack, per repo (median of per-repo medians) | **${agg.medianOfRepoMedianStackTokens.toLocaleString("en-US")} tokens** |`);
+  L.push(`| median resolved stack, pooled (all entry points) | ${agg.medianResolvedStackTokens.toLocaleString("en-US")} tokens |`);
+  L.push(`| entry points over budget, repo-weighted (mean of per-repo rates) | **${agg.repoWeightedOverBudgetEntryPointPct}%** |`);
+  L.push(`| largest single repo, share of all entry points | ${agg.largestRepoEntryPointSharePct}% |`);
   L.push(`| repos with ≥1 over-budget entry point | **${agg.overBudgetRepos} of ${agg.reposMapped} — ${agg.overBudgetRepoRatePct}%** |`);
-  L.push(`| entry points over budget | **${agg.overBudgetEntryPoints} of ${agg.entryPoints} — ${agg.overBudgetEntryPointRatePct}%** |`);
+  L.push(`| entry points over budget, pooled | ${agg.overBudgetEntryPoints} of ${agg.entryPoints} — ${agg.overBudgetEntryPointRatePct}% |`);
   L.push("");
   L.push("## Per-repo rows");
   L.push("");
-  L.push("| repo | entry points | resolved tokens | redundant tokens | redundant % | over-budget EPs | value-conflict EPs |");
-  L.push("|------|-------------:|----------------:|-----------------:|------------:|----------------:|-------------------:|");
+  L.push("| repo | entry points | resolved tokens | median EP stack | redundant tokens | redundant % | over-budget EPs | value-conflict EPs |");
+  L.push("|------|-------------:|----------------:|----------------:|-----------------:|------------:|----------------:|-------------------:|");
   for (const r of [...repoSummaries].sort((a, b) => (a.repo < b.repo ? -1 : 1))) {
     L.push(
-      `| \`${r.repo}\` | ${r.entryPoints} | ${r.stackTokens.toLocaleString("en-US")} | ${r.redundantTokens.toLocaleString("en-US")} | ${r.redundantPct}% | ${r.overBudgetEntryPoints} | ${r.valueConflictEntryPoints} |`,
+      `| \`${r.repo}\` | ${r.entryPoints} | ${r.stackTokens.toLocaleString("en-US")} | ${r.medianStackTokens.toLocaleString("en-US")} | ${r.redundantTokens.toLocaleString("en-US")} | ${r.redundantPct}% | ${r.overBudgetEntryPoints} | ${r.valueConflictEntryPoints} |`,
     );
   }
   L.push("");
@@ -453,7 +590,7 @@ const README_START = "## What conman finds in the wild";
 const SURVEY_MARK_BEGIN = "<!-- survey:begin -->";
 const SURVEY_MARK_END = "<!-- survey:end -->";
 
-function surveyBlock({ month, sample, agg, skips, small }) {
+function surveyBlock({ month, sample, agg, skips, small, suite }) {
   const rel = `docs/survey-${month}.md`;
   const L = [];
   L.push(SURVEY_MARK_BEGIN);
@@ -466,7 +603,7 @@ function surveyBlock({ month, sample, agg, skips, small }) {
     L.push(`${sample.length} sampled), not the full survey — treat the pinned-corpus table above as the`);
     L.push("load-bearing numbers until the ~100-repo run lands.");
   } else {
-    L.push(`\`scripts/survey.mjs\` shallow-cloned and mapped a random ${agg.reposMapped}-repo sample of`);
+    L.push(`\`scripts/survey.mjs\` shallow-cloned and mapped ${suite ? "the curated" : "a random"} ${agg.reposMapped}-repo ${suite ? "suite (docs/suite-criteria.md)" : "sample"} of`);
     L.push(`public repos carrying a real agent context stack. Full method and per-repo rows: [\`${rel}\`](${rel}).`);
   }
   L.push("");
@@ -474,7 +611,7 @@ function surveyBlock({ month, sample, agg, skips, small }) {
   L.push("|---------|---------------|");
   L.push(`| redundant tokens (% of resolved stack, per repo) | **median ${agg.redundantTokenPctMedian}%, mean ${agg.redundantTokenPctMean}%** |`);
   L.push(`| repos with a direct value conflict (error severity) | **${agg.valueConflictRepos} of ${agg.reposMapped} — ${agg.valueConflictRepoRatePct}%** |`);
-  L.push(`| median resolved stack | **${agg.medianResolvedStackTokens.toLocaleString("en-US")} tokens** |`);
+  L.push(`| median resolved stack, per repo | **${agg.medianOfRepoMedianStackTokens.toLocaleString("en-US")} tokens** |`);
   L.push(`| repos with an over-budget entry point | **${agg.overBudgetRepos} of ${agg.reposMapped} — ${agg.overBudgetRepoRatePct}%** |`);
   L.push("");
   L.push(SURVEY_MARK_END);
@@ -521,24 +658,32 @@ async function main() {
   // --- discovery / candidate list ---
   let candidates;
   let discoverySource;
-  if (args.candidates) {
-    candidates = readFileSync(args.candidates, "utf8")
-      .split("\n")
-      .map((s) => s.replace(/#.*/, "").trim())
-      .filter((s) => /^[\w.-]+\/[\w.-]+$/.test(s));
-    candidates = [...new Set(candidates)].sort();
+  if (args.suite) {
+    candidates = parseRepoList(readFileSync(args.suite, "utf8"));
+    discoverySource = `curated suite \`${args.suite.startsWith(ROOT) ? args.suite.slice(ROOT.length + 1) : args.suite}\` (docs/suite-criteria.md)`;
+    console.error(`loaded ${candidates.length} suite repos from ${args.suite}`);
+  } else if (args.candidates) {
+    candidates = parseRepoList(readFileSync(args.candidates, "utf8"));
     discoverySource = `candidate list \`${args.candidates}\``;
     console.error(`loaded ${candidates.length} candidates from ${args.candidates}`);
   } else {
     console.error(`discovering candidates (pages=${args.pages})...`);
     const raw = await discover(args.pages);
-    console.error(`filtering ${raw.length} repos (fork/archived)...`);
-    const { kept, dropped } = await filterRepos(raw);
-    candidates = kept.map((k) => k.repo).sort();
+    // With --qualify the qualify stage rejects forks/archived itself (and records
+    // why), so skip the extra per-repo metadata pass here.
+    let dropped = [];
+    if (args.qualify) {
+      candidates = raw;
+    } else {
+      console.error(`filtering ${raw.length} repos (fork/archived)...`);
+      const f = await filterRepos(raw);
+      dropped = f.dropped;
+      candidates = f.kept.map((k) => k.repo).sort();
+    }
     discoverySource = `GitHub code-search on ${new Date().toISOString().slice(0, 10)} (${dropped.length} forks/archived/failed dropped)`;
     const header = [
       `# conman survey candidates — ${month}`,
-      `# ${candidates.length} public repos, forks + archived removed`,
+      `# ${candidates.length} public repos${args.qualify ? " (unfiltered; qualify stage rejects forks/archived)" : ", forks + archived removed"}`,
       `# regenerate: node scripts/survey.mjs --discover-only --pages ${args.pages}`,
       "",
     ].join("\n");
@@ -555,9 +700,36 @@ async function main() {
     return;
   }
 
+  // --- qualify ---
+  if (args.qualify && !args.suite) {
+    const { getTokenizer } = await import(pathToFileURL(join(ROOT, "dist", "tokenizer.js")).href);
+    const countTokens = (t) => getTokenizer("claude-local").countTokens(t);
+    const { accepted, rejected } = await qualifyAll(candidates, {
+      cachePath: args.qualifyCache, now: Date.now(), countTokens,
+    });
+    const selected = sampleCandidates(accepted, args.seed, args.suiteSize).sort((a, b) => (a.repo < b.repo ? -1 : 1));
+    const suiteOut = args.suiteOut || join(ROOT, "docs", "survey-suite.txt");
+    writeFileSync(suiteOut, suiteFileText({ month, accepted, selected, rejected, args, candidateCount: candidates.length }));
+    const rejOut = suiteOut.replace(/\.txt$/, "") + "-rejections.txt";
+    const report = rejectionReport({ rejected, accepted, selected, candidateCount: candidates.length });
+    writeFileSync(
+      rejOut,
+      [`# qualify-stage rejections — ${month}`, ...report.split("\n").map((l) => "# " + l), "",
+        ...[...rejected].sort((a, b) => (a.repo < b.repo ? -1 : 1)).map((r) => `${r.repo} # ${r.reason}`), ""].join("\n"),
+    );
+    console.error(`\n${report}\nwrote ${suiteOut} and ${rejOut}`);
+    if (args.qualifyOnly) return;
+    candidates = selected.map((r) => r.repo);
+  } else if (args.qualifyOnly) {
+    console.error("--qualify-only does not combine with --suite.");
+    process.exit(2);
+  }
+
   // --- sample ---
-  const sample = sampleCandidates(candidates, args.seed, args.limit);
-  console.error(`sampled ${sample.length} of ${candidates.length} candidates (seed "${args.seed}")`);
+  const sample = args.suite || args.qualify
+    ? candidates
+    : sampleCandidates(candidates, args.seed, args.limit);
+  console.error(`${args.suite || args.qualify ? "mapping" : "sampled"} ${sample.length} of ${candidates.length} candidates (seed "${args.seed}")`);
 
   // --- clone + map ---
   if (args.keepJson) mkdirSync(args.keepJson, { recursive: true });
@@ -610,7 +782,7 @@ async function main() {
     const block = surveyBlock({
       month,
       sample: sample.map((c) => (typeof c === "string" ? c : c.repo)),
-      agg, skips, small,
+      agg, skips, small, suite: !!(args.suite || args.qualify),
     });
     const how = patchReadme(join(ROOT, "README.md"), block);
     console.error(`README.md: ${how} survey block`);
@@ -620,7 +792,7 @@ async function main() {
   console.error(`done: ${agg.reposMapped} mapped, ${skips.length} skipped.`);
   console.error(`  redundant %: median ${agg.redundantTokenPctMedian}, mean ${agg.redundantTokenPctMean}`);
   console.error(`  value-conflict repos: ${agg.valueConflictRepos}/${agg.reposMapped} (${agg.valueConflictRepoRatePct}%)`);
-  console.error(`  median resolved stack: ${agg.medianResolvedStackTokens} tokens`);
+  console.error(`  median resolved stack: per repo ${agg.medianOfRepoMedianStackTokens}, pooled ${agg.medianResolvedStackTokens} tokens`);
   console.error(`  over-budget repos: ${agg.overBudgetRepos}/${agg.reposMapped} (${agg.overBudgetRepoRatePct}%)`);
 }
 

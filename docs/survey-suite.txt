@@ -1,0 +1,55 @@
+# conman curated survey suite — 2026-10
+# Criteria: docs/suite-criteria.md. 50 repos selected from 106 that qualified (4001 candidates).
+# regenerate: node scripts/survey.mjs --qualify-only --pages 10 --suite-size 50
+# lines marked '# borderline:' passed every threshold but sit near one; the captain rules on them.
+
+1amageek/SwiftAgent # features: nested-claude-md; root 10036 tok; 106 stars; source 92%
+907739769/OSR # features: nested-claude-md x38; root 9806 tok; 72 stars; source 90% # borderline: 72 stars, near the 50 floor
+Automattic/wordpress-atmosphere # features: skills x5; root 3572 tok; 54 stars; source 71% # borderline: 54 stars, near the 50 floor
+FPurchess/blank # features: rules x20; root 10246 tok; 285 stars; source 80%
+FalkorDB/FalkorDB # features: skills x8; root 2461 tok; 10491 stars; source 58%
+HorusGoul/eslint-plugin-react-render-types # features: skills x3; root 1361 tok; 111 stars; source 47% # borderline: agent-dir share 38%, near the 40% ceiling
+Inebrio/Routerly # features: rules x3, skills x17; root 2984 tok; 103 stars; source 60%
+Kastalien-Research/thoughtbox # features: nested-claude-md, rules x3, skills x50; root 4938 tok; 65 stars; source 46% # borderline: 65 stars, near the 50 floor; agent-dir share 38%, near the 40% ceiling
+MorphiaOrg/morphia # features: skills x2; root 742 tok; 1676 stars; source 32% # borderline: root memory 742 tok, near the 500 floor; source share 32%, near the 30% floor
+NaverPayDev/pie # features: nested-claude-md x7; root 1106 tok; 115 stars; source 49%
+OpenMANET/openmanetd # features: rules x11, skills x4; root 2233 tok; 62 stars; source 76% # borderline: 62 stars, near the 50 floor
+Pantani/tdmcp # features: skills x35; root 7660 tok; 55 stars; source 59% # borderline: 55 stars, near the 50 floor
+PyPSA/pypsa-usa # features: skills; root 2986 tok; 150 stars; source 33% # borderline: source share 33%, near the 30% floor
+SynkraAI/aiox-core # features: rules x11, skills x15; root 4060 tok; 3135 stars; source 42%
+WordPress/gutenberg # features: nested-claude-md x4; root 2914 tok; 11775 stars; source 63%
+adam-s/intercept # features: rules x5, skills x10; root 962 tok; 190 stars; source 60%
+axsaucedo/kaos # features: rules x10, skills x4; root 2781 tok; 281 stars; source 66%
+breimanntools/aaanalysis # features: rules x18, skills x5; root 2465 tok; 89 stars; source 58%
+chillzhuang/Kinema # features: nested-claude-md, skills x19; root 6830 tok; 233 stars; source 60%
+crbnos/carbon # features: nested-claude-md x39, rules x77, skills x36; root 5594 tok; 2758 stars; source 85%
+danielngo03/TER-Career # features: rules x5, skills x7; root 5828 tok; 60 stars; source 81% # borderline: 60 stars, near the 50 floor
+devoxx/DevoxxGenieIDEAPlugin # features: skills x6; root 1518 tok; 686 stars; source 69%
+dropseed/plain # features: nested-claude-md, rules x29, skills x16; root 693 tok; 1043 stars; source 72% # borderline: root memory 693 tok, near the 500 floor
+dutradotdev/quokka # features: skills; root 4800 tok; 110 stars; source 56%
+enso-org/enso # features: nested-claude-md x82, skills x3; root 1516 tok; 7443 stars; source 50%
+flowexec/flow # features: skills x6; root 1866 tok; 138 stars; source 66%
+kernelslacker/trinity # features: nested-claude-md x30; root 4479 tok; 910 stars; source 95%
+keychat-io/keychat-app # features: skills x11; root 3466 tok; 98 stars; source 74%
+kromatv/kroma # features: skills x14; root 5335 tok; 67 stars; source 87% # borderline: 67 stars, near the 50 floor
+littlebearapps/untether # features: rules x10, skills x6; root 2675 tok; 74 stars; source 62% # borderline: 74 stars, near the 50 floor
+llama-farm/llamafarm # features: rules x4, skills x19; root 595 tok; 836 stars; source 70% # borderline: root memory 595 tok, near the 500 floor
+lnccbrown/HSSM # features: rules, skills; root 2287 tok; 130 stars; source 53%
+morethanwords/tweb # features: skills x8; root 16170 tok; 2696 stars; source 85%
+mrclrchtr/supi # features: nested-claude-md x23; root 3811 tok; 103 stars; source 53%
+ng-primitives/ng-primitives # features: rules x6, skills; root 1997 tok; 611 stars; source 76%
+novasamatech/nova-spektr # features: nested-claude-md, skills x3, @-imports x6; root 7548 tok; 56 stars; source 94% # borderline: 56 stars, near the 50 floor
+nwiizo/ccswarm # features: rules x4, skills x12, @-imports x3; root 5814 tok; 154 stars; source 46% # borderline: agent-dir share 38%, near the 40% ceiling
+panaversity/ksor # features: nested-claude-md, skills x3; root 28908 tok; 232 stars; source 74%
+quangdangfit/goshop # features: rules x14; root 2097 tok; 410 stars; source 84%
+rigortype/rigor # features: skills x14; root 2781 tok; 107 stars; source 64%
+robustmq/robustmq # features: skills x7; root 928 tok; 1846 stars; source 58%
+sageox/ox # features: rules x17, skills x5; root 4913 tok; 65 stars; source 66% # borderline: 65 stars, near the 50 floor
+samuelloranger/labby # features: skills; root 2186 tok; 94 stars; source 80%
+stacklok/toolhive # features: rules x7, skills x12; root 1706 tok; 2305 stars; source 79%
+suchipi/hex-engine # features: rules x13; root 2136 tok; 675 stars; source 64%
+talmolab/sleap # features: skills x3; root 655 tok; 619 stars; source 53% # borderline: root memory 655 tok, near the 500 floor
+ucsandman/DashClaw # features: rules x2, skills x11; root 4116 tok; 313 stars; source 69%
+wlsdks/ontology-atlas # features: nested-claude-md x2, rules x9, skills x17; root 2663 tok; 143 stars; source 72%
+xiaolai/vmark # features: rules x15, skills x19; root 3581 tok; 867 stars; source 82%
+zacharyfmarion/openscad-studio # features: skills; root 5920 tok; 245 stars; source 48%
