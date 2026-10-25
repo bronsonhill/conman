@@ -8,6 +8,13 @@ follow semantic versioning.
 
 ### Added
 
+- `conman diff --base-dir <path>` compares this checkout's resolved stack
+  against a second checkout: entry points added and removed, token change per
+  common entry point, and findings new and resolved (identified by type,
+  severity, file paths, and message, not line numbers). `--map` covers the
+  whole repo; `--json` emits the same data. Report-only, exit 0, no git;
+  materialising the base revision is left to the caller. (An earlier changelog
+  entry listed `conman diff` under 0.1.0; the command did not exist then.)
 - Report headers (text, `map`, and HTML) now name the anchored Claude Code
   release and its verification date next to the model version:
   `model 0.10  (Claude Code anchor v2.1.251, verified 2026-09-01)`. For
@@ -130,7 +137,6 @@ the same bytes for the same input every time.
   prose or meaning; idempotent.
 - `conman <entry> --trim` — delete-only Tier-1 trim advice over the whole-file
   duplication findings.
-- `conman diff` — compare resolved stacks.
 
 ### Finding types
 

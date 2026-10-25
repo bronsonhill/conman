@@ -1,0 +1,4 @@
+{
+  "budget": { "total": 2000, "perFile": 1500, "skillIndex": 400 },
+  "gate": { "duplication": "error", "value-conflict": "error" }
+}

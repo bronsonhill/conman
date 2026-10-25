@@ -354,13 +354,14 @@ from tool-selection research and not measured on Claude Code skill indexes.
 conman <entrypoint>          analyze one entry point (a directory, or a file for scoped checks)
 conman map [root]            analyze every entry point discovered in the repo
 conman check [<entrypoint>]  analyze, then exit non-zero over budget or on a gated finding
+conman diff --base-dir <path>  compare this checkout against a second one (add --map for the whole repo); report only, exit 0
 conman explain [<id>]        describe a finding type: explanation, research, remediation
 ```
 
 Flags: `--json`, `--format <human|json|sarif>`, `--config <path>`, `--budget <n>`,
 `--tokenizer <name>`, `--agent <claude|codex|cursor|copilot>`,
 `--no-repo-boundary`, `--repo-root <path>`, `--fix`, `--dry-run`, `--trim`,
-`--map` (with `check`), `--html <path>` (with `map` or `check --map`), and
+`--map` (with `check` or `diff`), `--base-dir <path>` (with `diff`), `--html <path>` (with `map` or `check --map`), and
 `--user` (with `--user-config-dir <path>`).
 
 ### `conman map`
